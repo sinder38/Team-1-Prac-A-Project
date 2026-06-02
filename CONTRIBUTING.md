@@ -5,22 +5,7 @@ efficiently while protecting the stability of `main` and maintaining code qualit
 
 ---
 
-## 1. Repository Structure
-
-```
-
-/
-├── backend/ # Project backend
-├── fronted # Project frontend
-├── data/ # Recorded data
-├── README.md # Project description
-└── CONTRIBUTING.md # This file
-
-````
-
----
-
-## 2. Branching & Release Strategy
+## 1. Branching & Release Strategy
 
 1. **Protect `main`**
     - No direct pushes. All changes go through Pull Requests (PRs).
@@ -52,7 +37,7 @@ efficiently while protecting the stability of `main` and maintaining code qualit
 
 ---
 
-## 3. Issue & Task Workflow **Currently unused**
+## 2. Issue & Task Workflow **Currently unused**
 
 You don't really need to create issues right now. But if you do please follow this.
 
@@ -70,7 +55,7 @@ You don't really need to create issues right now. But if you do please follow th
 
 ---
 
-## 4. Coding Style & Performance
+## 3. Coding Style & Performance
 
 1. **Language Conventions**
     - Follow PEP8 conventions or analog for your language
@@ -90,7 +75,7 @@ You don't really need to create issues right now. But if you do please follow th
 
 ---
 
-## 5. Commit Messages & Pull Requests
+## 4. Commit Messages & Pull Requests
 
 1. **Commit Message Format (Conventional Commits)**
    ```
@@ -106,7 +91,7 @@ You don't really need to create issues right now. But if you do please follow th
       ```
 ---
 
-## 6. Code Review Process
+## 5. Code Review Process
 
 1. **Assigning Reviewers**
    Pull requests (PRs) should be reviewed by the appropriate team members. Make sure to assign relevant reviewer.
@@ -116,7 +101,7 @@ You don't really need to create issues right now. But if you do please follow th
     
 ---
 
-## 7. Merging & Releases
+## 6. Merging & Releases
 
 1. **Squash & Merge (Preferred)**
 

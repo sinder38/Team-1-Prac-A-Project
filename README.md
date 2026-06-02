@@ -256,6 +256,7 @@ team1-prac-a-project/
 ├── LICENCE.md                         # Project licencing 
 ├── /.github/                          # GitHub Actions
 ├── /sprints/                          # Sprint details
+├── /scripts/                          # Various helper scripts
 ├── /data/
 │   ├── /evidence/                     # Data & screenshots 
 │   ├── /almanac/                      # Analysis from Investors Almanac
@@ -264,6 +265,7 @@ team1-prac-a-project/
 │   ├── /charts/                       # Charts Screenshots
 │   ├── /llm/                          # LLM outputs and comparisons
 │   ├── /formats/                      # Formats for each agent
+│   ├── /final prediction/             # Our final prediction
 │   └── /human/                        # Human predictions
 └── /presentations/                    # Class presentations
 ```
