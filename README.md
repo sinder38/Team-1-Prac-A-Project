@@ -192,12 +192,18 @@ After the three agents are built, we paste them into an identical prompt and que
 <tr>
 <td><b>R1 — Product Owner</b></td>
 <td>Sprint goal. Definition of done.</td>
-<td><code>sprint_goal_WXX.md</code></td>
+<td>
+<code>sprint_goal_WXX.md</code><br>
+<code>acceptance_criteria.md</code>
+</td>
 </tr>
 <tr>
 <td><b>R2 — Scrum Master</b></td>
 <td>Stand-ups. Retrospective. Blockers.</td>
-<td><code>retrospective_WXX.md</code></td>
+<td>
+<code>standup_WXX.md</code><br>
+<code>retrospective_WXX.md</code>
+</td>
 </tr>
 <tr>
 <td><b>R3 — Almanac Agent Lead</b></td>
@@ -217,17 +223,21 @@ After the three agents are built, we paste them into an identical prompt and que
 <tr>
 <td><b>R6 — LLM Synthesis Operator</b></td>
 <td>Query all four models. Comparison table.</td>
-<td><code>data/synthesis/synthesis_*_WXX.txt</code></td>
+<td>
+<code>data/llm/synthesis_*_WXX.txt</code><br>
+<code>data/llm/llm_comparison_WXX.md</code>
+</td>
 </tr>
 <tr>
 <td><b>R7 — Human Score Analyst</b></td>
 <td>Five-dimension scoring. Override paragraph. Final prediction.</td>
-<td><code>data/synthesis/human_score_WXX.md</code></td>
+<td><code>data/human/human_score_WXX.md</code></td>
 </tr>
 <tr>
 <td><b>R8 — Data &amp; Evidence Lead</b></td>
 <td>Data sourcing. Screenshots. Actuals recording.</td>
-<td><code>data/evidence/</code></td>
+<td><code>data/evidence/actuals_WXX.md</code>,
+<code>finviz_*.png</code></td>
 </tr>
 <tr>
 <td><b>R9 — GitHub &amp; Integration Lead</b></td>
@@ -237,7 +247,11 @@ After the three agents are built, we paste them into an identical prompt and que
 <tr>
 <td><b>R10 — QA &amp; Learning Log Lead</b></td>
 <td>Calibration scoring. LLM horse race. Learning log.</td>
-<td><code>calibration_log.md</code>, <code>learning_log_WXX.md</code></td>
+<td>
+<code>calibration_log.md</code><br>
+<code>llm_horserace.md</code><br>
+<code>learning_log_WXX.md</code>
+</td>
 </tr>
 </tbody>
 </table>
@@ -261,7 +275,7 @@ team1-prac-a-project/
 │   ├── /evidence/                     # Data & screenshots 
 │   ├── /almanac/                      # Analysis from Investors Almanac
 │   ├── /macro/                        # Fundamental analysis
-│   ├── /technical/                    # Technical anylysis
+│   ├── /technical/                    # Technical analysis
 │   ├── /charts/                       # Charts Screenshots
 │   ├── /llm/                          # LLM outputs and comparisons
 │   ├── /formats/                      # Formats for each agent
