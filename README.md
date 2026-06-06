@@ -282,8 +282,16 @@ team1-prac-a-project/
 </thead>
 <tbody>
 <tr>
-<td><a href="https://dt3-tr2-26-market-intelligence.pages.dev/"><b>DT3 Task Brief</b></a></td>
+<td><a href="https://dt3-tr2-26-market-intelligence.pages.dev/"><b>DT3 Current Task Brief</b></a></td>
 <td>Official course materials</td>
+</tr>
+<tr>
+<td><a href="./tasks/W2Task.html"><b>DT3 Week 2 Task Brief</b></a></td>
+<td>Official course materials (backup)</td>
+</tr>
+<tr>
+<td><a href="./tasks/W3Task.html"><b>DT3 Week 3 Task Brief</b></a></td>
+<td>Official course materials (backup)</td>
 </tr>
 <tr>
 <td><a href="https://discord.com/channels/1505861202444816455/1505883026771677366"><b>CP3405 Discord</b></a></td>
