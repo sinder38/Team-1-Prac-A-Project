@@ -242,8 +242,8 @@ After the three agents are built, we paste them into an identical prompt and que
 <tr>
 <td><b>R9 — GitHub &amp; Integration Lead</b></td>
 <td>Repository organization. Commits. Release tags.</td>
-<td>All required content merged
-    README up to date
+<td>All required content merged<br>
+    README up to date<br>
     Repository maintained
 </td>
 </tr>
