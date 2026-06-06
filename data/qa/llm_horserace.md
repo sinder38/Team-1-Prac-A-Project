@@ -1,7 +1,7 @@
 # LLM Horse Race - Week 2
 
 Role: R10 QA and Learning Log Lead  
-Date checked: 31 May 2026
+Date checked: 6 June 2026
 
 ## What this file is for
 
@@ -9,7 +9,7 @@ This file tracks which AI model gave the closest SPX forecast. Over the sprint w
 
 ## Evidence used
 
-I used the merged R6 comparison table in:
+I used the merged R6 comparison table:
 
 `data/llm/llm_comparison_W2.md`
 
@@ -30,7 +30,7 @@ The actual SPX result from `data/evidence/actuals_W2.md` was:
 
 ## Week 2 winner
 
-Winner: DeepSeek
+Winner: **DeepSeek**
 
 DeepSeek and ChatGPT both included the actual +1.40% result inside their predicted SPX ranges. I chose DeepSeek as the winner because its midpoint was slightly closer to the actual result.
 

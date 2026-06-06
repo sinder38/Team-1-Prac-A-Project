@@ -2,14 +2,14 @@
 
 Role: R10 QA and Learning Log Lead  
 Checked by: QA Lead  
-Date checked: 31 May 2026
+Date checked: 6 June 2026
 
 ## Evidence checked
 
+- `data/final prediction/prediction_2026-W02_Team1.md`
 - `data/evidence/actuals_W2.md`
+- `data/human/human_score_W2.md`
 - `data/llm/llm_comparison_W2.md`
-- `human/human_score_W2.md` from the R7 branch
-- `data/final prediction/prediction_2026-W02_Team1.md` from the R7 branch
 
 ## Scoring rule
 
@@ -24,19 +24,9 @@ The teacher's calibration score depends on direction and confidence:
 | Medium | Wrong | 0 |
 | Low / Uncertain | Wrong | +1 |
 
-## Latest actuals available
+## Team prediction
 
-From `data/evidence/actuals_W2.md`, the completed market week ended on Friday 29 May 2026:
-
-| Asset | Actual result |
-| --- | ---: |
-| SPX | +1.40% |
-| NDX | +2.86% |
-| IWM | +1.82% |
-
-## Prediction evidence available
-
-The R7 branch currently has a final prediction file. It was filed on 31 May 2026 and predicts the 1-5 June market week:
+The locked Week 2 prediction file gave these calls:
 
 | Asset | Direction | Predicted range | Confidence |
 | --- | --- | ---: | --- |
@@ -44,25 +34,28 @@ The R7 branch currently has a final prediction file. It was filed on 31 May 2026
 | NDX | Up | +0.5% to +1.5% | Medium |
 | IWM | Up | 0.0% to +1.2% | Low-Medium |
 
-## QA decision
+## Actual result
 
-I am not assigning a final calibration score yet. The actuals file currently available is for the week ending 29 May, while the latest final prediction file appears to forecast 1-5 June.
+From `data/evidence/actuals_W2.md`, all three tracked indexes finished higher:
 
-Because the prediction week and actuals week do not clearly match, scoring it now would be misleading. The right QA action is to hold calibration until the matching actual results are available.
+| Asset | Actual result | Direction result |
+| --- | ---: | --- |
+| SPX | +1.40% | Correct |
+| NDX | +2.86% | Correct |
+| IWM | +1.82% | Correct |
 
-## Current calibration status
+## Calibration score
 
-| Asset | Prediction to track | Matching actual available? | Score |
+| Asset | Confidence used for scoring | Direction correct? | Score |
 | --- | --- | --- | ---: |
-| SPX | Up, +0.2% to +1.0%, Medium confidence | No | N/A |
-| NDX | Up, +0.5% to +1.5%, Medium confidence | No | N/A |
-| IWM | Up, 0.0% to +1.2%, Low-Medium confidence | No | N/A |
+| SPX | Medium | Yes | +2 |
+| NDX | Medium | Yes | +2 |
+| IWM | Low / Uncertain | Yes | +1 |
 
-## Result
-
-Calibration score: pending  
-Reason: the locked prediction and the available actuals do not refer to the same market week yet.
+Total calibration score: **+5 / +9**
 
 ## QA note
 
-For the next calibration update, R10 should compare the 1-5 June actual results against the locked prediction file and then apply the scoring table above.
+I counted IWM as Low / Uncertain because the prediction file used `Low-Medium`, which is not one of the exact score labels in the teacher's table. To avoid overstating the result, I used the lower score bucket.
+
+The team got the direction correct for all three indexes. The main improvement is that next sprint the confidence labels should use the same categories as the scoring table: High, Medium, or Low.
