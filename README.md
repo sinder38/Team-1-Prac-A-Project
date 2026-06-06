@@ -193,16 +193,16 @@ After the three agents are built, we paste them into an identical prompt and que
 <td><b>R1 — Product Owner</b></td>
 <td>Sprint goal. Definition of done.</td>
 <td>
-<code>sprint_goal_WXX.md</code><br>
-<code>acceptance_criteria.md</code>
+<code>sprints/sprint_goal_WXX.md</code><br>
+<code>sprints/acceptance_criteria_WXX.md</code>
 </td>
 </tr>
 <tr>
 <td><b>R2 — Scrum Master</b></td>
 <td>Stand-ups. Retrospective. Blockers.</td>
 <td>
-<code>standup_WXX.md</code><br>
-<code>retrospective_WXX.md</code>
+<code>sprints/standup_WXX.md</code><br>
+<code>sprints/retrospective_WXX.md</code>
 </td>
 </tr>
 <tr>
@@ -236,21 +236,24 @@ After the three agents are built, we paste them into an identical prompt and que
 <tr>
 <td><b>R8 — Data &amp; Evidence Lead</b></td>
 <td>Data sourcing. Screenshots. Actuals recording.</td>
-<td><code>data/evidence/actuals_WXX.md</code>,
-<code>finviz_*.png</code></td>
+<td><code>data/evidence/actuals_WXX.md</code>
+<code>data/evidence/finviz_*.png</code></td>
 </tr>
 <tr>
 <td><b>R9 — GitHub &amp; Integration Lead</b></td>
 <td>Repository organization. Commits. Release tags.</td>
-<td>All files merged + README updated</td>
+<td>All required content merged
+    README up to date
+    Repository maintained
+</td>
 </tr>
 <tr>
 <td><b>R10 — QA &amp; Learning Log Lead</b></td>
 <td>Calibration scoring. LLM horse race. Learning log.</td>
 <td>
-<code>calibration_log.md</code><br>
-<code>llm_horserace.md</code><br>
-<code>learning_log_WXX.md</code>
+<code>data/qa/calibration_log.md</code><br>
+<code>data/qa/llm_horserace.md</code><br>
+<code>data/qa/learning_log_WXX.md</code>
 </td>
 </tr>
 </tbody>
@@ -280,6 +283,7 @@ team1-prac-a-project/
 │   ├── /llm/                          # LLM outputs and comparisons
 │   ├── /formats/                      # Formats for each agent
 │   ├── /final prediction/             # Our final prediction
+│   ├── /qa/                           # Quality assurance
 │   └── /human/                        # Human predictions
 └── /presentations/                    # Class presentations
 ```
