@@ -13,16 +13,7 @@ Date checked: 6 June 2026
 
 ## Scoring rule
 
-The teacher's calibration score depends on direction and confidence:
-
-| Confidence | Direction correct? | Score |
-| --- | --- | ---: |
-| High | Correct | +3 |
-| Medium | Correct | +2 |
-| Low / Uncertain | Correct | +1 |
-| High | Wrong | -2 |
-| Medium | Wrong | 0 |
-| Low / Uncertain | Wrong | +1 |
+Scoring rule used: `data/qa/calibration_scoring_rule.md`
 
 ## Team prediction
 
