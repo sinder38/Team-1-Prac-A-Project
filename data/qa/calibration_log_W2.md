@@ -13,7 +13,7 @@ Date checked: 6 June 2026
 
 ## Scoring rule
 
-Scoring rule used: `data/qa/calibration_scoring_rule.md`
+Scoring rule used: `data/qa/calibration_scoring_rule_W2.md`
 
 ## Team prediction
 
