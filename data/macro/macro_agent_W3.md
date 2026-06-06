@@ -60,14 +60,9 @@ New-home orders, pricing trends, mortgage-rate impacts, and housing demand, prov
 
 CONFIRMED NEWS EVENTS (Reuters / AP):
 
-- US forces struck Iranian radar sites after Iranian drone launches near key Gulf shipping routes; US military 
- units intercepted multiple drones near the Strait of Hormuz. — Source: Reuters, AP — 6 Jun 2026 — Market implication: 
- Heightened geopolitical risk may support oil prices, defense stocks, and safe-haven assets while weighing on risk 
- sentiment.
+- US forces struck Iranian radar sites after Iranian drone launches near key Gulf shipping routes; US military units intercepted multiple drones near the Strait of Hormuz. — Source: Reuters, AP — 6 Jun 2026 — Market implication: Heightened geopolitical risk may support oil prices, defense stocks, and safe-haven assets while weighing on risk sentiment.
  
-- Wall Street ended sharply lower after stronger-than-expected US jobs data reduced expectations for future Federal 
- Reserve rate cuts and pressured technology shares. — Source: Reuters — 6 Jun 2026 — Market implication: Higher-for-longer 
- rate expectations are a headwind for growth stocks and support elevated Treasury yields.
+- Wall Street ended sharply lower after stronger-than-expected US jobs data reduced expectations for future Federal Reserve rate cuts and pressured technology shares. — Source: Reuters — 6 Jun 2026 — Market implication: Higher-for-longer rate expectations are a headwind for growth stocks and support elevated Treasury yields.
 
 MACRO BIAS: Binary-risk
 
