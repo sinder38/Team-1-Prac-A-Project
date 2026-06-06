@@ -1,3 +1,5 @@
+Macro Agent Output — Week of 6 June — Source: R4
+
 FED & RATES (CME FedWatch + Treasury.gov):
 
 - Current Fed rate: 3.50%-3.75%
@@ -78,3 +80,5 @@ to a single inflation release.
 
 INVALIDATION: A materially softer-than-expected CPI report (particularly Core CPI) that drives Treasury yields lower 
 and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
+
+Sources accessed: 6 June 2026
