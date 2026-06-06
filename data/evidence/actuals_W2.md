@@ -76,8 +76,8 @@ Saved in the **evidence** folder:
 
 | What the picture shows | File name |
 |------------------------|-----------|
-| 1-week performance (Finviz) | [finviz_1W_2026-W2_Sat.png.png](./finviz_1W_2026-W2_Sat.png.png) |
-| S&P 500 map by sector (Finviz) | [finviz_sectors_5D_2026_W2_Sat.png.png](./finviz_sectors_5D_2026_W2_Sat.png.png) |
+| 1-week performance (Finviz) | [finviz_1W_2026-W2_Sat.png.png](./finviz_1W_2026-W2_Sat.png) |
+| S&P 500 map by sector (Finviz) | [finviz_sectors_5D_2026_W2_Sat.png.png](./finviz_sectors_5D_2026_W2_Sat.png) |
 
 ## Where the numbers came from
 
