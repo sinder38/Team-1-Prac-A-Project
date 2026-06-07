@@ -6,7 +6,7 @@ CYCLE CONTEXT: Midterm election year. Q2–Q3 is the "Weak Spot." Almanac foreca
 MONTHLY STATS:
 - S&P 500: ranks #8 of 12 months. Up 61% of the time. Avg +0.3% normally.
 - Midterm year May avg: −0.7% for S&P. This is the active context for 2026.
-- Nasdaq avg +1.1%, ranks #5.
+- Nasdaq: avg +1.1%, ranks #5.
 - Russell 2000: avg +1.3%, ranks #4.
 
 SPECIFIC WEEK PATTERN (Memorial Day Week, 26–30 May):

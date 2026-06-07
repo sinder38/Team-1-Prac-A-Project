@@ -55,7 +55,7 @@ RULES: List[Rule] = [
     BulletCount(
         name="MONTHLY STATS — Nasdaq bullet",
         section_header=re.compile(r"^MONTHLY STATS:"),
-        bullet_pattern=re.compile(r"^\s*-\s+Nasdaq"),
+        bullet_pattern=re.compile(r"^\s*-\s+Nasdaq:"),
         min_count=1,
         max_count=1,
         required=True,
