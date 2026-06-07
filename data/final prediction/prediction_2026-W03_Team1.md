@@ -49,10 +49,3 @@ Our Neutral-Bearish thesis is wrong if:
 
 (d) Market risk sentiment improves despite elevated macro uncertainty
 
-## FINAL CALL
-
-**Neutral-Bearish**
-
-## CONFIDENCE
-
-**Medium**
