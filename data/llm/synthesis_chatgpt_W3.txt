@@ -1,0 +1,20 @@
+1. Weekly Regime: Bearish
+2. Confidence Score: High
+3. Key Supporting Evidence:
+    * June is historically the weakest month of the midterm-election-year cycle (average S&P 500 return −2.1%), and the broader Almanac Q2–Q3 “Weak Spot” remains active.
+    * Macro conditions have deteriorated: stronger-than-expected jobs data reduced rate-cut expectations, the 10-year Treasury yield is rising (4.534%), and the dollar is strengthening, creating a headwind for equities.
+    * Technical structure weakened materially after Friday’s sell-off: SPX, NDX, and IWM all closed below their 8 EMA, key trendline supports were broken, and momentum has shifted from bullish to neutral/bearish.
+4. Key Contradictions:
+    * Technology seasonality (XLK) remains in a favorable March–July window, which could support large-cap growth if CPI surprises lower.
+    * Geopolitical tensions and elevated oil prices can support selected sectors (energy, defense) even if the broader market weakens.
+5. Invalidation Conditions:
+    * CPI on June 10 comes in meaningfully cooler than expected (below consensus and showing disinflation progress), causing yields and the dollar to fall.
+    * SPX quickly reclaims and holds above 7,516.72 resistance with broad participation, while NDX recovers above broken trendline support and market breadth improves.
+    * Markets begin repricing higher odds of Fed easing despite recent labor-market strength.
+6. Predicted % move
+    * SPX (S&P 500): -0.8% to -3.0%
+    * NDX (Nasdaq 100): -1.0% to -4.0%
+    * IWM (Russell 2000): -1.0% to -3.5%
+7. Plain-English brief:
+    The market enters the week with several headwinds: rising bond yields, a stronger U.S. dollar, disappointing rate-cut expectations, and broken technical support after a sharp sell-off. The upcoming CPI inflation report is the key event; unless inflation comes in cooler than expected, the path of least resistance appears lower. Expect elevated volatility and a defensive market tone.
+8. Disclaimer: This is a market-regime assessment based on seasonal, macroeconomic, news, and technical evidence. It is not financial advice, investment advice, or a recommendation to buy or sell any security. Markets can change rapidly, especially around major economic releases such as CPI.

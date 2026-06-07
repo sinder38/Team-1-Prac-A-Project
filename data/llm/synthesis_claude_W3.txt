@@ -1,0 +1,16 @@
+1. Weekly Regime: Bearish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Seasonality and cycle base rates align bearishly, as midterm-year June historically ranks dead last for S&P 500 performance (average -2.1%) within the active Q2–Q3 "Weak Spot"[cite: 1].
+   - The bearish macro catalyst triggered on Friday as stronger-than-expected jobs data reduced easing hopes, sending the 10-year yield up to 4.534%, the US dollar index up 1.21%, and crude oil up 3.64% amid Middle East risk[cite: 2].
+   - Structural technical breakdowns occurred across all three major indices, with SPX, NDX, and IWM closing below their 8 EMAs and breaking near-term trendline supports on broad selling volume[cite: 3].
+4. Key Contradictions:
+   - Wednesday's upcoming CPI inflation report is a significant two-way wildcard, where any cooler-than-expected print could swiftly ignite an oversold relief rally[cite: 2].
+   - Technical multi-week trends remain structurally Neutral rather than Bearish, as the 8 EMA still sits above the 21 EMA across the board and SPX held its immediate horizontal support[cite: 3].
+5. Invalidation Conditions: A cooler-than-expected US CPI print on June 10 that revives rate cut expectations, or SPX rapidly reclaiming its 8 EMA and broken trendline to close above resistance at 7,516.72[cite: 2, 3].
+6. Predicted % move
+   SPX (S&P 500): [-3.5% to +1.5%] direction Down
+   NDX (Nasdaq 100): [-4.5% to +2.0%] direction Down
+   IWM (Russell 2000): [-4.0% to +2.0%] direction Down
+7. Plain-English brief: Stocks fell hard on Friday after a strong jobs report convinced investors the Fed won't cut rates anytime soon, and the week ahead leans negative due to a historically weak midterm June cycle and rising yields. The single biggest swing factor is Wednesday's inflation report: a hotter number likely extends the selling, while a cooler one could spark a bounce in beaten-down stocks. The overall stance is cautious and bearish, but with real two-way risk around that one data point.
+8. Disclaimer: This analysis is an automated market regime synthesis generated strictly for informational and educational purposes. It does not constitute investment or financial advice, or a recommendation to transact in any financial asset. Market conditions are subject to rapid change, particularly surrounding binary macroeconomic events.
