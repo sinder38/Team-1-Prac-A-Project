@@ -23,8 +23,9 @@ SECTOR SIGNALS:
 - Oil/Energy (XLE): seasonal SHORT begins early June. New signal this sprint.
 
 ALMANAC SEASONAL BIAS: Bearish.
-PATTERN CONFIDENCE: Medium. June midterm year avg −2.1% is the strongest bearish seasonal reading of the year. Technology seasonal long is the only bullish offset.
-ALMANAC THESIS: "June 2026 is the worst month of the year in a midterm cycle. Four sectors now have active seasonal short signals. Technology remains the one seasonal bright spot. Summer doldrums beginning — volume will decline and moves may be exaggerated.
-INVALIDATION: A significantly cool NFP print on Friday 5 June triggering Fed cut expectations could override the bearish seasonal lean and push markets higher."
+PATTERN CONFIDENCE field: Medium. June midterm year avg −2.1% is the strongest bearish seasonal reading of the year. Technology seasonal long is the only bullish offset.
+ALMANAC THESIS field (quoted): "June 2026 is the worst month of the year in a midterm cycle. Four sectors now have active seasonal short signals. Technology remains the one seasonal bright spot. Summer doldrums building alongside midterm year weakness create a compounding bearish bias. NFP on Friday is the key risk event that could alter this thesis if significantly cooler than expectations."
+
+INVALIDATION: A significantly cool NFP print on Friday 5 June triggering Fed cut expectations could override the bearish seasonal lean and push markets higher.
 
 Source: Stock Trader's Almanac 2026, pp. 66–67, p. 94, pp. 10–11. Accessed: 3 June 2026.
