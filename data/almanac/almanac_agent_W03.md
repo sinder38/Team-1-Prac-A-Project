@@ -1,4 +1,4 @@
-Almanac Agent Output — Week of 2–6 June 2026 — Source: R3
+Almanac Agent Output — Week of 2–6 June 2026 
 
 MONTH: June 2026
 CYCLE CONTEXT: Midterm election year. Q2–Q3 is the "Weak Spot." Almanac forecasts tough trading through Q3 before Q4 "Sweet Spot" rally.
@@ -6,7 +6,8 @@ CYCLE CONTEXT: Midterm election year. Q2–Q3 is the "Weak Spot." Almanac foreca
 MONTHLY STATS:
 - S&P 500: ranks #9 of 12 months normally. Ranks #12 in midterm year — dead last.
 - Midterm year June avg: −2.1% for S&P. This is the active context for 2026.
-- Nasdaq avg +1.0%, ranks #9 normally.Russell 2000 avg +0.8%, ranks #9 normally.
+- Nasdaq avg +1.0%, ranks #9 normally.
+- Russell 2000 avg +0.8%, ranks #9 normally.
 
 SPECIFIC WEEK PATTERN (Early June Week, 2–6 June):
 - No specific holiday pattern this week. Early June is transitional — summer doldrums building.
