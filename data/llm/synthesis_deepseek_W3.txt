@@ -1,0 +1,19 @@
+1. Weekly Regime: Bearish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   · Seasonal & cycle headwinds: Midterm election year June ranks dead last for S&P 500 (avg –2.1%), and Almanac flags a “Weak Spot” through Q3.
+   · Macro tightening pressure: 10-year yield rising (4.534%) and DXY strengthening (+1.21% weekly) create headwinds for equities, especially growth/tech — reinforced by Friday’s sharp sell-off on hot jobs data.
+   · Technical breakdown: SPX, NDX, and IWM all closed below their 8 EMA; SPX violated trendline support near 7,450, triggering a neutral-to-bearish shift.
+4. Key Contradictions:
+   · Tech sector (XLK) is still in its seasonal long window (Mar–Jul), which could provide relative support and limit downside.
+   · The June 10 CPI report is a binary event — a cooler print could rapidly reverse bearish positioning and spark a relief rally.
+5. Invalidation Conditions:
+   A significantly cooler-than-expected US CPI print (MoM and YoY below consensus) would revive rate-cut expectations, potentially breaking the bearish technical and macro setup and flipping the regime toward neutral/bullish into quarter-end.
+6. Predicted % move
+   · SPX (S&P 500): [–3.0% to +1.5%]
+   · NDX (Nasdaq 100): [–4.0% to +2.0%]
+   · IWM (Russell 2000): [–3.5% to +2.0%]
+7. Plain-English brief:
+   Stocks are under heavy pressure after strong jobs data crushed hopes for near-term rate cuts, and historically this midterm-year June is the worst month for the market. Next week’s inflation report is the make-or-break moment — if it runs hot, expect more selling; if it comes in cool, we could see a sharp bounce. Until then, rising bond yields and a strengthening dollar favor a cautious, defensive stance.
+8. Disclaimer:
+   This is an automated market regime synthesis based on available data and historical patterns. It is not financial advice. All investing involves risk — consult a qualified advisor before making any decisions.

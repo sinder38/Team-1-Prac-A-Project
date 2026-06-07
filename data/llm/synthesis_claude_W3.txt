@@ -1,0 +1,31 @@
+**1. Weekly Regime:** Bearish
+
+**2. Confidence Score:** Medium
+
+**3. Key Supporting Evidence:**
+- **Seasonality + base rate align bearish.** Midterm-year June is historically the weakest month for the S&P (ranks dead last, avg −2.1%), consistent with the almanac's Q2–Q3 "Weak Spot." Sector seasonals are overwhelmingly short (XLF, Gold, Materials, and now Energy), and the lone long signal (XLK/tech) was contradicted by tech leading Friday's decline (NDX −4.77%).
+- **The bearish macro catalyst already triggered.** Friday's stronger-than-expected NFP repriced rate-cut odds lower and drove a broad sell-off — meaning the almanac's stated invalidation (a *cool* NFP) did **not** occur. The backdrop reinforces this: Fed firmly on hold (96.2%), 10Y rising to 4.534%, WTI +3.64%, DXY +1.21%, plus US–Iran tension adding tail risk.
+- **Technicals broke down across all three indices.** SPX, NDX, and IWM all closed below their 8 EMA on heavy selling; SPX and NDX violated near-term trendline support, and EMA momentum is collapsing toward a bearish posture.
+
+**4. Key Contradictions:**
+- **Wednesday's CPI is a genuine two-way wildcard.** A cooler-than-expected print (vs. the 3.9% consensus) could revive cut hopes and spark a sharp relief rally — amplified by how oversold markets are after Friday.
+- **Technical bias is only Neutral, not Bearish.** The 8 EMA still sits above the 21 EMA (no bearish cross yet), and SPX is resting *exactly* on Support 1 (7,383.74), a level from which oversold bounces frequently launch. Tech's seasonal long window (Mar–Jul) also remains technically open.
+
+**5. Invalidation Conditions:**
+- A **cool CPI** on June 10 (meaningfully below 3.9%, signaling disinflation) → likely flips regime toward Neutral/Bullish.
+- **SPX reclaiming the 8 EMA** and pushing back above the broken ~7,450 trendline toward resistance 7,516.72 → invalidates the bearish technical read.
+- **Oil rolling over** on US–Iran de-escalation → removes a key inflation/bearish input.
+- *Conversely, confirmation:* SPX closing **below 7,383.74** opens the gap toward Support 2 (7,017.20) and deepens conviction.
+
+**6. Predicted % move (week of June 8–12):**
+- **SPX (S&P 500):** −3.5% to +1.5%
+- **NDX (Nasdaq 100):** −4.5% to +2.0%
+- **IWM (Russell 2000):** −4.0% to +2.0%
+
+*(Ranges are net-negative and downside-skewed, but deliberately wide on the upside to reflect the CPI binary and oversold-bounce risk — which is why this is Medium, not High, confidence.)*
+
+**7. Plain-English brief:**
+Stocks fell hard on Friday after a strong jobs report convinced investors the Fed won't cut rates anytime soon, and the week ahead leans negative — a historically weak June in a midterm-election year, rising oil and bond yields, and Middle East tensions all point the same way. The single biggest swing factor is Wednesday's inflation report: a hotter number likely extends the selling, while a cooler one could spark a bounce in beaten-down stocks. The overall stance is cautious/bearish, but with real two-way risk around that one data point.
+
+**8. Disclaimer:**
+This is an analytical synthesis of the evidence you provided, for educational and informational purposes only — not financial advice. I'm not a financial advisor, and seasonal patterns, macro signals, and technical levels can all fail in any given week, especially around a binary catalyst like CPI. Do your own research and consider consulting a licensed professional before making any investment or trading decision.
