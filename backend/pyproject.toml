@@ -1,0 +1,15 @@
+[project]
+name = "market-prediction"
+version = "0.1.0"
+description = "Weekly market prediction pipeline — SPX, NDX, IWM"
+requires-python = ">=3.13"
+dependencies = [
+    "yfinance>=0.2",
+    "requests>=2.32",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0",
+    "pyright>=1.1",
+]
