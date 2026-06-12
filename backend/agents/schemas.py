@@ -70,13 +70,22 @@ class AlmanacOutput:
 
 
 @dataclass
+class CommodityData:
+    """Commodity price and weekly change data."""
+    price: float
+    weekly_change: float  # percentage change
+
+
+@dataclass
 class MacroOutput:
     prediction_date: date
     fed_rate: str
     yield_2y: float
     yield_10y: float
     yield_30y: float
-    dxy: float
+    dxy: CommodityData
+    wti_oil: CommodityData
+    gold: CommodityData
     macro_bias: MacroBias
     primary_driver: str
     confidence: Confidence
