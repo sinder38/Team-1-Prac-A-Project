@@ -12,6 +12,7 @@ import sys
 import requests
 import yfinance as yf
 import pandas as pd
+from macro_event_data import UPCOMING_EVENTS, CONFIRMED_NEWS
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -122,12 +123,12 @@ class MacroAgent(BaseAgent):
         )
 
     def determine_macro_bias(
-        self,
-        yield_2y_change: float,
-        yield_10y_change: float,
-        dxy_change: float,
-        gold_change: float,
-        wti_change: float,
+            self,
+            yield_2y_change: float,
+            yield_10y_change: float,
+            dxy_change: float,
+            gold_change: float,
+            wti_change: float,
     ) -> tuple[MacroBias, int]:
         """Determine macro bias using a scoring system based on weekly changes."""
         score = 0
@@ -172,6 +173,18 @@ class MacroAgent(BaseAgent):
 
         return bias, score
 
+    def calculate_event_risk(self, events):
+        """Calculate Event Risk."""
+        score = 0
+
+        for event in events:
+            if event.impact == "HIGH":
+                score += 3
+            elif event.impact == "MEDIUM":
+                score += 1
+
+        return score
+
     def fetch_macro_data(self, prediction_date: date) -> MacroOutput:
         """
         Fetch Fed rate, Treasury yields, DXY, WTI, and Gold with weekly changes.
@@ -215,27 +228,23 @@ class MacroAgent(BaseAgent):
         else:
             confidence = Confidence.LOW
 
+        # Consider event risk for confidence
+        event_risk_score = self.calculate_event_risk(UPCOMING_EVENTS)
+        if event_risk_score >= 10:
+            if confidence == Confidence.HIGH:
+                confidence = Confidence.MEDIUM
+            elif confidence == Confidence.MEDIUM:
+                confidence = Confidence.LOW
+
         # Primary driver (biggest mover this week)
-        movers = {
-            "DXY": abs(dxy_data.weekly_change),
-            "WTI": abs(wti_data.weekly_change),
-            "Gold": abs(gold_data.weekly_change),
-            "2Y Yield": abs(yield_2y_change) * 10,
-            "10Y Yield": abs(yield_10y_change) * 10,
-        }
-
-        driver = max(movers, key=movers.get)
-
-        if driver == "DXY":
-            primary_driver = f"Dollar strength/weakness (DXY {dxy_data.weekly_change:+.3f}% WoW)"
-        elif driver == "WTI":
-            primary_driver = f"Oil volatility (WTI {wti_data.weekly_change:+.3f}% WoW)"
-        elif driver == "Gold":
-            primary_driver = f"Gold repricing (Gold {gold_data.weekly_change:+.3f}% WoW)"
-        elif driver == "2Y Yield":
-            primary_driver = f"Front-end rates repricing (2Y {yield_2y_change:+.3f}pp)"
+        if UPCOMING_EVENTS:
+            primary_event = max(
+                UPCOMING_EVENTS,
+                key=lambda e: e.priority
+            )
+            primary_driver = primary_event.name
         else:
-            primary_driver = f"Long-end yield move (10Y {yield_10y_change:+.3f}pp)"
+            primary_driver = "No major scheduled events"
 
         invalidation = "Major events or significant shift in inflation expectations"
 
@@ -284,6 +293,8 @@ COMMODITIES & DOLLAR:
  · WTI Crude Oil: {output.wti_oil.price}, weekly change: {output.wti_oil.weekly_change:+.4f}%
  · Gold: {output.gold.price}, weekly change: {output.gold.weekly_change:+.4f}%
  · DXY (Dollar): {output.dxy.price}, weekly change: {output.dxy.weekly_change:+.4f}%
+
+CONFIRMED NEWS EVENTS (Reuters / AP): {CONFIRMED_NEWS}
 
 MACRO BIAS: {output.macro_bias.value if output.macro_bias else "N/A"}
 PRIMARY DRIVER THIS WEEK: {output.primary_driver}
