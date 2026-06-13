@@ -430,14 +430,14 @@ class MacroAgent(BaseAgent):
 
         content = f"""Macro Agent Output — Week of {self.report_week_label(prediction_date)} — Source: R4
 
-FED & RATES:
+FED & RATES (FRED & Yfinance):
 
 - Current Fed rate: {output.fed_rate}
 - Next FOMC date: {self.full_date_label(output.next_fomc_date)}. Hold probability: {output.hold_probability:.1f}%. Cut probability: {output.cut_probability:.1f}%. Direction vs last week: {output.fomc_direction}
 - 2-year yield: {output.yield_2y:.3f}% 10-year yield: {output.yield_10y:.3f}% 30-year yield: {output.yield_30y:.3f}%
 - Yield curve: {output.yield_curve}. 10-year direction this week: {output.yield_10y_direction}
 
-COMMODITIES & DOLLAR:
+COMMODITIES & DOLLAR (Yfinance):
 
 - WTI Crude Oil: {self.format_price(output.wti_oil.price)}, weekly change {self.format_percent(output.wti_oil.weekly_change)}, direction: {output.wti_oil.direction}
 - Gold: {self.format_price(output.gold.price)}, weekly change {self.format_percent(output.gold.weekly_change)}, direction: {output.gold.direction}
