@@ -5,25 +5,83 @@ Usage:
     python agents/macro/macro_agent.py 2026-06-16
 """
 import json
-from datetime import date, timedelta
+from datetime import date
 from dataclasses import asdict
 from pathlib import Path
 import sys
 import requests
 import yfinance as yf
 import pandas as pd
-from macro_event_data import UPCOMING_EVENTS, CONFIRMED_NEWS
+from macro_event_data import (
+    UPCOMING_EVENTS,
+    CONFIRMED_NEWS,
+    FOMC_MARKET_PRICING,
+    KEY_EARNINGS,
+)
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from agents.base import BaseAgent
-from agents.schemas import MacroOutput, MacroBias, Confidence, CommodityData
+from agents.schemas import (
+    CalendarEvent,
+    CommodityData,
+    Confidence,
+    MacroBias,
+    MacroOutput,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class MacroAgent(BaseAgent):
     agent_type = "macro"
+
+    @staticmethod
+    def report_week_label(prediction_date: date) -> str:
+        """Return a human-readable report week label."""
+        return f"{prediction_date.day} {prediction_date.strftime('%B')}"
+
+    @staticmethod
+    def full_date_label(value: date | None) -> str:
+        """Return a report-friendly date label."""
+        if value is None:
+            return "N/A"
+        return f"{value.strftime('%B')} {value.day}, {value.year}"
+
+    @staticmethod
+    def direction_from_change(
+            change: float,
+            positive: str = "rising",
+            negative: str = "falling",
+            flat: str = "flat",
+            threshold: float = 0.0,
+    ) -> str:
+        """Map a numeric weekly change to a direction label."""
+        if change > threshold:
+            return positive
+        if change < -threshold:
+            return negative
+        return flat
+
+    @staticmethod
+    def determine_yield_curve(yield_2y: float, yield_10y: float) -> str:
+        """Classify the 2years10years yield curve."""
+        spread = yield_10y - yield_2y
+        if spread > 0.05:
+            return "normal"
+        if spread < -0.05:
+            return "inverted"
+        return "flat"
+
+    @staticmethod
+    def format_price(value: float) -> str:
+        """Format market prices without noisy trailing zeroes."""
+        return f"{value:.2f}".rstrip("0").rstrip(".")
+
+    @staticmethod
+    def format_percent(value: float) -> str:
+        """Format weekly percentage moves with explicit signs."""
+        return f"{value:+.2f}%"
 
     def fetch_fred(self, series: str, api_key: str) -> float:
         """Fetch latest observation from FRED API."""
@@ -112,7 +170,13 @@ class MacroAgent(BaseAgent):
             print(f"Error fetching weekly return for {ticker}: {e}")
             return 0.0
 
-    def fetch_commodity_data(self, ticker: str) -> CommodityData:
+    def fetch_commodity_data(
+            self,
+            ticker: str,
+            positive_direction: str = "rising",
+            negative_direction: str = "falling",
+            flat_direction: str = "flat",
+    ) -> CommodityData:
         """Fetch commodity price and weekly change."""
         price = self.latest_price(ticker)
         weekly_change = self.get_weekly_return(ticker)
@@ -120,7 +184,63 @@ class MacroAgent(BaseAgent):
         return CommodityData(
             price=round(price, 4) if price is not None else 0.0,
             weekly_change=weekly_change,
+            direction=self.direction_from_change(
+                weekly_change,
+                positive=positive_direction,
+                negative=negative_direction,
+                flat=flat_direction,
+            ),
         )
+
+    def build_week_ahead_calendar(self) -> list[CalendarEvent]:
+        """Convert configured event fixtures to schema objects for export."""
+        return [
+            CalendarEvent(
+                date_label=event.date_label,
+                name=event.name,
+                impact=event.impact.title(),
+                expected=event.expected,
+                previous=event.previous,
+            )
+            for event in UPCOMING_EVENTS
+        ]
+
+    def build_primary_driver(self) -> str:
+        """Describe the top-priority event as the report's primary driver."""
+        if not UPCOMING_EVENTS:
+            return "- No major scheduled events"
+
+        primary_event = max(UPCOMING_EVENTS, key=lambda e: e.priority)
+        driver_name = primary_event.catalyst_name or primary_event.name
+        driver_date = primary_event.catalyst_date or primary_event.date_label
+        catalyst_type = "data" if any(
+            token in driver_name.upper()
+            for token in ("CPI", "PPI", "PAYROLLS", "INFLATION")
+        ) else "event"
+        return (
+            f"{driver_name} {catalyst_type} on {driver_date} "
+        )
+
+    def build_invalidation(self, macro_bias: MacroBias) -> str:
+        """Build an invalidation statement according to the report."""
+        if macro_bias == MacroBias.BINARY_RISK:
+            return (
+                "A materially more dovish-than-expected Fed decision or press "
+                "conference that drives Treasury yields lower and increases "
+                "expectations for Fed rate cuts would reverse the current "
+                "cautious stance and support risk assets."
+            )
+        if macro_bias == MacroBias.HAWKISH:
+            return (
+                "A materially softer inflation or growth signal that pushes "
+                "Treasury yields lower would invalidate the hawkish bias."
+            )
+        if macro_bias == MacroBias.DOVISH:
+            return (
+                "A materially stronger inflation or growth signal that pushes "
+                "Treasury yields higher would invalidate the dovish bias."
+            )
+        return "Major events or significant shift in inflation expectations"
 
     def determine_macro_bias(
             self,
@@ -228,32 +348,21 @@ class MacroAgent(BaseAgent):
         else:
             confidence = Confidence.LOW
 
-        # Consider event risk for confidence
+        # Consider event risk score for bias and confidence
         event_risk_score = self.calculate_event_risk(UPCOMING_EVENTS)
         if event_risk_score >= 10:
-            if confidence == Confidence.HIGH:
-                confidence = Confidence.MEDIUM
-            elif confidence == Confidence.MEDIUM:
-                confidence = Confidence.LOW
+            macro_bias = MacroBias.BINARY_RISK
+            confidence = Confidence.MEDIUM
 
-        # Primary driver (biggest mover this week)
-        if UPCOMING_EVENTS:
-            primary_event = max(
-                UPCOMING_EVENTS,
-                key=lambda e: e.priority
-            )
-            primary_driver = primary_event.name
-        else:
-            primary_driver = "No major scheduled events"
-
-        invalidation = "Major events or significant shift in inflation expectations"
+        primary_driver = self.build_primary_driver()
+        invalidation = self.build_invalidation(macro_bias)
 
         return MacroOutput(
             prediction_date=prediction_date,
             fed_rate=fed_rate,
-            yield_2y=round(yield_2y, 2),
-            yield_10y=round(yield_10y, 2),
-            yield_30y=round(yield_30y, 2),
+            yield_2y=round(yield_2y, 3),
+            yield_10y=round(yield_10y, 3),
+            yield_30y=round(yield_30y, 3),
             dxy=dxy_data,
             wti_oil=wti_data,
             gold=gold_data,
@@ -261,6 +370,15 @@ class MacroAgent(BaseAgent):
             primary_driver=primary_driver,
             confidence=confidence,
             invalidation=invalidation,
+            next_fomc_date=FOMC_MARKET_PRICING.next_fomc_date,
+            hold_probability=FOMC_MARKET_PRICING.hold_probability,
+            cut_probability=FOMC_MARKET_PRICING.cut_probability,
+            fomc_direction=FOMC_MARKET_PRICING.direction_vs_last_week,
+            yield_curve=self.determine_yield_curve(yield_2y, yield_10y),
+            yield_10y_direction=self.direction_from_change(yield_10y_change),
+            week_ahead_calendar=self.build_week_ahead_calendar(),
+            key_earnings=KEY_EARNINGS,
+            confirmed_news=CONFIRMED_NEWS,
         )
 
     def run(self, prediction_date: date, **kwargs) -> MacroOutput:
@@ -275,31 +393,77 @@ class MacroAgent(BaseAgent):
         with open(out_dir / filename, "w", encoding="utf-8") as f:
             json.dump(asdict(output), f, indent=2, default=str)
 
+    def render_calendar_events(self, output: MacroOutput) -> str:
+        """Render week-ahead calendar rows."""
+        if not output.week_ahead_calendar:
+            return "- No high-impact macro calendar events configured."
+
+        return "\n\n".join(
+            (
+                f"- {event.date_label}: {event.name} — Expected: "
+                f"{event.expected}, Previous: {event.previous} — "
+                f"IMPORTANCE: {event.impact}"
+            )
+            for event in output.week_ahead_calendar
+        )
+
+    def render_key_earnings(self, output: MacroOutput) -> str:
+        """Render key earnings rows."""
+        if not output.key_earnings:
+            return "- No key earnings configured."
+
+        return "\n\n".join(output.key_earnings)
+
+    def render_confirmed_news(self, output: MacroOutput) -> str:
+        """Render confirmed Reuters/AP news rows."""
+        if not output.confirmed_news:
+            return "- No confirmed Reuters/AP news events configured."
+
+        return "\n\n".join(output.confirmed_news)
+
     def save_md(self, output: MacroOutput, prediction_date: date) -> None:
         """Render MacroOutput to MD matching data/formats/macro_agent.md"""
         week = prediction_date.isocalendar()
-        filename = f"macro_agent_{week.year}-W{week.week:02d}.md"
+        filename = f"macro_agent_W{week.week:02d}.md"
         out_dir = REPO_ROOT / "data" / "macro"
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        content = f"""Macro Agent Output — Week of {prediction_date}
+        content = f"""Macro Agent Output — Week of {self.report_week_label(prediction_date)} — Source: R4
+
 FED & RATES:
- · Current Fed rate: {output.fed_rate}
- · 2-year yield: {output.yield_2y}%
- · 10-year yield: {output.yield_10y}%
- · 30-year yield: {output.yield_30y}%
+
+- Current Fed rate: {output.fed_rate}
+- Next FOMC date: {self.full_date_label(output.next_fomc_date)}. Hold probability: {output.hold_probability:.1f}%. Cut probability: {output.cut_probability:.1f}%. Direction vs last week: {output.fomc_direction}
+- 2-year yield: {output.yield_2y:.3f}% 10-year yield: {output.yield_10y:.3f}% 30-year yield: {output.yield_30y:.3f}%
+- Yield curve: {output.yield_curve}. 10-year direction this week: {output.yield_10y_direction}
 
 COMMODITIES & DOLLAR:
- · WTI Crude Oil: {output.wti_oil.price}, weekly change: {output.wti_oil.weekly_change:+.4f}%
- · Gold: {output.gold.price}, weekly change: {output.gold.weekly_change:+.4f}%
- · DXY (Dollar): {output.dxy.price}, weekly change: {output.dxy.weekly_change:+.4f}%
 
-CONFIRMED NEWS EVENTS (Reuters / AP): {CONFIRMED_NEWS}
+- WTI Crude Oil: {self.format_price(output.wti_oil.price)}, weekly change {self.format_percent(output.wti_oil.weekly_change)}, direction: {output.wti_oil.direction}
+- Gold: {self.format_price(output.gold.price)}, weekly change {self.format_percent(output.gold.weekly_change)}, direction: {output.gold.direction}
+- DXY (Dollar): {self.format_price(output.dxy.price)}, weekly change {self.format_percent(output.dxy.weekly_change)}, direction: {output.dxy.direction}
+
+WEEK-AHEAD CALENDAR (TradingEconomics): 
+
+{self.render_calendar_events(output)}
+
+KEY EARNINGS THIS WEEK (Earnings Whispers): 
+
+{self.render_key_earnings(output)}
+
+CONFIRMED NEWS EVENTS (Reuters / AP): 
+
+{self.render_confirmed_news(output)}
 
 MACRO BIAS: {output.macro_bias.value if output.macro_bias else "N/A"}
+
 PRIMARY DRIVER THIS WEEK: {output.primary_driver}
+
 CONFIDENCE: {output.confidence.value if output.confidence else "N/A"}
+
 INVALIDATION: {output.invalidation}
+
+Sources accessed: {prediction_date}
 """
         (out_dir / filename).write_text(content, encoding="utf-8")
 

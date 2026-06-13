@@ -1,0 +1,73 @@
+{
+  "prediction_date": "2026-06-13",
+  "fed_rate": "3.50%-3.75%",
+  "yield_2y": 4.05,
+  "yield_10y": 4.45,
+  "yield_30y": 4.95,
+  "dxy": {
+    "price": 99.75,
+    "weekly_change": -0.3198,
+    "direction": "falling"
+  },
+  "wti_oil": {
+    "price": 84.88,
+    "weekly_change": -6.2514,
+    "direction": "falling"
+  },
+  "gold": {
+    "price": 4215.0,
+    "weekly_change": -2.8152,
+    "direction": "falling"
+  },
+  "macro_bias": "Binary-risk",
+  "primary_driver": "US Fed Interest Rate Decision event on June 18 ",
+  "confidence": "Medium",
+  "invalidation": "A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.",
+  "next_fomc_date": "2026-06-17",
+  "hold_probability": 97.4,
+  "cut_probability": 2.6,
+  "fomc_direction": "shifted hawkish slightly",
+  "yield_curve": "normal",
+  "yield_10y_direction": "falling",
+  "week_ahead_calendar": [
+    {
+      "date_label": "Thursday, June 18",
+      "name": "US Fed Interest Rate Decision",
+      "impact": "High",
+      "expected": "Hold",
+      "previous": "3.50%-3.75%"
+    },
+    {
+      "date_label": "Thursday, June 18",
+      "name": "FOMC Economic Projections",
+      "impact": "High",
+      "expected": "N/A",
+      "previous": "N/A"
+    },
+    {
+      "date_label": "Thursday, June 18",
+      "name": "Fed Press Conference",
+      "impact": "High",
+      "expected": "N/A",
+      "previous": "N/A"
+    },
+    {
+      "date_label": "Thursday, June 18",
+      "name": "BoE Interest Rate Decision",
+      "impact": "Medium",
+      "expected": "3.75%",
+      "previous": "3.75%"
+    }
+  ],
+  "key_earnings": [
+    "- Accenture Ltd. (ACN) \u2014 Thursday, June 18 (Before Open) \u2014 Sector: XLK/XLF (Enterprise Tech / Consulting) \u2014 What to watch: enterprise IT spending, AI-related transformation budgets, broader software and tech sentiment.",
+    "- Progressive Corp. (PGR) \u2014 Wednesday, June 17 (Before Open) \u2014 Sector: XLF (Financials) \u2014 What to watch: Insurance margin strength and pricing trends",
+    "- Jabil Inc. (JBL) \u2014 Wednesday, June 17 (Before Open) \u2014 Sector: XLK (Tech Hardware / AI Supply Chain) \u2014 What to watch: electronics demand and AI infrastructure supply chain momentum."
+  ],
+  "confirmed_news": [
+    "- US stocks rise after oil prices ease and SpaceX soars in its debut on Wall Street \u2014 Source: AP \u2014 13 Jun 2026",
+    "- US and Iran have agreed to wording of a deal to end their war, Pakistan's prime minister says \u2014 Source: AP \u2014 13 Jun 2026",
+    "- Iran peace deal looms while new military action flares near Strait of Hormuz \u2014 Source: Reuters, AP \u2014 13 Jun 2026"
+  ],
+  "agent_type": "macro"
+}
