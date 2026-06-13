@@ -10,6 +10,7 @@ MONTHLY STATS:
 - Russell 2000: avg +0.8%, ranks #9 normally.
 
 SPECIFIC WEEK PATTERN (Mid-June Week, 15-19 June):
+- Pattern tendency: bearish-neutral. Pattern strength: moderate.
 - June midterm-year weakness remains the main seasonal background.
 - The market is still inside the Q2-Q3 Weak Spot, so rallies should be treated carefully.
 - A holiday-shortened week around Juneteenth can reduce liquidity and make moves less reliable.
@@ -28,4 +29,4 @@ PATTERN CONFIDENCE: MEDIUM. Data is useful as a background signal, but macro eve
 ALMANAC THESIS: "Seasonality is still a headwind in mid-June because June is the weakest month in the midterm-year pattern. Technology seasonality is the main positive offset, but the broader Almanac setup stays cautious."
 INVALIDATION: A major macro surprise or technical breakout against the seasonal bias would reduce the value of this Almanac signal for the week.
 
-Source: Stock Trader's Almanac 2026 team notes from W02/W03, plus public Stock Trader's Almanac June/July seasonal summaries. Encoded for sprint W4-W8 software increment.
+Source: Stock Trader's Almanac 2026 team notes from W02/W03, plus public Stock Trader's Almanac June/July seasonal summaries. W4-W8 entries are encoded for the first software increment; other months have complete placeholders for follow-up data verification.

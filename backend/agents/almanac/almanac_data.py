@@ -1,11 +1,44 @@
 """Encoded seasonal data for the Almanac Agent.
 
-This first software increment focuses on the next several sprint weeks. The
-structure is intentionally simple so more months and exact Almanac figures can
-be added without changing the agent interface.
+This file is the first structured data layer for the Almanac Agent. W4-W8
+entries are the most detailed because they are needed first. Other months are
+included so the agent has a complete Jan-Dec structure, but exact Almanac page
+figures can still be tightened by the data encoder support role.
 """
 
 MONTHLY_STATS = {
+    1: {
+        "month": "January",
+        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
+        "midterm": "Midterm year adjustment not verified yet.",
+        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "monthly_bias": "Mixed",
+    },
+    2: {
+        "month": "February",
+        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
+        "midterm": "Midterm year adjustment not verified yet.",
+        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "monthly_bias": "Mixed",
+    },
+    3: {
+        "month": "March",
+        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
+        "midterm": "Midterm year adjustment not verified yet.",
+        "nasdaq": "Technology seasonality begins to improve during the March-July window in our team notes.",
+        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "monthly_bias": "Mixed",
+    },
+    4: {
+        "month": "April",
+        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
+        "midterm": "Midterm year adjustment not verified yet.",
+        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "monthly_bias": "Mixed",
+    },
     5: {
         "month": "May",
         "sp500": "ranks #8 of 12 months. Up 61% of the time. Avg +0.3% normally.",
@@ -30,6 +63,46 @@ MONTHLY_STATS = {
         "russell": "small caps can lag if rates stay high, even when July seasonality is supportive.",
         "monthly_bias": "Mixed",
     },
+    8: {
+        "month": "August",
+        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
+        "midterm": "Midterm-year context remains inside the Q2-Q3 Weak Spot in our team notes.",
+        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "monthly_bias": "Mixed",
+    },
+    9: {
+        "month": "September",
+        "sp500": "placeholder monthly stats entry; September is normally treated cautiously in Almanac-style seasonality, but exact figures still need verification.",
+        "midterm": "Midterm year adjustment not verified yet.",
+        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "monthly_bias": "Bearish",
+    },
+    10: {
+        "month": "October",
+        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
+        "midterm": "Q4 Sweet Spot can begin to matter later in the year, but exact midterm-year adjustment is not verified yet.",
+        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "monthly_bias": "Mixed",
+    },
+    11: {
+        "month": "November",
+        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
+        "midterm": "Q4 Sweet Spot context is normally more constructive after the Q2-Q3 Weak Spot, but exact figures still need verification.",
+        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "monthly_bias": "Bullish",
+    },
+    12: {
+        "month": "December",
+        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
+        "midterm": "Q4 Sweet Spot context remains relevant, but exact midterm-year adjustment is not verified yet.",
+        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "monthly_bias": "Bullish",
+    },
 }
 
 
@@ -37,7 +110,10 @@ WEEKLY_PATTERNS = {
     (6, 3): {
         "label": "Mid-June Week, 15-19 June",
         "name": "Mid-June weakness / CPI follow-through week",
+        "tendency": "Bearish-neutral",
+        "strength": "Moderate",
         "bullets": [
+            "Pattern tendency: bearish-neutral. Pattern strength: moderate.",
             "June midterm-year weakness remains the main seasonal background.",
             "The market is still inside the Q2-Q3 Weak Spot, so rallies should be treated carefully.",
             "A holiday-shortened week around Juneteenth can reduce liquidity and make moves less reliable.",
@@ -54,7 +130,10 @@ WEEKLY_PATTERNS = {
     (6, 4): {
         "label": "Late June Week, 22-26 June",
         "name": "Late-June / quarter-end positioning",
+        "tendency": "Mixed",
+        "strength": "Low-Medium",
         "bullets": [
+            "Pattern tendency: mixed. Pattern strength: low-medium.",
             "Late June can see quarter-end positioning and rebalancing flows.",
             "Midterm-year June remains weak even if short-term bounces appear.",
             "Summer trading volume may start to thin, which can exaggerate moves.",
@@ -72,7 +151,10 @@ WEEKLY_PATTERNS = {
     (6, 5): {
         "label": "Turn-of-Month Week, 29 June-3 July",
         "name": "End-of-quarter / early-July transition",
+        "tendency": "Mixed to slightly bullish",
+        "strength": "Low-Medium",
         "bullets": [
+            "Pattern tendency: mixed to slightly bullish. Pattern strength: low-medium.",
             "The week crosses from weak midterm-year June into stronger early-July seasonality.",
             "Month-end and quarter-end flows may support large-cap indexes.",
             "The Independence Day holiday period can reduce volume and increase noise.",
@@ -89,7 +171,10 @@ WEEKLY_PATTERNS = {
     (7, 1): {
         "label": "Early July Week, 6-10 July",
         "name": "Early-July strength",
+        "tendency": "Bullish",
+        "strength": "Moderate",
         "bullets": [
+            "Pattern tendency: bullish. Pattern strength: moderate.",
             "Early July is often one of the more constructive parts of the summer calendar.",
             "New-month and second-half inflows can support index performance.",
             "The midterm-year Weak Spot still argues against overconfidence.",
@@ -106,7 +191,10 @@ WEEKLY_PATTERNS = {
     (7, 2): {
         "label": "Second July Week, 13-17 July",
         "name": "Post-holiday July follow-through",
+        "tendency": "Mixed",
+        "strength": "Moderate",
         "bullets": [
+            "Pattern tendency: mixed. Pattern strength: moderate.",
             "July strength can continue after the holiday period if breadth confirms.",
             "Technology seasonality remains supportive through July.",
             "If rates or inflation pressure rise again, small caps may not benefit from the seasonal setup.",
@@ -159,6 +247,7 @@ SECTOR_WINDOWS = [
 
 SOURCE_NOTE = (
     "Stock Trader's Almanac 2026 team notes from W02/W03, plus public Stock "
-    "Trader's Almanac June/July seasonal summaries. Encoded for sprint W4-W8 "
-    "software increment."
+    "Trader's Almanac June/July seasonal summaries. W4-W8 entries are encoded "
+    "for the first software increment; other months have complete placeholders "
+    "for follow-up data verification."
 )
