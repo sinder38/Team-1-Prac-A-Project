@@ -33,8 +33,10 @@ class ExampleAgent(BaseLLMAgent):
 
 
 if __name__ == "__main__":
+    from agents.io import FileSaver, week_stem
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
     agent = ExampleAgent()
     output = agent.run(prediction_date)
-    agent.export(output, prediction_date, fmt="json")
+    saver = FileSaver(Path(__file__).parent.parent.parent / "data" / "outputs" / "llm" / agent.model_name)
+    saver.save(agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}_{agent.model_name}.json")
     print(f"Saved to data/outputs/llm/{agent.model_name}/")

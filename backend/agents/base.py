@@ -2,7 +2,6 @@ import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict
 from datetime import date
-from pathlib import Path
 from typing import Generic, TypeVar, Union
 
 from agents.schemas import AlmanacOutput, LLMOutput, MacroOutput, TechnicalOutput
@@ -23,28 +22,11 @@ class BaseAgent(ABC, Generic[T]):
         """
         ...
 
-    def save_json(self, output: T, prediction_date: date) -> None:
-        """Serialize output to data/outputs/{agent_type}/{YYYY-WNN}.json"""
-        week = prediction_date.isocalendar()
-        filename = f"{week.year}-W{week.week:02d}.json"
-        out_dir = Path(__file__).parent.parent / "data" / "outputs" / self.agent_type
-        out_dir.mkdir(parents=True, exist_ok=True)
-        with open(out_dir / filename, "w", encoding="utf-8") as f:
-            json.dump(asdict(output), f, indent=2, default=str)
+    def render_json(self, output: T, prediction_date: date) -> str:
+        """Return JSON string for output. Override to customize serialization."""
+        return json.dumps(asdict(output), indent=2, default=str)
 
     @abstractmethod
-    def save_md(self, output: T, prediction_date: date) -> None:
-        """
-        Render output into MD format.
-        Each subclass implements its own template logic.
-        """
+    def render_md(self, output: T, prediction_date: date) -> str:
+        """Return Markdown string for output. Subclasses implement their own template."""
         ...
-
-    def export(self, output: T, prediction_date: date, fmt: str = "json") -> None:
-        """Calls save_json or save_md based on fmt argument."""
-        if fmt == "json":
-            self.save_json(output, prediction_date)
-        elif fmt == "md":
-            self.save_md(output, prediction_date)
-        else:
-            raise ValueError(f"Unknown format: {fmt!r}. Expected 'json' or 'md'.")

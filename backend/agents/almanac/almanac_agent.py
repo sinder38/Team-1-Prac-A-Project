@@ -29,17 +29,11 @@ class AlmanacAgent(BaseAgent):
     def run(self, prediction_date: date, **kwargs) -> AlmanacOutput:
         return self.lookup_seasonal_data(prediction_date)
 
-    def save_md(self, output: AlmanacOutput, prediction_date: date) -> None:
-        """Render AlmanacOutput to MD matching data/formats/almanac_agent.md"""
-        week = prediction_date.isocalendar()
-        filename = f"almanac_agent_{week.year}-W{week.week:02d}.md"
-        out_dir = Path(__file__).parent.parent.parent / "data" / "almanac"
-        out_dir.mkdir(parents=True, exist_ok=True)
-
+    def render_md(self, output: AlmanacOutput, prediction_date: date) -> str:
         sector_lines = "\n".join(
             f" - {s.sector}: {s.bias.value} — {s.window}" for s in output.sector_signals
         )
-        content = f"""Almanac Agent Output — Week of {prediction_date}
+        return f"""Almanac Agent Output — Week of {prediction_date}
 
 MONTHLY BIAS: {output.monthly_bias.value if output.monthly_bias else "N/A"}
 WEEKLY PATTERN: {output.weekly_pattern}
@@ -51,14 +45,18 @@ SECTOR SIGNALS:
 
 ALMANAC THESIS: {output.thesis}
 """
-        (out_dir / filename).write_text(content, encoding="utf-8")
 
 
 if __name__ == "__main__":
+    from agents.io import FileSaver, week_stem
+
     prediction_date = (
         date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
     )
     agent = AlmanacAgent()
     output = agent.run(prediction_date)
-    agent.export(output, prediction_date, fmt="json")
+    saver = FileSaver.for_agent(agent.agent_type)
+    saver.save(
+        agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}.json"
+    )
     print(f"Saved to data/outputs/almanac/")

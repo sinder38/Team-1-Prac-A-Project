@@ -28,14 +28,8 @@ class MacroAgent(BaseAgent):
     def run(self, prediction_date: date, **kwargs) -> MacroOutput:
         return self.fetch_macro_data(prediction_date)
 
-    def save_md(self, output: MacroOutput, prediction_date: date) -> None:
-        """Render MacroOutput to MD matching data/formats/macro_agent.md"""
-        week = prediction_date.isocalendar()
-        filename = f"macro_agent_{week.year}-W{week.week:02d}.md"
-        out_dir = Path(__file__).parent.parent.parent / "data" / "macro"
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        content = f"""Macro Agent Output — Week of {prediction_date}
+    def render_md(self, output: MacroOutput, prediction_date: date) -> str:
+        return f"""Macro Agent Output — Week of {prediction_date}
 
 FED & RATES:
  · Current Fed rate: {output.fed_rate}
@@ -51,12 +45,13 @@ PRIMARY DRIVER THIS WEEK: {output.primary_driver}
 CONFIDENCE: {output.confidence.value if output.confidence else "N/A"}
 INVALIDATION: {output.invalidation}
 """
-        (out_dir / filename).write_text(content, encoding="utf-8")
 
 
 if __name__ == "__main__":
+    from agents.io import FileSaver, week_stem
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
     agent = MacroAgent()
     output = agent.run(prediction_date)
-    agent.export(output, prediction_date, fmt="json")
+    saver = FileSaver.for_agent(agent.agent_type)
+    saver.save(agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}.json")
     print(f"Saved to data/outputs/macro/")
