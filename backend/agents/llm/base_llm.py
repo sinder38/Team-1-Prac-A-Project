@@ -92,26 +92,21 @@ class BaseLLMAgent(BaseAgent):
         raw = self.query(prompt)
         return self.parse_response(raw, prediction_date)
 
-    def save_md(self, output: LLMOutput, prediction_date: date) -> None:
-        week = prediction_date.isocalendar()
-        filename = f"{week.year}-W{week.week:02d}_{self.model_name}.md"
-        out_dir = Path(__file__).parent.parent.parent / "data" / "outputs" / "llm" / self.model_name
-        out_dir.mkdir(parents=True, exist_ok=True)
-
+    def render_md(self, output: LLMOutput, prediction_date: date) -> str:
         lines = [
             f"# LLM Agent Output — {self.model_name} — Week of {prediction_date}",
-            f"",
+            "",
             f"1. Weekly Regime: {output.weekly_regime.value}",
             f"2. Confidence Score: {output.confidence.value}",
-            f"3. Key Supporting Evidence:",
+            "3. Key Supporting Evidence:",
             *[f"   - {e}" for e in output.supporting_evidence],
-            f"4. Key Contradictions:",
+            "4. Key Contradictions:",
             *[f"   - {c}" for c in output.contradictions],
             f"5. Invalidation Conditions: {output.invalidation}",
             f"6. Predicted % move — SPX: {output.spx_range.low}% to {output.spx_range.high}%",
             f"   Predicted % move — NDX: {output.ndx_range.low}% to {output.ndx_range.high}%",
             f"   Predicted % move — IWM: {output.iwm_range.low}% to {output.iwm_range.high}%",
             f"7. Plain-English brief: {output.plain_english}",
-            f"8. Disclaimer: This is not financial advice.",
+            "8. Disclaimer: This is not financial advice.",
         ]
-        (out_dir / filename).write_text("\n".join(lines), encoding="utf-8")
+        return "\n".join(lines)
