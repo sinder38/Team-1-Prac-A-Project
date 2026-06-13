@@ -1,4 +1,4 @@
-# Calibration Log - Week 3
+# Calibration Log - Week 23
 
 Role: R10 QA and Learning Log Lead  
 Checked by: QA Lead  
@@ -14,11 +14,11 @@ Date checked: 13 June 2026
 - `data/macro/macro_agent_W3.md`
 - `data/technical/technnical_agent_W3.md`
 
-Note: `actuals_W4.md` is the correct actuals file for scoring the Week 3 prediction because the Week 3 prediction covered the market week of 8-12 June 2026.
+Note: `actuals_W4.md` is the correct actuals file for scoring the Week 23 prediction because the Week 23 prediction covered the market week of 8-12 June 2026.
 
-## W3 prediction checked
+## W23 prediction checked
 
-The Week 3 final prediction file gave these calls for the next market week:
+The Week 23 final prediction file gave these calls for the next market week:
 
 | Asset | Direction | Predicted range | Confidence |
 | --- | --- | ---: | --- |
@@ -32,7 +32,7 @@ Main invalidation: A cooler-than-expected CPI report, falling Treasury yields, a
 
 ## Actual result
 
-From the Week 4 actuals file, all three indexes finished higher during the matching prediction week:
+From the Week 24 actuals file, all three indexes finished higher during the matching prediction week:
 
 | Asset | Actual move | Actual direction |
 | --- | ---: | --- |
@@ -70,6 +70,6 @@ Range accuracy: **0 / 3**
 
 ## QA decision
 
-The W3 prediction had the required structure, but the result was wrong across all three indexes. The main issue was not formatting. The issue was that the team and the LLMs leaned too bearish after the previous selloff, while the actual week became a risk-on rebound.
+The W23 prediction had the required structure, but the result was wrong across all three indexes. The main issue was not formatting. The issue was that the team and the LLMs leaned too bearish after the previous selloff, while the actual week became a risk-on rebound.
 
 For the next sprint, R10 should remind the team to avoid treating one strong bearish setup as certain. If CPI or rates are the main risk, the final range should leave enough room for a relief bounce.

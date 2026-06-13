@@ -1,0 +1,16 @@
+1. Weekly Regime: Bullish
+2. Confidence Score: Medium — Technicals are decisively bullish, and the macro backdrop is supportive, but seasonal headwinds and the upcoming jobs report introduce uncertainty that lowers conviction from High to Medium.
+3. Key Supporting Evidence:
+   · SPX and NDX are in strong Zone 1 bullish expansions, firmly above rising 8/21 EMAs with no signs of trend exhaustion. IWM has broken out from a coiling phase, confirming small-cap participation.
+   · Falling 10-year yields, a weaker dollar, and a sharp drop in oil prices collectively ease financial conditions and act as tailwinds for risk assets.
+   · The Technology sector’s seasonal long window (Mar–Jul) aligns with heavy-hitting tech earnings this week (PANW, AVGO, CRWD), reinforcing the market’s strongest leadership.
+4. Key Contradictions:
+   · Memorial Day week carries a historical bearish lean (Dow down 17 of last 29), and midterm-year Mays average –0.7% for the S&P 500.
+   · Friday’s Nonfarm Payrolls report remains a volatility wildcard; a surprisingly strong number could rekindle rate-hike fears despite the current 99.6% hold probability for June.
+5. Invalidation Conditions: A daily close below 7,500 on the S&P 500 would break the short-term uptrend and EMA support. A much-stronger-than-expected NFP print or an inflation surprise that sends the 10-year yield sharply higher would also flip the regime to cautious.
+6. Predicted % move -> direction + range
+   SPX (S&P 500): [+0.5% to +1.5%]
+   NDX (Nasdaq 100): [+0.8% to +2.0%]
+   IWM (Russell 2000): [+0.5% to +1.5%]
+7. Plain-English brief: The stock market’s upward momentum is strong, with technology stocks leading the charge. Falling interest rates and cheaper oil are giving investors extra confidence, and big tech earnings this week could add to the gains. While this particular week has a slightly weak historical track record, the bigger risk is Friday’s jobs report—if it surprises to the upside, it could rattle the optimistic mood.
+8. Disclaimer: This market regime recommendation is for informational and educational purposes only. It does not constitute financial advice, investment recommendation, or solicitation of any kind. Past performance and seasonal patterns are not guarantees of future results. All investment decisions should be made with a qualified professional.

@@ -31,13 +31,13 @@ Communication and coordination challenges across multiple workstreams.
 R3 – Almanac Agent Lead
 Contributor: Zaw Latt
 Completed
-Finished Week 2 Almanac output.
-Finished Week 3 Almanac output.
+Finished Week 22 Almanac output.
+Finished Week 23 Almanac output.
 Uploaded files to data/almanac/.
 Created and submitted PRs.
 Prepared presentation slide.
 Working on Next
-Complete Week 4 Almanac output.
+Complete Week 24 Almanac output.
 Update sprint review script.
 Blockers
 No blockers. Used website reference card as backup.
@@ -96,11 +96,11 @@ No current blockers.
 R8 – Data & Evidence Lead
 Contributors: Markcus
 Completed
-Completed Week 3 market report.
+Completed Week 23 market report.
 Updated index and macro data.
 Ranked all S&P sectors.
 Working on Next
-Prepare Week 4 actuals and forecasts.
+Prepare Week 24 actuals and forecasts.
 Update presentation materials.
 Blockers
 No major blockers.
@@ -122,13 +122,13 @@ Some team members are still unfamiliar with GitHub Actions.
 R10 – QA & Learning Log Lead
 Contributors: Jason, Minghao, Georgi
 Completed
-Completed Week 2 QA activities.
+Completed Week 22 QA activities.
 Updated calibration using final results.
-Started Week 3 QA drafts.
+Started Week 23 QA drafts.
 Working on Next
-Complete Week 3 calibration.
+Complete Week 23 calibration.
 Finish LLM horse race and learning log.
 Document process improvements.
 Blockers
-Waiting for final Week 3 outputs.
+Waiting for final Week 23 outputs.
 Need consistent week naming across files.
