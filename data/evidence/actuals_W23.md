@@ -66,7 +66,7 @@ Each row is one industry group in the S&P 500.
 2. **Consumer discretionary** — down 4.97%. Growth and spending-sensitive names pulled back with rate fears.
 3. **Communication** — down 3.47%. Big tech and media names dragged lower with the Nasdaq.
 
-**In plain words:** The market flipped from last week. Tech carried the rally in Week 2 — this week it led the drop. Money rotated into **defensive** sectors (energy, health care, staples) while growth and chips got hit hardest.
+**In plain words:** The market flipped from last week. Tech carried the rally in Week 22 — this week it led the drop. Money rotated into **defensive** sectors (energy, health care, staples) while growth and chips got hit hardest.
 
 ---
 

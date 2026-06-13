@@ -1,11 +1,11 @@
-# Learning Log - Week 3
+# Learning Log - Week 23
 
 Role: R10 QA and Learning Log Lead  
 Date checked: 13 June 2026
 
 ## What did we predict?
 
-The team prediction for Week 3 was **Neutral-Bearish**.
+The team prediction for Week 23 was **Neutral-Bearish**.
 
 | Asset | Direction | Predicted range | Confidence |
 | --- | --- | ---: | --- |
@@ -29,7 +29,7 @@ All three indexes went up instead of down. The miss was largest in IWM because s
 
 ## Calibration result
 
-The W3 calibration score is **0 / +9**.
+The W23 calibration score is **0 / +9**.
 
 All three predictions used Medium confidence. Under the scoring rule, Medium confidence with the wrong direction scores 0. This means the team did not gain calibration points, but it also did not get a negative score.
 

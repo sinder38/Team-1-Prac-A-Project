@@ -1,13 +1,12 @@
 from datetime import date
 from pathlib import Path
 
-
 DATA_ROOT = Path(__file__).parent.parent / "data" / "outputs"
 
 
 def week_stem(prediction_date: date) -> str:
     week = prediction_date.isocalendar()
-    return f"{week.year}-W{week.week:02d}"
+    return f"W{week.week:02d}"
 
 
 class FileSaver:

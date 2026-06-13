@@ -1,4 +1,4 @@
-# LLM Horse Race - Week 2
+# LLM Horse Race - Week 22
 
 Role: R10 QA and Learning Log Lead  
 Date checked: 6 June 2026
@@ -19,7 +19,7 @@ The actual SPX result from `data/evidence/actuals_W2.md` was:
 | --- | ---: |
 | SPX | +1.40% |
 
-## Week 2 comparison
+## Week 22 comparison
 
 | Model | SPX estimate | Compared with actual +1.40% |
 | --- | ---: | --- |
@@ -28,7 +28,7 @@ The actual SPX result from `data/evidence/actuals_W2.md` was:
 | Gemini | +0.5% to +1.2% | Slightly low |
 | DeepSeek | +0.5% to +1.5% | Hit range and closest midpoint |
 
-## Week 2 winner
+## Week 22 winner
 
 Winner: **DeepSeek**
 
@@ -38,7 +38,7 @@ DeepSeek and ChatGPT both included the actual +1.40% result inside their predict
 
 | Sprint | Actual SPX result | Winner | Reason |
 | --- | ---: | --- | --- |
-| Week 2 | +1.40% | DeepSeek | Hit range and closest midpoint |
+| Week 22 | +1.40% | DeepSeek | Hit range and closest midpoint |
 
 ## QA note
 

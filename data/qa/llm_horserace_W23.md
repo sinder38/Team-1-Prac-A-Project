@@ -1,4 +1,4 @@
-# LLM Horse Race - Week 3
+# LLM Horse Race - Week 23
 
 Role: R10 QA and Learning Log Lead  
 Date checked: 13 June 2026
@@ -14,7 +14,7 @@ Date checked: 13 June 2026
 
 ## Model comparison
 
-All four models gave a bearish weekly regime for Week 3.
+All four models gave a bearish weekly regime for Week 23.
 
 | Model | Weekly regime | Confidence | SPX estimate |
 | --- | --- | --- | ---: |
@@ -29,7 +29,7 @@ The actual SPX result for the matching prediction week was **+0.46%**.
 
 This means the bearish direction was wrong for every model. However, Claude and DeepSeek had wide enough SPX ranges to include the actual result.
 
-## Week 3 horse race result
+## Week 23 horse race result
 
 | Model | Direction correct? | Actual inside SPX range? | SPX midpoint error |
 | --- | --- | --- | ---: |
@@ -38,7 +38,7 @@ This means the bearish direction was wrong for every model. However, Claude and 
 | Gemini | No | No | 2.46 pp |
 | DeepSeek | No | Yes | 1.21 pp |
 
-Week 3 range winner: **DeepSeek**
+Week 23 range winner: **DeepSeek**
 
 Important note: this is not a clean directional win. DeepSeek wins only because its wider SPX range included the actual +0.46% result and its midpoint was closer than Claude's midpoint. No model got the actual SPX direction right.
 
@@ -46,8 +46,8 @@ Important note: this is not a clean directional win. DeepSeek wins only because 
 
 | Sprint | Actual SPX result | Winner | Reason |
 | --- | ---: | --- | --- |
-| Week 2 | +1.40% | DeepSeek | DeepSeek and ChatGPT both covered the actual SPX move, but DeepSeek's midpoint was closer to the actual result. |
-| Week 3 | +0.46% | DeepSeek | No model got direction right, but DeepSeek had the closest SPX range midpoint among the models that included the actual result. |
+| Week 22 | +1.40% | DeepSeek | DeepSeek and ChatGPT both covered the actual SPX move, but DeepSeek's midpoint was closer to the actual result. |
+| Week 23 | +0.46% | DeepSeek | No model got direction right, but DeepSeek had the closest SPX range midpoint among the models that included the actual result. |
 
 ## QA observation
 

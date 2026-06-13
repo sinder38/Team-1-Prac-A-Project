@@ -1,0 +1,35 @@
+Weekly Market Regime Synthesis — Week of June 1–5, 2026
+
+1. Weekly Regime: Bullish (modestly, with caveats)
+
+2. Confidence Score: Medium. The highest-conviction input (technicals: High confidence, strong uptrends across all three indices) and the macro backdrop (falling yields, oil, and dollar) both lean risk-on. But confidence is capped below “High” because a binary, high-importance NFP print lands mid-week, price is pressing right against resistance on SPX/NDX, and seasonality is a genuine (if low-conviction) headwind. Trend says go; the calendar says don’t get greedy.
+
+3. Key Supporting Evidence
+
+ • Technical structure is the dominant signal and it’s strong. All three indices are in bullish EMA-expansion zones with intact uptrend lines and healthy breadth; small-caps (IWM) just broke out, which broadens participation rather than narrowing it.
+ • Macro tailwinds are aligned. The 10-year yield is falling, WTI crude is down ~9.6% on the week (inflation relief), and the dollar is weakening — a textbook risk-supportive mix. The Fed is firmly on hold (99.6% hold odds for June 17), so no near-term policy shock is priced.
+ • Tech seasonality + catalysts reinforce the leader. XLK’s Mar–Jul long window lines up with the strongest-trending index (NDX), and three major XLK earnings (AVGO, CRWD, PANW) hit June 2–3 as potential upside catalysts.
+
+4. Key Contradictions
+
+ • Seasonality cuts the other way. Midterm-year May averages −0.7% for the S&P, Memorial Day week carries a bearish lean, and the broader “Weak Spot” Q2–Q3 framing argues for caution. This is explicitly low-conviction (self-conflicting week patterns), but it’s the clearest counterweight to the bullish technical read.
+ • Event risk meets resistance. SPX (7,580) and NDX (30,333) are bumping their first resistance (7,600 / 30,500) with little room overhead, and Friday’s NFP (96K expected) is a true two-sided catalyst. A geopolitical tail also lurks: the Iran / Strait of Hormuz headline could spike oil and flip the inflation-relief narrative.
+
+5. Invalidation Conditions
+
+ • Technical: A close below SPX 7,500, NDX 29,600, or IWM 285 breaks the bullish structure for that index.
+ • Macro: A much hotter or much weaker NFP (or an inflation surprise) that resets Fed-cut expectations; a sharp reversal higher in the 10-year yield; or an oil spike from the Iran situation. Any of these undercuts the risk-supportive backdrop driving this call.
+
+6. Predicted % Move → Direction + Range (model estimate for the week, net-directional, two-sided risk acknowledged)
+
+ • SPX (S&P 500): Upside bias, +0.3% to +1.2% (~7,603–7,671; clears R1 toward the R2 zone)
+ • NDX (Nasdaq 100): Upside bias, +0.5% to +1.8% (~30,485–30,880; leader, earnings-driven)
+ • IWM (Russell 2000): Upside bias, +0.2% to +1.6% (~291–295; breakout follow-through, but lowest conviction)
+
+These assume the bullish structure holds; a downside NFP surprise or a break of the invalidation levels would void the ranges and likely produce a red week instead.
+
+7. Plain-English Brief
+The market’s trend is clearly up right now, and the bigger-picture backdrop — cheaper oil, easing interest rates, a softer dollar — is helping rather than hurting stocks, so the lean for the week is modestly higher. The main reasons to stay cautious are Friday’s jobs report (which can move the whole market in either direction) and the fact that prices are sitting just under a ceiling, leaving limited room before they’d have to push through resistance. Net: lean bullish, but keep expectations measured and watch the jobs number.
+
+8. Disclaimer
+This is an analytical synthesis of the evidence you provided, not financial advice. I’m not a financial advisor, these predicted ranges are probabilistic estimates rather than guarantees, and markets can move sharply against any seasonal, macro, or technical read — especially around a scheduled event like payrolls. Do your own due diligence and consider your own risk tolerance before making any trading or investment decision.
