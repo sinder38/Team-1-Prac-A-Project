@@ -175,7 +175,7 @@ class TechnicalAgent(BaseAgent):
             " - Compare SPX, NDX, and IWM blocks for broadening vs narrow leadership.",
             "",
             f"TECHNICAL BIAS: {bias_text}",
-            f"CONFIDENCE: {inst.confidence.value}. Structure {'clear' if inst.confidence == Confidence.HIGH else 'mixed'}.",
+            f"CONFIDENCE: {inst.confidence.value}",
             f"INVALIDATION: {invalidation}",
             f"WATCH THIS WEEK: Can price hold {'above' if above8 else 'below'} the 8 EMA at {fmt(e8)}? "
             f"Does it {'break' if p < inst.key_resistance else 'hold'} {fmt(inst.key_resistance)} resistance?",
