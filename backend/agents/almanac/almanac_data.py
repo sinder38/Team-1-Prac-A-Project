@@ -173,6 +173,42 @@ MONTHLY_STATS = {
 # Each entry gives the agent enough detail to write the "SPECIFIC WEEK PATTERN"
 # section in the Markdown output.
 WEEKLY_PATTERNS = {
+      (5, 4): {
+          "label": "Memorial Day Week, 26-30 May",
+          "name": "Memorial Day week / week after options expiration",
+          "bullets": [
+              "Memorial Day week has a bearish lean: Dow down 17 of last 29.",
+              "The day after Memorial Day has also been bearish: Dow down 8 of last 10.",
+              "The week after options expiration gives a mild bullish offset: S&P up 30 of 45, avg +0.40%.",
+              "Net: mixed / slight bearish lean because the week-level patterns conflict.",
+          ],
+          "seasonal_bias": "Mixed",
+          "confidence": "Low-Medium",
+          "thesis": (
+              "Seasonality suggests caution in late May during a midterm year. "
+              "Technology is the one seasonal bright spot. Banking and Materials "
+              "face active headwinds. Conflicting week patterns keep confidence low."
+          ),
+      },
+     (6, 1): {
+          "label": "Early June Week, 2-6 June",
+          "name": "Early June midterm-year weakness",
+          "bullets": [
+              "No specific holiday pattern is active this week.",
+              "Early June is transitional as summer doldrums begin.",
+              "Volume tends to decline in early June as institutional activity slows.",
+              "NFP on Friday 5 June is the dominant market event this week.",
+              "Net: slight bearish lean from June midterm-year context. No strong specific week pattern.",
+          ],
+          "seasonal_bias": "Slight Bearish",
+          "confidence": "Medium",
+          "thesis": (
+              "June 2026 is the worst month of the year in a midterm cycle. "
+              "Four sectors now have active seasonal short signals. Technology "
+              "remains the one seasonal bright spot. Summer doldrums beginning "
+              "means volume may decline and moves may be exaggerated."
+          ),
+     },
     (6, 3): {
         "label": "Mid-June Week, 15-19 June",
         "name": "Mid-June weakness / CPI follow-through week",
