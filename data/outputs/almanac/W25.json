@@ -1,0 +1,41 @@
+{
+  "prediction_date": "2026-06-16",
+  "monthly_bias": "Bearish",
+  "seasonal_bias": "Bearish",
+  "confidence": "Medium",
+  "thesis": "Seasonality is still a headwind in mid-June because June is the weakest month in the midterm-year pattern. Technology seasonality is the main positive offset, but the broader Almanac setup stays cautious.",
+  "weekly_pattern": "Mid-June weakness / CPI follow-through week",
+  "sector_signals": [
+    {
+      "sector": "Technology (XLK)",
+      "bias": "Bullish",
+      "window": "seasonal LONG window (March-July). Supports Nasdaq while the window remains active."
+    },
+    {
+      "sector": "Banking / Financials (XLF)",
+      "bias": "Bearish",
+      "window": "seasonal SHORT window (May-July). Headwind for banks and financials."
+    },
+    {
+      "sector": "Gold / Silver",
+      "bias": "Bearish",
+      "window": "seasonal SHORT window (mid-May-June). Weakens after spring strength."
+    },
+    {
+      "sector": "Materials (XLB)",
+      "bias": "Bearish",
+      "window": "seasonal SHORT window (May-October). Six-month seasonal headwind."
+    },
+    {
+      "sector": "Oil / Energy (XLE)",
+      "bias": "Bearish",
+      "window": "seasonal SHORT begins in early June, but geopolitical oil spikes can override it."
+    },
+    {
+      "sector": "Healthcare (XLV)",
+      "bias": "Neutral",
+      "window": "defensive sector; not a strong seasonal LONG/SHORT signal in the current sprint notes."
+    }
+  ],
+  "agent_type": "almanac"
+}

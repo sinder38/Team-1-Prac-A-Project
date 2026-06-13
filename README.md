@@ -135,6 +135,31 @@ No vague calls like "looks bullish" — only measured statements like "bullish w
 
 ---
 
+## Running The Almanac Agent
+
+The Sprint 4 software increment includes a runnable Almanac Agent. It uses
+encoded seasonal data from `backend/agents/almanac/almanac_data.py` and writes
+both app output and report output.
+
+```bash
+python backend/agents/almanac/almanac_agent.py 2026-06-16
+```
+
+This creates:
+
+```text
+data/outputs/almanac/W25.json
+data/almanac/almanac_agent_W25.md
+```
+
+To check the Markdown format:
+
+```bash
+python scripts/validate_output.py almanac_agent data/almanac/almanac_agent_W25.md
+```
+
+---
+
 ## Multi-LLM Synthesis
 
 After the three agents are built, we paste them into an identical prompt and query all four models. We save all four raw responses and fill a comparison table — where do they agree (high confidence), where do they diverge (flag as uncertainty), and which model's reasoning is strongest this week.
