@@ -13,7 +13,7 @@ from __future__ import annotations
 import sys
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Final, Literal, NamedTuple, TypeAlias
+from typing import Final, Literal, NamedTuple, TypeAlias, cast
 
 import pandas as pd
 import yfinance as yf
@@ -209,12 +209,10 @@ class TechnicalAgent(BaseAgent):
         returns the lowest low and highest high within that window.
         """
         recent = df.tail(window_days)
-        support = float(
-            recent["Low"].rolling(SWING_WINDOW, min_periods=1).min().min()
-        )
-        resistance = float(
-            recent["High"].rolling(SWING_WINDOW, min_periods=1).max().max()
-        )
+        low_roll = recent["Low"].rolling(SWING_WINDOW, min_periods=1).min()
+        high_roll = recent["High"].rolling(SWING_WINDOW, min_periods=1).max()
+        support = float(low_roll.min())  # type: ignore[arg-type]
+        resistance = float(high_roll.max())  # type: ignore[arg-type]
         return support, resistance
 
     def _compute_swing_levels(self, df: pd.DataFrame) -> SwingLevels:
@@ -285,7 +283,8 @@ class TechnicalAgent(BaseAgent):
         """Fetch price data and compute EMAs for a single instrument."""
         df = self._fetch_ohlcv(symbol, prediction_date)
 
-        snapshot = self._compute_emas(df["Close"])
+        closes = cast(pd.Series, df["Close"])
+        snapshot = self._compute_emas(closes)
         levels = self._compute_swing_levels(df)
         assessment = self._assess_trend(snapshot)
 
@@ -415,11 +414,16 @@ class TechnicalAgent(BaseAgent):
     def render_md(self, output: TechnicalOutput, prediction_date: date) -> str:
         """Render TechnicalOutput to MD matching data/formats/technical_agent.md"""
         lines = [f"Technical Agent Output — Week of {prediction_date}", ""]
-        symbols = list(output.instruments)
+        symbols: list[Symbol] = [
+            cast(Symbol, s) for s in output.instruments if s in INSTRUMENTS
+        ]
         for i, symbol in enumerate(symbols):
             # Re-fetch OHLCV to recover the actual last bar date and extended swing levels.
             df = self._fetch_ohlcv(symbol, prediction_date)
-            bar_date = pd.Timestamp(str(df.index[-1])).date()
+            last_ts = pd.to_datetime(str(df.index[-1]))
+            if pd.isna(last_ts):
+                raise ValueError(f"No valid bar date for {symbol}")
+            bar_date = cast(date, last_ts.date())
             levels = self._compute_swing_levels(df)
             lines.extend(
                 self._render_block(
