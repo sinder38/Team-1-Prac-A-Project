@@ -1,7 +1,5 @@
 """
-Technical Agent — fetches price data and computes EMA-based technical analysis.
-
-Data source: yfinance
+Technical Agent — EMA-based technical analysis via yfinance.
   SPX -> ^GSPC   NDX -> ^NDX   IWM -> IWM
 
 Usage:
@@ -23,434 +21,240 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from agents.base import BaseAgent
 from agents.schemas import Bias, Confidence, InstrumentTechnical, TechnicalOutput
 
-# Types
-
 Symbol: TypeAlias = Literal["SPX", "NDX", "IWM"]
-"""Supported index/ETF symbols tracked by this agent."""
-
-
-class EmaSnapshot(NamedTuple):
-    """Latest price and exponential moving averages derived from daily closes."""
-
-    price: float
-    ema_fast: float
-    ema_slow: float
-
-
-class SwingLevels(NamedTuple):
-    """Rolling swing high/low used as key support and resistance."""
-
-    support: float
-    resistance: float
-    secondary_support: float
-    secondary_resistance: float
-
-
-class EmaZone(NamedTuple):
-    """Human-readable EMA alignment zone for markdown rendering."""
-
-    zone_id: int
-    label: str
-    description: str
-
-
-class TrendAssessment(NamedTuple):
-    """Combined trend bias and confidence for one instrument."""
-
-    bias: Bias
-    confidence: Confidence
-
-
-# Constants — instruments & data source
 
 INSTRUMENTS: Final[list[Symbol]] = ["SPX", "NDX", "IWM"]
-
-TICKERS: Final[dict[Symbol, str]] = {
-    "SPX": "^GSPC",
-    "NDX": "^NDX",
-    "IWM": "IWM",
-}
-
+TICKERS: Final[dict[Symbol, str]] = {"SPX": "^GSPC", "NDX": "^NDX", "IWM": "IWM"}
 LABELS: Final[dict[Symbol, str]] = {
     "SPX": "S&P 500 (SPX), Daily Chart",
     "NDX": "Nasdaq 100 (NDX), Daily Chart",
     "IWM": "Russell 2000 (IWM), Daily Chart",
 }
 
-# Constants — lookback & indicator parameters
-
 EMA_FAST_SPAN: Final[int] = 8
 EMA_SLOW_SPAN: Final[int] = 21
 LOOKBACK_DAYS: Final[int] = 20
 EXTENDED_LOOKBACK_DAYS: Final[int] = 90
 SWING_WINDOW: Final[int] = 5
-SWING_MIN_PERIODS: Final[int] = 1
-HISTORY_DAYS: Final[int] = 90
-
-EMA_ADJUST: Final[bool] = False
-PERCENT_SCALE: Final[float] = 100.0
-
-PRICE_ROUND_DIGITS: Final[int] = 2
-
-# Confidence scoring: minimum EMA gap and price-to-fast-EMA distance (as % of price).
+HISTORY_DAYS: Final[int] = 150  # calendar days; gives ~90 trading sessions after weekends/holidays
 EMA_GAP_CONFIDENCE_PCT: Final[float] = 0.5
-PRICE_EMA8_DISTANCE_CONFIDENCE_PCT: Final[float] = 0.2
+PRICE_EMA_DISTANCE_CONFIDENCE_PCT: Final[float] = 0.2
 
-# Markdown rendering tokens.
-APPROX_PREFIX: Final[str] = "~"
 
-# Constants — yfinance fetch
+class EmaSnapshot(NamedTuple):
+    price: float
+    ema_fast: float
+    ema_slow: float
 
-YF_END_DAY_BUFFER: Final[int] = 1
-YF_AUTO_ADJUST: Final[bool] = True
-YF_SHOW_PROGRESS: Final[bool] = False
-OHLCV_REQUIRED_COLUMNS: Final[tuple[str, ...]] = ("Close", "High", "Low")
 
-# Constants — EMA zone IDs (markdown template)
+def _fmt(v: float) -> str:
+    return f"{v:,.0f}" if v >= 1000 else f"{v:,.2f}"
 
-ZONE_NEUTRAL: Final[int] = 0
-ZONE_BULLISH: Final[int] = 1
-ZONE_NEUTRAL_BULLISH: Final[int] = 2
-ZONE_NEUTRAL_BEARISH: Final[int] = 3
-ZONE_BEARISH: Final[int] = 4
 
-# Composite zone labels built from schema Bias string values.
-NEUTRAL_BULLISH_LABEL: Final[str] = f"{Bias.NEUTRAL.value}-{Bias.BULLISH.value}"
-NEUTRAL_BEARISH_LABEL: Final[str] = f"{Bias.NEUTRAL.value}-{Bias.BEARISH.value}"
-
-# Format large index levels without decimals; keep decimals for smaller prices (e.g. IWM).
-LARGE_PRICE_THRESHOLD: Final[float] = 1000.0
-
-QUICK_NOTE: Final[str] = (
-    "Quick note: The 8 EMA is a short-term average price line. "
-    "The 21 EMA is a longer-term average. When price sits above both "
-    "and the 8 is above the 21, the trend is usually up."
-)
+def _pct(part: float, whole: float) -> float:
+    return 0.0 if whole == 0 else abs(part) / whole * 100.0
 
 
 class TechnicalAgent(BaseAgent):
     agent_type = "technical"
 
-    # Data fetching & normalization
+    # Frames cached during run() so render_md() doesn't need to re-fetch.
+    _frames: dict[Symbol, pd.DataFrame]
 
     def _fetch_ohlcv(self, symbol: Symbol, prediction_date: date) -> pd.DataFrame:
-        """
-        Download daily OHLCV from yfinance and trim to prediction_date.
-
-        No future bars are included so indicators never use lookahead data.
-        """
+        """Pulls daily OHLCV trimmed to prediction_date — no lookahead."""
         ticker = TICKERS[symbol]
-        start = prediction_date - timedelta(days=HISTORY_DAYS)
         raw = yf.download(
             ticker,
-            start=start.isoformat(),
-            end=(prediction_date + timedelta(days=YF_END_DAY_BUFFER)).isoformat(),
-            progress=YF_SHOW_PROGRESS,
-            auto_adjust=YF_AUTO_ADJUST,
+            start=(prediction_date - timedelta(days=HISTORY_DAYS)).isoformat(),
+            end=(prediction_date + timedelta(days=1)).isoformat(),
+            progress=False,
+            auto_adjust=True,
         )
         if raw is None or raw.empty:
-            raise ValueError(f"No price data returned for {symbol} ({ticker})")
+            raise ValueError(f"No data for {symbol} ({ticker})")
 
-        df: pd.DataFrame = raw
+        df = raw
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
 
         df = df.sort_index()
         df.index = pd.to_datetime(df.index).tz_localize(None)
-        df = df.dropna(subset=list(OHLCV_REQUIRED_COLUMNS))
+        df = df.dropna(subset=["Close", "High", "Low"])
         df = df.loc[df.index <= pd.Timestamp(prediction_date)]
+
         if df.empty:
-            raise ValueError(
-                f"No price data on or before {prediction_date} for {symbol} ({ticker})"
-            )
+            raise ValueError(f"No data on or before {prediction_date} for {symbol}")
         return df
 
     def _compute_emas(self, closes: pd.Series) -> EmaSnapshot:
-        """Compute fast/slow EMAs; adjust=False matches common chart platforms."""
-        ema_fast = float(
-            closes.ewm(span=EMA_FAST_SPAN, adjust=EMA_ADJUST).mean().iloc[-1]
-        )
-        ema_slow = float(
-            closes.ewm(span=EMA_SLOW_SPAN, adjust=EMA_ADJUST).mean().iloc[-1]
-        )
-        price = float(closes.iloc[-1])
-        return EmaSnapshot(price=price, ema_fast=ema_fast, ema_slow=ema_slow)
-
-    def _swing_from_window(
-        self, df: pd.DataFrame, window_days: int
-    ) -> tuple[float, float]:
-        """Lowest low and highest high over window_days with rolling smooth."""
-        recent = df.tail(window_days)
-        support = float(
-            recent["Low"]
-            .rolling(SWING_WINDOW, min_periods=SWING_MIN_PERIODS)
-            .min()
-            .min()  # type: ignore[arg-type]
-        )
-        resistance = float(
-            recent["High"]
-            .rolling(SWING_WINDOW, min_periods=SWING_MIN_PERIODS)
-            .max()
-            .max()  # type: ignore[arg-type]
-        )
-        return support, resistance
-
-    def _compute_swing_levels(self, df: pd.DataFrame) -> SwingLevels:
-        """
-        Derive primary and secondary support/resistance from fetched OHLCV data.
-
-        Primary levels use the short LOOKBACK_DAYS window (recent swing structure).
-        Secondary levels use the longer EXTENDED_LOOKBACK_DAYS window so Resistance 2
-        and Support 2 reflect actual historical highs/lows rather than fixed offsets.
-        """
-        support, resistance = self._swing_from_window(df, LOOKBACK_DAYS)
-        extended_window = min(len(df), EXTENDED_LOOKBACK_DAYS)
-        secondary_support, secondary_resistance = self._swing_from_window(
-            df, extended_window
-        )
-        return SwingLevels(
-            support=support,
-            resistance=resistance,
-            secondary_support=secondary_support,
-            secondary_resistance=secondary_resistance,
+        """adjust=False matches most charting platforms."""
+        return EmaSnapshot(
+            price=float(closes.iloc[-1]),
+            ema_fast=float(closes.ewm(span=EMA_FAST_SPAN, adjust=False).mean().iloc[-1]),
+            ema_slow=float(closes.ewm(span=EMA_SLOW_SPAN, adjust=False).mean().iloc[-1]),
         )
 
-    def _assess_trend(self, snapshot: EmaSnapshot) -> TrendAssessment:
-        """
-        Classify trend bias from price vs EMA stack, then score confidence.
+    def _swing_levels(self, df: pd.DataFrame) -> tuple[float, float, float, float]:
+        """Returns (support, resistance, secondary_support, secondary_resistance).
+        Primary window = recent LOOKBACK_DAYS; secondary = EXTENDED_LOOKBACK_DAYS."""
+        def hi_lo(n: int) -> tuple[float, float]:
+            w = df.tail(n)
+            lo = float(w["Low"].rolling(SWING_WINDOW, min_periods=1).min().to_numpy().min())
+            hi = float(w["High"].rolling(SWING_WINDOW, min_periods=1).max().to_numpy().max())
+            return lo, hi
 
-        Bias rules:
-          - Bullish: price > fast EMA > slow EMA
-          - Bearish: price < fast EMA < slow EMA
-          - Neutral: any other alignment (mixed stack)
+        sup, res = hi_lo(LOOKBACK_DAYS)
+        sup2, res2 = hi_lo(min(len(df), EXTENDED_LOOKBACK_DAYS))
+        return sup, res, sup2, res2
 
-        Confidence rises when EMAs are separated and price is clearly away from
-        the fast EMA; neutral bias always maps to low confidence.
-        """
-        price, ema_fast, ema_slow = snapshot
-
-        if price > ema_fast > ema_slow:
+    def _assess_trend(self, s: EmaSnapshot) -> tuple[Bias, Confidence]:
+        if s.price > s.ema_fast > s.ema_slow:
             bias = Bias.BULLISH
-        elif price < ema_fast < ema_slow:
+        elif s.price < s.ema_fast < s.ema_slow:
             bias = Bias.BEARISH
         else:
-            bias = Bias.NEUTRAL
+            return Bias.NEUTRAL, Confidence.LOW
 
-        if bias == Bias.NEUTRAL:
-            confidence = Confidence.LOW
-        elif (
-            self._pct_of(ema_fast - ema_slow, price) > EMA_GAP_CONFIDENCE_PCT
-            and self._pct_of(price - ema_fast, price)
-            > PRICE_EMA8_DISTANCE_CONFIDENCE_PCT
-        ):
-            confidence = Confidence.HIGH
-        else:
-            confidence = Confidence.MEDIUM
+        strong = (
+            _pct(s.ema_fast - s.ema_slow, s.price) > EMA_GAP_CONFIDENCE_PCT
+            and _pct(s.price - s.ema_fast, s.price) > PRICE_EMA_DISTANCE_CONFIDENCE_PCT
+        )
+        return bias, Confidence.HIGH if strong else Confidence.MEDIUM
 
-        return TrendAssessment(bias=bias, confidence=confidence)
-
-    def _round_price(self, value: float) -> float:
-        """Round monetary values to a consistent number of decimal places."""
-        return round(value, PRICE_ROUND_DIGITS)
-
-    @staticmethod
-    def _pct_of(part: float, whole: float) -> float:
-        """Return |part| as a percentage of whole using PERCENT_SCALE."""
-        if whole == 0:
-            return 0.0
-        return abs(part) / whole * PERCENT_SCALE
-
-    # Public API
-
-    def fetch_instrument(
-        self, symbol: Symbol, prediction_date: date
-    ) -> InstrumentTechnical:
-        """Fetch price data and compute EMAs for a single instrument."""
+    def fetch_instrument(self, symbol: Symbol, prediction_date: date) -> InstrumentTechnical:
         df = self._fetch_ohlcv(symbol, prediction_date)
+        self._frames[symbol] = df
 
-        closes = cast(pd.Series, df["Close"])
-        snapshot = self._compute_emas(closes)
-        levels = self._compute_swing_levels(df)
-        assessment = self._assess_trend(snapshot)
+        snap = self._compute_emas(cast(pd.Series, df["Close"]))
+        sup, res, *_ = self._swing_levels(df)
+        bias, confidence = self._assess_trend(snap)
 
         return InstrumentTechnical(
-            last_close=self._round_price(snapshot.price),
-            ema_8=self._round_price(snapshot.ema_fast),
-            ema_21=self._round_price(snapshot.ema_slow),
-            trend_bias=assessment.bias,
-            key_support=self._round_price(levels.support),
-            key_resistance=self._round_price(levels.resistance),
-            confidence=assessment.confidence,
+            last_close=round(snap.price, 2),
+            ema_8=round(snap.ema_fast, 2),
+            ema_21=round(snap.ema_slow, 2),
+            trend_bias=bias,
+            key_support=round(sup, 2),
+            key_resistance=round(res, 2),
+            confidence=confidence,
         )
 
     def run(
-        self, prediction_date: date, instruments: list[Symbol] = INSTRUMENTS, **kwargs
+        self,
+        prediction_date: date,
+        instruments: list[Symbol] = INSTRUMENTS,
+        **kwargs,
     ) -> TechnicalOutput:
+        self._frames = {}
         results: dict[str, InstrumentTechnical] = {}
         for symbol in instruments:
             results[symbol] = self.fetch_instrument(symbol, prediction_date)
         return TechnicalOutput(prediction_date=prediction_date, instruments=results)
 
-    # Markdown rendering
+    def _ema_zone(self, p: float, fast: float, slow: float) -> tuple[int, str, str]:
+        neutral = Bias.NEUTRAL.value
+        if p > fast > slow:
+            return 1, Bias.BULLISH.value, "price above both EMAs"
+        if p < fast < slow:
+            return 4, Bias.BEARISH.value, "price below both EMAs"
+        if fast > slow:
+            return 2, f"{neutral}-{Bias.BULLISH.value}", "8 EMA above 21 EMA"
+        if fast < slow:
+            return 3, f"{neutral}-{Bias.BEARISH.value}", "8 EMA below 21 EMA"
+        return 0, neutral, "EMAs compressed"
 
-    def _resolve_ema_zone(
-        self, price: float, ema_fast: float, ema_slow: float
-    ) -> EmaZone:
-        """Map price/EMA alignment to a numbered zone for the markdown template."""
-        if price > ema_fast > ema_slow:
-            return EmaZone(ZONE_BULLISH, Bias.BULLISH.value, "price above both EMAs")
-        if price < ema_fast < ema_slow:
-            return EmaZone(ZONE_BEARISH, Bias.BEARISH.value, "price below both EMAs")
-        if ema_fast > ema_slow:
-            return EmaZone(
-                ZONE_NEUTRAL_BULLISH,
-                NEUTRAL_BULLISH_LABEL,
-                "8 EMA above 21 EMA",
-            )
-        if ema_fast < ema_slow:
-            return EmaZone(
-                ZONE_NEUTRAL_BEARISH,
-                NEUTRAL_BEARISH_LABEL,
-                "8 EMA below 21 EMA",
-            )
-        return EmaZone(ZONE_NEUTRAL, Bias.NEUTRAL.value, "EMAs compressed")
-
-    @staticmethod
-    def _format_week_title(prediction_date: date) -> str:
-        """Human-readable week title matching team markdown convention."""
-        return f"{prediction_date.day} {prediction_date.strftime('%B %Y')}"
-
-    @staticmethod
-    def _week_md_filename(prediction_date: date) -> str:
-        """Filename pattern expected by agent-checks CI (technical_agent_W*.md)."""
-        week = prediction_date.isocalendar().week
-        return f"technical_agent_W{week:02d}.md"
-
-    @staticmethod
-    def _format_price(value: float) -> str:
-        """Format index levels: whole numbers above threshold, decimals below."""
-        if value >= LARGE_PRICE_THRESHOLD:
-            return f"{value:,.0f}"
-        return f"{value:,.2f}"
-
-    def _approx_price(self, value: float) -> str:
-        return f"{APPROX_PREFIX}{self._format_price(value)}"
-
-    def _gap_points(self, a: float, b: float) -> str:
-        return self._format_price(abs(a - b))
-
-    def _invalidation_text(self, bias: Bias, support: float, resistance: float) -> str:
-        """One-line invalidation rule keyed off the current trend bias."""
-        fmt = self._format_price
+    def _invalidation(self, bias: Bias, sup: float, res: float) -> str:
         if bias == Bias.BULLISH:
-            return f"Close below {fmt(support)}."
+            return f"Close below {_fmt(sup)}."
         if bias == Bias.BEARISH:
-            return f"Close above {fmt(resistance)}."
+            return f"Close above {_fmt(res)}."
         return (
-            f"Close below {fmt(support)} shifts to {Bias.BEARISH.value}; "
-            f"close above {fmt(resistance)} shifts to {Bias.BULLISH.value}."
+            f"Close below {_fmt(sup)} shifts to {Bias.BEARISH.value}; "
+            f"close above {_fmt(res)} shifts to {Bias.BULLISH.value}."
         )
 
-    def _render_breadth_note(self, symbol: Symbol) -> list[str]:
-        # TODO: add cross-index breadth (% above 200-day MA, relative strength).
-        return [
-            "BREADTH NOTE:",
-            f" - Breadth data not available for {symbol} in this scaffold.",
-        ]
-
     def _render_block(
-        self,
-        symbol: Symbol,
-        inst: InstrumentTechnical,
-        bar_date: date,
-        levels: SwingLevels,
+        self, symbol: Symbol, inst: InstrumentTechnical, bar_date: date
     ) -> list[str]:
         p, e8, e21 = inst.last_close, inst.ema_8, inst.ema_21
-        above8, above21 = p > e8, e8 > e21
-        zone = self._resolve_ema_zone(p, e8, e21)
-        fmt = self._format_price
+        sup, res, sup2, res2 = self._swing_levels(self._frames[symbol])
+        zid, zlabel, zdesc = self._ema_zone(p, e8, e21)
 
-        above_support = p > inst.key_support
         return [
             f"INSTRUMENT: {LABELS[symbol]}",
-            f"LAST CLOSE: {fmt(p)} ({bar_date.strftime('%a %d %b %Y')})",
+            f"LAST CLOSE: {_fmt(p)} ({bar_date.strftime('%a %d %b %Y')})",
             "",
             "8 EMA vs PRICE:",
-            f" - Price is {'ABOVE' if above8 else 'BELOW'} the 8 EMA.",
-            f" - 8 EMA at {self._approx_price(e8)}; gap {self._gap_points(p, e8)} pts.",
+            f" - Price is {'ABOVE' if p > e8 else 'BELOW'} the 8 EMA.",
+            f" - 8 EMA at ~{_fmt(e8)}; gap {_fmt(abs(p - e8))} pts.",
             "",
             "8 EMA vs 21 EMA:",
-            f" - 8 EMA is {'ABOVE' if above21 else 'BELOW'} 21 EMA.",
-            f" - 21 EMA at {self._approx_price(e21)}; gap {self._gap_points(e8, e21)} pts.",
-            f" - EMA condition: Zone {zone.zone_id} ({zone.label}) — {zone.description}.",
+            f" - 8 EMA is {'ABOVE' if e8 > e21 else 'BELOW'} 21 EMA.",
+            f" - 21 EMA at ~{_fmt(e21)}; gap {_fmt(abs(e8 - e21))} pts.",
+            f" - EMA condition: Zone {zid} ({zlabel}) — {zdesc}.",
             "",
             "TRENDLINE:",
             f" - Swing support over the last {LOOKBACK_DAYS} sessions.",
-            f" - Trendline range: {fmt(inst.key_support)}–{fmt(e21)}.",
-            f" - Price is {'above' if above_support else 'below'} support.",
+            f" - Trendline range: {_fmt(inst.key_support)}–{_fmt(e21)}.",
+            f" - Price is {'above' if p > inst.key_support else 'below'} support.",
             "",
             "KEY LEVELS:",
-            f" - Resistance 1: {fmt(inst.key_resistance)}.",
-            f" - Resistance 2: {fmt(levels.secondary_resistance)}.",
-            f" - Support 1: {fmt(inst.key_support)}.",
-            f" - Support 2: {fmt(levels.secondary_support)}.",
+            f" - Resistance 1: {_fmt(res)}.",
+            f" - Resistance 2: {_fmt(res2)}.",
+            f" - Support 1: {_fmt(sup)}.",
+            f" - Support 2: {_fmt(sup2)}.",
             "",
-            *self._render_breadth_note(symbol),
+            # TODO: cross-index breadth (% above 200-day MA, relative strength)
+            "BREADTH NOTE:",
+            f" - Breadth data not available for {symbol} in this scaffold.",
             "",
             f"TECHNICAL BIAS: {inst.trend_bias.value}.",
             f"CONFIDENCE: {inst.confidence.value}.",
-            f"INVALIDATION: {self._invalidation_text(inst.trend_bias, inst.key_support, inst.key_resistance)}",
-            f"WATCH THIS WEEK: Watch {fmt(inst.key_resistance)} resistance and {fmt(inst.key_support)} support.",
+            f"INVALIDATION: {self._invalidation(inst.trend_bias, inst.key_support, inst.key_resistance)}",
+            f"WATCH THIS WEEK: Watch {_fmt(res)} resistance and {_fmt(sup)} support.",
         ]
 
     def render_md(self, output: TechnicalOutput, prediction_date: date) -> str:
-        """Render TechnicalOutput to MD matching data/formats/technical_agent.md"""
         lines = [
-            f"Technical Agent Output — Week of {self._format_week_title(prediction_date)}",
+            f"Technical Agent Output — Week of {prediction_date.day} {prediction_date.strftime('%B %Y')}",
             "",
-            QUICK_NOTE,
+            "Quick note: The 8 EMA is a short-term average price line. The 21 EMA is a "
+            "longer-term average. When price sits above both and the 8 is above the 21, "
+            "the trend is usually up.",
             "",
             "---",
             "",
         ]
-        symbols: list[Symbol] = [
-            cast(Symbol, s) for s in output.instruments if s in INSTRUMENTS
-        ]
+        symbols: list[Symbol] = [cast(Symbol, s) for s in INSTRUMENTS if s in output.instruments]
         for i, symbol in enumerate(symbols):
-            # Re-fetch OHLCV to recover the actual last bar date and extended swing levels.
-            df = self._fetch_ohlcv(symbol, prediction_date)
+            df = self._frames[symbol]
             last_ts = pd.to_datetime(str(df.index[-1]))
             if pd.isna(last_ts):
                 raise ValueError(f"No valid bar date for {symbol}")
             bar_date = cast(date, last_ts.date())
-            levels = self._compute_swing_levels(df)
-            lines.extend(
-                self._render_block(symbol, output.instruments[symbol], bar_date, levels)
-            )
+            lines.extend(self._render_block(symbol, output.instruments[symbol], bar_date))
             if i < len(symbols) - 1:
                 lines.extend(["", "---", ""])
         return "\n".join(lines)
 
-
-def _technical_md_dir() -> Path:
-    """Directory for technical agent MD files validated by CI."""
-    return Path(__file__).resolve().parent.parent.parent.parent / "data" / "technical"
+    @staticmethod
+    def _week_md_filename(prediction_date: date) -> str:
+        return f"technical_agent_W{prediction_date.isocalendar().week:02d}.md"
 
 
 if __name__ == "__main__":
     from agents.io import FileSaver, week_stem
 
-    prediction_date = (
-        date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
-    )
+    prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
     agent = TechnicalAgent()
     output = agent.run(prediction_date)
 
-    stem = week_stem(prediction_date)
-    saver = FileSaver.for_agent(agent.agent_type)
-    saver.save(agent.render_json(output, prediction_date), f"{stem}.json")
+    FileSaver.for_agent(agent.agent_type).save(
+        agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}.json"
+    )
 
-    md_dir = _technical_md_dir()
+    md_dir = Path(__file__).resolve().parents[3] / "data" / "technical"
     md_dir.mkdir(parents=True, exist_ok=True)
     md_path = md_dir / TechnicalAgent._week_md_filename(prediction_date)
     md_path.write_text(agent.render_md(output, prediction_date), encoding="utf-8")
