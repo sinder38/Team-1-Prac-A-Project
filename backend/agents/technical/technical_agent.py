@@ -23,9 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from agents.base import BaseAgent
 from agents.schemas import Bias, Confidence, InstrumentTechnical, TechnicalOutput
 
-# ---------------------------------------------------------------------------
 # Types
-# ---------------------------------------------------------------------------
 
 Symbol: TypeAlias = Literal["SPX", "NDX", "IWM"]
 """Supported index/ETF symbols tracked by this agent."""
@@ -63,9 +61,7 @@ class TrendAssessment(NamedTuple):
     confidence: Confidence
 
 
-# ---------------------------------------------------------------------------
 # Constants — instruments & data source
-# ---------------------------------------------------------------------------
 
 INSTRUMENTS: Final[list[Symbol]] = ["SPX", "NDX", "IWM"]
 
@@ -81,9 +77,7 @@ LABELS: Final[dict[Symbol, str]] = {
     "IWM": "Russell 2000 (IWM), Daily Chart",
 }
 
-# ---------------------------------------------------------------------------
 # Constants — lookback & indicator parameters
-# ---------------------------------------------------------------------------
 
 EMA_FAST_SPAN: Final[int] = 8
 EMA_SLOW_SPAN: Final[int] = 21
@@ -105,18 +99,14 @@ PRICE_EMA8_DISTANCE_CONFIDENCE_PCT: Final[float] = 0.2
 # Markdown rendering tokens.
 APPROX_PREFIX: Final[str] = "~"
 
-# ---------------------------------------------------------------------------
 # Constants — yfinance fetch
-# ---------------------------------------------------------------------------
 
 YF_END_DAY_BUFFER: Final[int] = 1
 YF_AUTO_ADJUST: Final[bool] = True
 YF_SHOW_PROGRESS: Final[bool] = False
-OHLCV_REQUIRED_COLUMNS: Final[tuple[str, ...]] = ("close", "high", "low")
+OHLCV_REQUIRED_COLUMNS: Final[tuple[str, ...]] = ("Close", "High", "Low")
 
-# ---------------------------------------------------------------------------
 # Constants — EMA zone IDs (markdown template)
-# ---------------------------------------------------------------------------
 
 ZONE_NEUTRAL: Final[int] = 0
 ZONE_BULLISH: Final[int] = 1
@@ -141,9 +131,7 @@ QUICK_NOTE: Final[str] = (
 class TechnicalAgent(BaseAgent):
     agent_type = "technical"
 
-    # ------------------------------------------------------------------
     # Data fetching & normalization
-    # ------------------------------------------------------------------
 
     def _fetch_ohlcv(self, symbol: Symbol, prediction_date: date) -> pd.DataFrame:
         """
@@ -169,7 +157,6 @@ class TechnicalAgent(BaseAgent):
 
         df = df.sort_index()
         df.index = pd.to_datetime(df.index).tz_localize(None)
-        df.columns = [str(c).lower() for c in df.columns]
         df = df.dropna(subset=list(OHLCV_REQUIRED_COLUMNS))
         df = df.loc[df.index <= pd.Timestamp(prediction_date)]
         if df.empty:
@@ -195,13 +182,13 @@ class TechnicalAgent(BaseAgent):
         """Lowest low and highest high over window_days with rolling smooth."""
         recent = df.tail(window_days)
         support = float(
-            recent["low"]
+            recent["Low"]
             .rolling(SWING_WINDOW, min_periods=SWING_MIN_PERIODS)
             .min()
             .min()  # type: ignore[arg-type]
         )
         resistance = float(
-            recent["high"]
+            recent["High"]
             .rolling(SWING_WINDOW, min_periods=SWING_MIN_PERIODS)
             .max()
             .max()  # type: ignore[arg-type]
@@ -253,7 +240,8 @@ class TechnicalAgent(BaseAgent):
             confidence = Confidence.LOW
         elif (
             self._pct_of(ema_fast - ema_slow, price) > EMA_GAP_CONFIDENCE_PCT
-            and self._pct_of(price - ema_fast, price) > PRICE_EMA8_DISTANCE_CONFIDENCE_PCT
+            and self._pct_of(price - ema_fast, price)
+            > PRICE_EMA8_DISTANCE_CONFIDENCE_PCT
         ):
             confidence = Confidence.HIGH
         else:
@@ -272,9 +260,7 @@ class TechnicalAgent(BaseAgent):
             return 0.0
         return abs(part) / whole * PERCENT_SCALE
 
-    # ------------------------------------------------------------------
     # Public API
-    # ------------------------------------------------------------------
 
     def fetch_instrument(
         self, symbol: Symbol, prediction_date: date
@@ -282,7 +268,7 @@ class TechnicalAgent(BaseAgent):
         """Fetch price data and compute EMAs for a single instrument."""
         df = self._fetch_ohlcv(symbol, prediction_date)
 
-        closes = cast(pd.Series, df["close"])
+        closes = cast(pd.Series, df["Close"])
         snapshot = self._compute_emas(closes)
         levels = self._compute_swing_levels(df)
         assessment = self._assess_trend(snapshot)
@@ -305,9 +291,7 @@ class TechnicalAgent(BaseAgent):
             results[symbol] = self.fetch_instrument(symbol, prediction_date)
         return TechnicalOutput(prediction_date=prediction_date, instruments=results)
 
-    # ------------------------------------------------------------------
     # Markdown rendering
-    # ------------------------------------------------------------------
 
     def _resolve_ema_zone(
         self, price: float, ema_fast: float, ema_slow: float
