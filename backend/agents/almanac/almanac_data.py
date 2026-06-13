@@ -1,111 +1,177 @@
 """Encoded seasonal data for the Almanac Agent.
 
-This file is the first structured data layer for the Almanac Agent. W4-W8
-entries are the most detailed because they are needed first. Other months are
-included so the agent has a complete Jan-Dec structure, but exact Almanac page
-figures can still be tightened by the data encoder support role.
+The first software increment focuses on W4-W8 because those are the next
+prediction weeks. The Jan-Dec monthly records are still included so the
+support encoder role can fill missing Stock Trader's Almanac figures without
+changing the agent code.
+
+This file is intentionally plain Python data. A teammate should be able to add
+or correct an Almanac figure here without touching the logic in
+almanac_agent.py.
 """
 
+
+def _index_stat(
+    *,
+    avg_return: float | None = None,
+    rank: int | None = None,
+    up_pct: int | None = None,
+    note: str = "",
+    verified: bool = False,
+) -> dict:
+    """Create one monthly stat record for SPX, Nasdaq, or Russell.
+
+    Use None when a number is not verified yet. The agent will still render the
+    note and say that encoder verification is needed.
+    """
+    return {
+        "avg_return": avg_return,
+        "rank": rank,
+        "up_pct": up_pct,
+        "note": note,
+        "verified": verified,
+    }
+
+
+def _midterm_stat(
+    *,
+    avg_return: float | None = None,
+    rank: int | None = None,
+    note: str = "",
+    verified: bool = False,
+) -> dict:
+    """Create one midterm-year record.
+
+    The midterm field is mostly about the S&P 500 because our manual W2/W3
+    notes used the midterm-year S&P context as the main cycle signal.
+    """
+    return {
+        "avg_return": avg_return,
+        "rank": rank,
+        "note": note,
+        "verified": verified,
+    }
+
+
+# MONTHLY_STATS uses month numbers as keys:
+#   1 = January, 2 = February, ... 12 = December.
+#
+# For each month we keep:
+# - sp500: normal S&P 500 monthly stats
+# - midterm: special midterm-year context, important because 2026 is midterm
+# - nasdaq: Nasdaq / NDX monthly stats
+# - russell: Russell 2000 / IWM monthly stats
+# - monthly_bias: simple label used by the agent when no weekly pattern exists
+#
+# verified=True means the value came from team notes already used in W2/W3.
+# verified=False means the support encoder should still check the Almanac page.
 MONTHLY_STATS = {
     1: {
         "month": "January",
-        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
-        "midterm": "Midterm year adjustment not verified yet.",
-        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
-        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "sp500": _index_stat(note="Exact January S&P 500 stats still need Almanac page verification."),
+        "midterm": _midterm_stat(note="Midterm year January adjustment not verified yet."),
+        "nasdaq": _index_stat(note="Exact January Nasdaq stats still need Almanac page verification."),
+        "russell": _index_stat(note="Exact January Russell 2000 stats still need Almanac page verification."),
         "monthly_bias": "Mixed",
     },
     2: {
         "month": "February",
-        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
-        "midterm": "Midterm year adjustment not verified yet.",
-        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
-        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "sp500": _index_stat(note="Exact February S&P 500 stats still need Almanac page verification."),
+        "midterm": _midterm_stat(note="Midterm year February adjustment not verified yet."),
+        "nasdaq": _index_stat(note="Exact February Nasdaq stats still need Almanac page verification."),
+        "russell": _index_stat(note="Exact February Russell 2000 stats still need Almanac page verification."),
         "monthly_bias": "Mixed",
     },
     3: {
         "month": "March",
-        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
-        "midterm": "Midterm year adjustment not verified yet.",
-        "nasdaq": "Technology seasonality begins to improve during the March-July window in our team notes.",
-        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "sp500": _index_stat(note="Exact March S&P 500 stats still need Almanac page verification."),
+        "midterm": _midterm_stat(note="Midterm year March adjustment not verified yet."),
+        "nasdaq": _index_stat(note="Technology seasonality begins to improve during the March-July window in our team notes."),
+        "russell": _index_stat(note="Exact March Russell 2000 stats still need Almanac page verification."),
         "monthly_bias": "Mixed",
     },
     4: {
         "month": "April",
-        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
-        "midterm": "Midterm year adjustment not verified yet.",
-        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
-        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "sp500": _index_stat(note="Exact April S&P 500 stats still need Almanac page verification."),
+        "midterm": _midterm_stat(note="Midterm year April adjustment not verified yet."),
+        "nasdaq": _index_stat(note="Exact April Nasdaq stats still need Almanac page verification."),
+        "russell": _index_stat(note="Exact April Russell 2000 stats still need Almanac page verification."),
         "monthly_bias": "Mixed",
     },
     5: {
         "month": "May",
-        "sp500": "ranks #8 of 12 months. Up 61% of the time. Avg +0.3% normally.",
-        "midterm": "Midterm year May avg: -0.7% for S&P 500.",
-        "nasdaq": "avg +1.1%, ranks #5 normally.",
-        "russell": "avg +1.3%, ranks #4 normally.",
+        "sp500": _index_stat(avg_return=0.3, rank=8, up_pct=61, verified=True),
+        "midterm": _midterm_stat(avg_return=-0.7, note="This is the active 2026 context for S&P 500.", verified=True),
+        "nasdaq": _index_stat(avg_return=1.1, rank=5, verified=True),
+        "russell": _index_stat(avg_return=1.3, rank=4, verified=True),
         "monthly_bias": "Mixed",
     },
     6: {
         "month": "June",
-        "sp500": "ranks #9 of 12 months normally. Ranks #12 in midterm year - dead last.",
-        "midterm": "Midterm year June avg: about -2.1% for S&P 500 in our team notes.",
-        "nasdaq": "avg +1.0%, ranks #9 normally.",
-        "russell": "avg +0.8%, ranks #9 normally.",
+        "sp500": _index_stat(rank=9, note="Normal June rank is weaker than most months.", verified=True),
+        "midterm": _midterm_stat(avg_return=-2.1, rank=12, note="Dead last in the midterm-year pattern for S&P 500.", verified=True),
+        "nasdaq": _index_stat(avg_return=1.0, rank=9, verified=True),
+        "russell": _index_stat(avg_return=0.8, rank=9, verified=True),
         "monthly_bias": "Bearish",
     },
     7: {
         "month": "July",
-        "sp500": "historically one of the stronger summer months, with early-July strength often carrying the month.",
-        "midterm": "Midterm-year context still sits inside the Q2-Q3 Weak Spot, so normal July strength should be discounted.",
-        "nasdaq": "historically strong in July, especially around the first-half to second-half turn.",
-        "russell": "small caps can lag if rates stay high, even when July seasonality is supportive.",
+        "sp500": _index_stat(note="Historically one of the stronger summer months, with early-July strength often carrying the month."),
+        "midterm": _midterm_stat(note="Midterm-year context still sits inside the Q2-Q3 Weak Spot, so normal July strength should be discounted."),
+        "nasdaq": _index_stat(note="Historically strong in July, especially around the first-half to second-half turn."),
+        "russell": _index_stat(note="Small caps can lag if rates stay high, even when July seasonality is supportive."),
         "monthly_bias": "Mixed",
     },
     8: {
         "month": "August",
-        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
-        "midterm": "Midterm-year context remains inside the Q2-Q3 Weak Spot in our team notes.",
-        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
-        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "sp500": _index_stat(note="Exact August S&P 500 stats still need Almanac page verification."),
+        "midterm": _midterm_stat(note="Midterm-year context remains inside the Q2-Q3 Weak Spot in our team notes."),
+        "nasdaq": _index_stat(note="Exact August Nasdaq stats still need Almanac page verification."),
+        "russell": _index_stat(note="Exact August Russell 2000 stats still need Almanac page verification."),
         "monthly_bias": "Mixed",
     },
     9: {
         "month": "September",
-        "sp500": "placeholder monthly stats entry; September is normally treated cautiously in Almanac-style seasonality, but exact figures still need verification.",
-        "midterm": "Midterm year adjustment not verified yet.",
-        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
-        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "sp500": _index_stat(note="September is normally treated cautiously in Almanac-style seasonality; exact figures still need verification."),
+        "midterm": _midterm_stat(note="Midterm year September adjustment not verified yet."),
+        "nasdaq": _index_stat(note="Exact September Nasdaq stats still need Almanac page verification."),
+        "russell": _index_stat(note="Exact September Russell 2000 stats still need Almanac page verification."),
         "monthly_bias": "Bearish",
     },
     10: {
         "month": "October",
-        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
-        "midterm": "Q4 Sweet Spot can begin to matter later in the year, but exact midterm-year adjustment is not verified yet.",
-        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
-        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "sp500": _index_stat(note="Exact October S&P 500 stats still need Almanac page verification."),
+        "midterm": _midterm_stat(note="Q4 Sweet Spot can begin to matter later in the year, but exact midterm-year adjustment is not verified yet."),
+        "nasdaq": _index_stat(note="Exact October Nasdaq stats still need Almanac page verification."),
+        "russell": _index_stat(note="Exact October Russell 2000 stats still need Almanac page verification."),
         "monthly_bias": "Mixed",
     },
     11: {
         "month": "November",
-        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
-        "midterm": "Q4 Sweet Spot context is normally more constructive after the Q2-Q3 Weak Spot, but exact figures still need verification.",
-        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
-        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "sp500": _index_stat(note="Exact November S&P 500 stats still need Almanac page verification."),
+        "midterm": _midterm_stat(note="Q4 Sweet Spot context is normally more constructive after the Q2-Q3 Weak Spot, but exact figures still need verification."),
+        "nasdaq": _index_stat(note="Exact November Nasdaq stats still need Almanac page verification."),
+        "russell": _index_stat(note="Exact November Russell 2000 stats still need Almanac page verification."),
         "monthly_bias": "Bullish",
     },
     12: {
         "month": "December",
-        "sp500": "placeholder monthly stats entry; exact S&P 500 rank, avg return, and up percentage still need Almanac page verification.",
-        "midterm": "Q4 Sweet Spot context remains relevant, but exact midterm-year adjustment is not verified yet.",
-        "nasdaq": "placeholder Nasdaq monthly stats entry; exact avg return and rank still need Almanac page verification.",
-        "russell": "placeholder Russell 2000 monthly stats entry; exact avg return and rank still need Almanac page verification.",
+        "sp500": _index_stat(note="Exact December S&P 500 stats still need Almanac page verification."),
+        "midterm": _midterm_stat(note="Q4 Sweet Spot context remains relevant, but exact midterm-year adjustment is not verified yet."),
+        "nasdaq": _index_stat(note="Exact December Nasdaq stats still need Almanac page verification."),
+        "russell": _index_stat(note="Exact December Russell 2000 stats still need Almanac page verification."),
         "monthly_bias": "Bullish",
     },
 }
 
-
+# WEEKLY_PATTERNS is more specific than MONTHLY_STATS.
+#
+# The key is (month, week_of_month). For example:
+# - (6, 3) = third week of June
+# - (7, 1) = first week of July
+#
+# Each entry gives the agent enough detail to write the "SPECIFIC WEEK PATTERN"
+# section in the Markdown output.
 WEEKLY_PATTERNS = {
     (6, 3): {
         "label": "Mid-June Week, 15-19 June",
@@ -210,7 +276,11 @@ WEEKLY_PATTERNS = {
     },
 }
 
-
+# These sector windows come from the Almanac-style seasonal notes used by the
+# team. The agent converts each entry into a SectorSignal object.
+#
+# Keep the words "seasonal LONG" or "seasonal SHORT" in the window text when
+# possible, because the current validator checks for those phrases.
 SECTOR_WINDOWS = [
     {
         "sector": "Technology (XLK)",
@@ -244,10 +314,26 @@ SECTOR_WINDOWS = [
     },
 ]
 
+# This is not used directly in the report yet, but it is useful for reviewers.
+# It explains what is already covered and what the support data encoder role
+# should improve later.
+DATA_COVERAGE = {
+    "monthly_records": "Jan-Dec keys exist; exact numeric fields are filled where the team has already used them.",
+    "verified_months": ["May", "June"],
+    "covered_sprint_weeks": ["W4", "W5", "W6", "W7", "W8"],
+    "encoder_follow_up": [
+        "Fill exact S&P 500 average return, rank, and up percentage for months outside May/June.",
+        "Fill exact Nasdaq and Russell 2000 monthly stats where not already verified.",
+        "Add more named weekly patterns as later sprint dates become clear.",
+    ],
+}
 
+# The Markdown output uses this in the final Source line. It is deliberately
+# honest about which data is already encoded and which parts still need exact
+# page verification.
 SOURCE_NOTE = (
     "Stock Trader's Almanac 2026 team notes from W02/W03, plus public Stock "
     "Trader's Almanac June/July seasonal summaries. W4-W8 entries are encoded "
-    "for the first software increment; other months have complete placeholders "
-    "for follow-up data verification."
+    "for the first software increment. Jan-Dec monthly records are structured "
+    "for data encoder follow-up where exact page figures are not yet verified."
 )
