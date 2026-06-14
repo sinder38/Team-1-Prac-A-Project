@@ -3,15 +3,15 @@
 1. Weekly Regime: Uncertain
 2. Confidence Score: Low-Medium
 3. Key Supporting Evidence:
-   - Macro agent identifies a high-impact binary-risk event with the Fed Interest Rate Decision on June 18, creating a cautious atmosphere.
-   - Technicals show all three indexes (SPX, NDX, IWM) in a Neutral trend bias, trading near or below their 8-day EMAs.
+   - Macro agent identifies a high-impact binary-risk event with the US Fed Interest Rate Decision on June 18, creating a cautious atmosphere.
+   - Technical agents show all three indexes (SPX, NDX, IWM) with a Neutral trend bias and Low confidence, trading near or below their 8-day EMAs.
    - Almanac agent indicates a Bearish monthly and seasonal bias, though Technology (XLK) remains in a seasonal long window supporting the Nasdaq.
 4. Key Contradictions:
-   - Recent evidence shows a broad risk-on recovery (10 of 11 sectors green, IWM up 3.93%), contradicting the Almanac's Bearish seasonal bias.
-   - Macro agent reports a "shifted hawkish" FOMC direction, while the Evidence report shows falling yields and a dropping VIX, which typically signal bullish sentiment.
-5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference on June 18 that drives Treasury yields lower would reverse the cautious stance.
+   - Recent evidence shows a broad risk-on recovery with 10 of 11 sectors green and IWM up 3.93%, contradicting the Almanac's bearish seasonal bias.
+   - Macro agent notes falling DXY and oil prices, which typically support equities, yet the overall macro bias remains "Binary-risk" due to the FOMC meeting.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower would reverse the cautious stance and support risk assets.
 6. Predicted % move — SPX: -1.0% to 1.5%
-   Predicted % move — NDX: -0.5% to 2.0%
-   Predicted % move — IWM: -2.0% to 3.0%
-7. Plain-English brief: The market is in a waiting game. While last week saw a strong bounce led by small caps and chips, the upcoming Fed meeting on June 18 creates significant uncertainty. We expect sideways to slightly positive movement as traders position for the Fed, with tech potentially outperforming due to seasonal strength, but overall volatility remains high.
+   Predicted % move — NDX: -1.5% to 2.0%
+   Predicted % move — IWM: -2.0% to 2.5%
+7. Plain-English brief: The market is in a holding pattern ahead of the June 18 Fed meeting. While last week saw a strong bounce led by small caps and chips, the overall seasonal trend is bearish and technicals remain neutral. Expect choppy, range-bound trading as investors weigh the potential for a hawkish Fed against recent positive momentum and geopolitical peace hopes.
 8. Disclaimer: This is not financial advice.
