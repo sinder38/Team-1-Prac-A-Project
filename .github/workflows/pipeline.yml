@@ -5,6 +5,9 @@ on:
     - cron: "0 14 * * 5" # Every Friday at 14:00 UTC — change time here
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   run-pipeline:
     name: Run prediction pipeline
