@@ -7,23 +7,21 @@ Usage:
 """
 import json
 import os
+import sys
 from datetime import date
 from dataclasses import asdict
 from pathlib import Path
-import sys
 import requests
 import yfinance as yf
 import pandas as pd
 from dotenv import load_dotenv
-from macro_event_data import (
+
+from agents.macro.macro_event_data import (
     UPCOMING_EVENTS,
     CONFIRMED_NEWS,
     FOMC_MARKET_PRICING,
     KEY_EARNINGS,
 )
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from agents.base import BaseAgent
 from agents.schemas import (
     CalendarEvent,
