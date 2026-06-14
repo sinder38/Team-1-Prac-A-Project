@@ -1,0 +1,17 @@
+# LLM Agent Output — Poolside Laguna M.1 — Week of 2026-06-15
+
+1. Weekly Regime: Uncertain
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Technical indicators show bullish trend bias across all three indices with prices above both 8-day and 21-day EMAs
+   - Technology sector in seasonal LONG window (March-July) providing support for Nasdaq
+   - Fed hold probability at 97.4% with yield curve remaining normal and 10-year yield falling
+4. Key Contradictions:
+   - Technical bullish bias conflicts with bearish seasonal/almanac bias for June (weakest month in midterm-year pattern)
+   - Declining oil prices and DXY support risk assets while broader seasonal headwinds suggest caution
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision driving Treasury yields lower and increasing rate cut expectations would reverse the cautious stance
+6. Predicted % move — SPX: -2.6% to 2.55%
+   Predicted % move — NDX: -4.85% to 3.8%
+   Predicted % move — IWM: -7.6% to 0.94%
+7. Plain-English brief: Markets face a tug-of-war between technical momentum and seasonal weakness. While charts point higher, June seasonality and the pending Fed decision on June 18 create uncertainty. Technology strength supports Nasdaq, but financials and commodities face seasonal headwinds. The week ahead hinges on the Fed's stance and whether they signal any shift toward easing.
+8. Disclaimer: This is not financial advice.

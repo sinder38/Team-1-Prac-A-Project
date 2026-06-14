@@ -1,0 +1,17 @@
+# LLM Agent Output — NVIDIA Nemotron 3 Super — Week of 2026-06-15
+
+1. Weekly Regime: Uncertain
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Technical indicators show price above the 8‑ and 21‑day EMAs for SPX, NDX and IWM, with a bullish trend bias across all three indices.
+   - Almanac data notes a seasonal bearish bias in mid‑June but highlights a bullish technology window (March‑July) that supports the Nasdaq.
+   - Macro readings indicate the Fed is expected to hold rates (97.4% probability), with falling Treasury yields, a weaker dollar and declining commodity prices, creating a binary‑risk environment ahead of the June 18 FOMC.
+4. Key Contradictions:
+   - The technical bullish bias conflicts with the Almanac’s bearish monthly/seasonal outlook, which warns of mid‑June weakness.
+   - While the macro base case is a Fed hold, a dovish surprise could rapidly shift sentiment to risk‑on, opposing the current cautious stance.
+5. Invalidation Conditions: A dovish Fed surprise that drives Treasury yields lower and boosts risk‑on sentiment, or a break below key support levels (SPX 7237.85, NDX 28196.9, IWM 270.63), would invalidate the current cautious outlook.
+6. Predicted % move — SPX: -2.6% to 2.6%
+   Predicted % move — NDX: -4.9% to 3.8%
+   Predicted % move — IWM: -7.6% to 1.0%
+7. Plain-English brief: The market faces mixed signals: technical charts point to short‑term upside, but seasonal patterns and the looming Fed decision suggest caution. Expect the week to trade within modest ranges, with the potential for a sharp move if the Fed deviates from expectations or if key support/resistance levels are breached.
+8. Disclaimer: This is not financial advice.
