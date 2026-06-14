@@ -1,5 +1,8 @@
 # Wildignore
 .*
+.env
+.env.*
+!.env.example
 !.gitignore
 
 # Python

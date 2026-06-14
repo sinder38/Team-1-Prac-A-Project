@@ -70,17 +70,46 @@ class AlmanacOutput:
 
 
 @dataclass
+class CommodityData:
+    """Commodity price and weekly change data."""
+    price: float
+    weekly_change: float  # percentage change
+    direction: str = ""
+
+
+@dataclass
+class CalendarEvent:
+    """Week-ahead macro calendar event."""
+    date_label: str
+    name: str
+    impact: str
+    expected: str = "N/A"
+    previous: str = "N/A"
+
+
+@dataclass
 class MacroOutput:
     prediction_date: date
     fed_rate: str
     yield_2y: float
     yield_10y: float
     yield_30y: float
-    dxy: float
+    dxy: CommodityData
+    wti_oil: CommodityData
+    gold: CommodityData
     macro_bias: MacroBias
     primary_driver: str
     confidence: Confidence
     invalidation: str
+    next_fomc_date: date | None = None
+    hold_probability: float = 0.0
+    cut_probability: float = 0.0
+    fomc_direction: str = "N/A"
+    yield_curve: str = "N/A"
+    yield_10y_direction: str = "N/A"
+    week_ahead_calendar: list[CalendarEvent] = field(default_factory=list)
+    key_earnings: list[str] = field(default_factory=list)
+    confirmed_news: list[str] = field(default_factory=list)
     agent_type: str = "macro"
 
 
