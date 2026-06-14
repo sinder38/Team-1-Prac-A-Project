@@ -5,6 +5,7 @@ Usage:
     python agents/macro/macro_agent.py 2026-06-16
 """
 import json
+import os
 from datetime import date
 from dataclasses import asdict
 from pathlib import Path
@@ -12,6 +13,7 @@ import sys
 import requests
 import yfinance as yf
 import pandas as pd
+from dotenv import load_dotenv
 from macro_event_data import (
     UPCOMING_EVENTS,
     CONFIRMED_NEWS,
@@ -31,6 +33,8 @@ from agents.schemas import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+
+load_dotenv()
 
 
 class MacroAgent(BaseAgent):
@@ -310,7 +314,10 @@ class MacroAgent(BaseAgent):
         Fetch Fed rate, Treasury yields, DXY, WTI, and Gold with weekly changes.
         Uses FRED API for rates/yields and yfinance for commodities.
         """
-        api_key = "9fd88d0ad7a6d5a788ca32f72d96b58c"
+        api_key = os.getenv("FRED_API_KEY")
+
+        if not api_key:
+            raise ValueError("FRED_API_KEY environment variable is not set for macro")
 
         # Fed rate
         fed_rate = self.get_fed_rate(api_key)

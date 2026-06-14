@@ -1,16 +1,16 @@
 Macro Agent Output — Week of 13 June — Source: R4
 
-FED & RATES:
+FED & RATES (FRED & Yfinance):
 
 - Current Fed rate: 3.50%-3.75%
-- Next FOMC date: June 17, 2026. Hold probability: 97.4%. Cut probability: 2.6%. Direction vs last week: shifted hawkish slightly
+- Next FOMC date: June 18, 2026. Hold probability: 97.4%. Cut probability: 2.6%. Direction vs last week: shifted hawkish slightly
 - 2-year yield: 4.050% 10-year yield: 4.450% 30-year yield: 4.950%
 - Yield curve: normal. 10-year direction this week: falling
 
-COMMODITIES & DOLLAR:
+COMMODITIES & DOLLAR (Yfinance):
 
 - WTI Crude Oil: 84.88, weekly change -6.25%, direction: falling
-- Gold: 4215, weekly change -2.82%, direction: falling
+- Gold: 4238.8, weekly change -2.27%, direction: falling
 - DXY (Dollar): 99.75, weekly change -0.32%, direction: falling
 
 WEEK-AHEAD CALENDAR (TradingEconomics): 

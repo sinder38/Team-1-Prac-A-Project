@@ -28,7 +28,7 @@ class FomcMarketPricing:
 
 
 FOMC_MARKET_PRICING = FomcMarketPricing(
-    next_fomc_date=date(2026, 6, 17),
+    next_fomc_date=date(2026, 6, 18),
     hold_probability=97.4,
     cut_probability=2.6,
     direction_vs_last_week="shifted hawkish slightly",
