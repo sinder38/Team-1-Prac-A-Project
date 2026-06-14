@@ -17,7 +17,10 @@ from agents.pipeline.stages import (
     run_technical,
 )
 
-PIPELINE_TOML = Path(__file__).parent / "pipeline.toml"
+_ci_toml = Path(__file__).parent / "pipeline.ci.toml"
+_dev_toml = Path(__file__).parent / "pipeline.toml"
+PIPELINE_TOML = _ci_toml if _ci_toml.exists() else _dev_toml
+
 REPO_ROOT = Path(__file__).parent.parent
 
 
@@ -72,15 +75,19 @@ def main() -> None:
 
     # Write comparison table if any LLMs ran
     if rows_by_slug and config.get("artifacts", {}).get("save_md", True):
-        from agents.llm.multi_model_runner import build_comparison_md
         from agents.io import FileSaver, week_stem
+        from agents.llm.multi_model_runner import build_comparison_md
 
         tag = week_stem(prediction_date)
         comparison_md = build_comparison_md(rows_by_slug, tag, prediction_date)
-        FileSaver(REPO_ROOT / "data" / "llm").save(comparison_md, f"llm_comparison_{tag}.md")
+        FileSaver(REPO_ROOT / "data" / "llm").save(
+            comparison_md, f"llm_comparison_{tag}.md"
+        )
         print(f"[pipeline] wrote data/llm/llm_comparison_{tag}.md")
 
-    print(f"\n[pipeline] complete. date={prediction_date}, llm_outputs={len(ctx.llm_outputs)}")
+    print(
+        f"\n[pipeline] complete. date={prediction_date}, llm_outputs={len(ctx.llm_outputs)}"
+    )
 
 
 if __name__ == "__main__":

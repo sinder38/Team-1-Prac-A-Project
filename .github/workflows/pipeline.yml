@@ -34,7 +34,7 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-        run: uv run python run_pipeline.py
+        run: uv run python run_pipeline.py --config pipeline.ci.toml
 
       - name: Commit artifacts
         run: |
