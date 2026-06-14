@@ -18,6 +18,7 @@ def _index_stat(
     up_pct: int | None = None,
     note: str = "",
     verified: bool = False,
+    source: str = "",
 ) -> dict:
     """Create one monthly stat record for SPX, Nasdaq, or Russell.
 
@@ -30,6 +31,7 @@ def _index_stat(
         "up_pct": up_pct,
         "note": note,
         "verified": verified,
+        "source": source,
     }
 
 
@@ -39,6 +41,7 @@ def _midterm_stat(
     rank: int | None = None,
     note: str = "",
     verified: bool = False,
+    source: str = "",
 ) -> dict:
     """Create one midterm-year record.
 
@@ -50,6 +53,7 @@ def _midterm_stat(
         "rank": rank,
         "note": note,
         "verified": verified,
+        "source": source,
     }
 
 
@@ -134,33 +138,62 @@ MONTHLY_STATS = {
         "monthly_bias": "Mixed",
     },
     5: {
-        "month": "May",
-        "sp500": _index_stat(avg_return=0.3, rank=8, up_pct=61, verified=True),
-        "midterm": _midterm_stat(
-            avg_return=-0.7,
-            note="This is the active 2026 context for S&P 500.",
-            verified=True,
-        ),
-        "nasdaq": _index_stat(avg_return=1.1, rank=5, verified=True),
-        "russell": _index_stat(avg_return=1.3, rank=4, verified=True),
-        "monthly_bias": "Mixed",
+       "month": "May",
+       "sp500": _index_stat(
+           avg_return=0.3,
+           rank=8,
+           up_pct=61,
+           verified=True,
+           source="data/almanac/almanac_agent_W22.md",
+       ),
+       "midterm": _midterm_stat(
+           avg_return=-0.7,
+           note="This is the active 2026 context for S&P 500.",
+           verified=True,
+           source="data/almanac/almanac_agent_W22.md",
+       ),
+       "nasdaq": _index_stat(
+           avg_return=1.1,
+           rank=5,
+           verified=True,
+           source="data/almanac/almanac_agent_W22.md",
+       ),
+       "russell": _index_stat(
+           avg_return=1.3,
+           rank=4,
+           verified=True,
+           source="data/almanac/almanac_agent_W22.md",
+       ),
+       "monthly_bias": "Mixed",
     },
     6: {
-        "month": "June",
-        "sp500": _index_stat(
-            rank=9,
-            note="Normal June rank is weaker than most months.",
-            verified=True,
-        ),
-        "midterm": _midterm_stat(
-            avg_return=-2.1,
-            rank=12,
-            note="Dead last in the midterm-year pattern for S&P 500.",
-            verified=True,
-        ),
-        "nasdaq": _index_stat(avg_return=1.0, rank=9, verified=True),
-        "russell": _index_stat(avg_return=0.8, rank=9, verified=True),
-        "monthly_bias": "Bearish",
+       "month": "June",
+       "sp500": _index_stat(
+           rank=9,
+           note="Normal June ranks #9 of 12 months.",
+           verified=True,
+           source="data/almanac/almanac_agent_W23.md",
+       ),
+       "midterm": _midterm_stat(
+           avg_return=-2.1,
+           rank=12,
+           note="Dead last in the midterm-year pattern for S&P 500.",
+           verified=True,
+           source="data/almanac/almanac_agent_W23.md",
+       ),
+       "nasdaq": _index_stat(
+           avg_return=1.0,
+           rank=9,
+           verified=True,
+           source="data/almanac/almanac_agent_W23.md",
+       ),
+       "russell": _index_stat(
+           avg_return=0.8,
+           rank=9,
+           verified=True,
+           source="data/almanac/almanac_agent_W23.md",
+       ),
+       "monthly_bias": "Bearish",
     },
     7: {
         "month": "July",
@@ -284,6 +317,38 @@ MONTHLY_STATS = {
     },
 }
 
+# MIDTERM_INDEX_ADJUSTMENTS stores verified midterm-year data.
+#
+# 2026 is a midterm election year, so some monthly averages may differ from
+# normal seasonality. The key is the month number, for example 5 = May and
+# 6 = June.
+#
+# Use None when a value was not verified in the W22/W23 team notes.
+# This is mainly for data tracking and future encoder follow-up.
+
+MIDTERM_INDEX_ADJUSTMENTS = {
+    5: {
+        "month": "May",
+        "sp500_avg_return": -0.7,
+        "dow_avg_return": None,
+        "nasdaq_avg_return": None,
+        "russell_avg_return": None,
+        "note": "Only S&P 500 May midterm average was verified in the W22 team output.",
+        "source": "data/almanac/almanac_agent_W22.md",
+        "verified": True,
+    },
+    6: {
+        "month": "June",
+        "sp500_avg_return": -2.1,
+        "dow_avg_return": -1.8,
+        "nasdaq_avg_return": -1.5,
+        "russell_avg_return": None,
+        "note": "June midterm-year context is bearish. Russell 2000 midterm average was not verified in the team notes.",
+        "source": "data/almanac/almanac_agent_W22.md and data/almanac/almanac_agent_W23.md",
+        "verified": True,
+    },
+}
+
 # WEEKLY_PATTERNS is more specific than MONTHLY_STATS.
 #
 # The key is (month, week_of_month). For example:
@@ -293,48 +358,61 @@ MONTHLY_STATS = {
 # Each entry gives the agent enough detail to write the "SPECIFIC WEEK PATTERN"
 # section in the Markdown output.
 WEEKLY_PATTERNS = {
-    (5, 4): {
-        "label": "Memorial Day Week, 26-30 May",
-        "name": "Memorial Day week / week after options expiration",
-        "bullets": [
-            "Memorial Day week has a bearish lean: Dow down 17 of last 29.",
-            "The day after Memorial Day has also been bearish: Dow down 8 of last 10.",
-            (
-                "The week after options expiration gives a mild bullish offset: "
-                "S&P up 30 of 45, avg +0.40%."
-            ),
-            "Net: mixed / slight bearish lean because the week-level patterns conflict.",
-        ],
-        "seasonal_bias": "Mixed",
-        "confidence": "Low-Medium",
-        "thesis": (
-            "Seasonality suggests caution in late May during a midterm year. "
-            "Technology is the one seasonal bright spot. Banking and Materials "
-            "face active headwinds. Conflicting week patterns keep confidence low."
-        ),
-    },
+      (5, 4): {
+          "label": "Memorial Day Week, 26-30 May",
+          "name": "Memorial Day week / week after options expiration",
+          "description": (
+              "Memorial Day week has a bearish lean, but the week after options "
+              "expiration gives a mild bullish offset."
+          ),
+          "tendency": "Mixed / slight bearish",
+          "strength": "Low-Medium",
+          "applicable_dates": "26-30 May 2026",
+          "source": "data/almanac/almanac_agent_W22.md",
+          "bullets": [
+              "Memorial Day week: Dow down 17 of last 29. Bearish lean.",
+              "Day after Memorial Day: Dow down 8 of last 10. Recent trend bearish.",
+              "Week after options expiration: S&P up 30 of 45, avg +0.40%. Mild bullish offset.",
+              "Net: mixed / slight bearish lean.",
+          ],
+          "seasonal_bias": "Mixed",
+          "confidence": "Low-Medium",
+          "thesis": (
+              "Seasonality suggests caution in late May during a midterm year. "
+              "Technology is the one seasonal bright spot. Banking and Materials "
+              "face active headwinds. Conflicting week patterns keep confidence low."
+          ),
+      },
     (6, 1): {
-        "label": "Early June Week, 2-6 June",
-        "name": "Early June midterm-year weakness",
-        "bullets": [
-            "No specific holiday pattern is active this week.",
-            "Early June is transitional as summer doldrums begin.",
-            "Volume tends to decline in early June as institutional activity slows.",
-            "NFP on Friday 5 June is the dominant market event this week.",
-            (
-                "Net: slight bearish lean from June midterm-year context. "
-                "No strong specific week pattern."
-            ),
-        ],
-        "seasonal_bias": "Bearish",
-        "confidence": "Medium",
-        "thesis": (
-            "June 2026 is the worst month of the year in a midterm cycle. "
-            "Four sectors now have active seasonal short signals. Technology "
-            "remains the one seasonal bright spot. Summer doldrums beginning "
-            "means volume may decline and moves may be exaggerated."
-        ),
-    },
+          "label": "Early June Week, 2-6 June",
+          "name": "Early June midterm-year weakness",
+          "description": (
+              "Early June has a slight bearish lean because June is weak in the "
+              "midterm-year pattern, with no strong holiday pattern to offset it."
+          ),
+          "tendency": "Slight bearish",
+          "strength": "Medium",
+          "applicable_dates": "2-6 June 2026",
+          "source": "data/almanac/almanac_agent_W23.md",
+          "bullets": [
+              "No specific holiday pattern is active this week.",
+              "Early June is transitional as summer doldrums begin.",
+              "Volume tends to decline in early June as institutional activity slows.",
+              "NFP on Friday 5 June is the dominant market event this week.",
+              (
+                  "Net: slight bearish lean from June midterm-year context. "
+                  "No strong specific week pattern."
+              ),
+          ],
+          "seasonal_bias": "Bearish",
+          "confidence": "Medium",
+          "thesis": (
+              "June 2026 is the worst month of the year in a midterm cycle. "
+              "Four sectors now have active seasonal short signals. Technology "
+              "remains the one seasonal bright spot. Summer doldrums beginning "
+              "means volume may decline and moves may be exaggerated."
+          ),
+      },
     (6, 3): {
         "label": "Mid-June Week, 15-19 June",
         "name": "Mid-June weakness / CPI follow-through week",
@@ -447,32 +525,47 @@ SECTOR_WINDOWS = [
     {
         "sector": "Technology (XLK)",
         "bias": "Bullish",
-        "window": "seasonal LONG window (March-July). Supports Nasdaq while the window remains active.",
+        "direction": "Long",
+        "start_month": "March",
+        "end_month": "July",
+        "window": "seasonal LONG window (March-July). Supports Nasdaq.",
+        "source": "data/almanac/almanac_agent_W22.md and data/almanac/almanac_agent_W23.md",
     },
     {
         "sector": "Banking / Financials (XLF)",
         "bias": "Bearish",
-        "window": "seasonal SHORT window (May-July). Headwind for banks and financials.",
+        "direction": "Short",
+        "start_month": "May",
+        "end_month": "July",
+        "window": "seasonal SHORT window (May-July). Headwind for financials.",
+        "source": "data/almanac/almanac_agent_W22.md and data/almanac/almanac_agent_W23.md",
     },
     {
         "sector": "Gold / Silver",
         "bias": "Bearish",
-        "window": "seasonal SHORT window (mid-May-June). Weakens after spring strength.",
+        "direction": "Short",
+        "start_month": "mid-May",
+        "end_month": "June",
+        "window": "seasonal SHORT window (mid-May-June).",
+        "source": "data/almanac/almanac_agent_W22.md and data/almanac/almanac_agent_W23.md",
     },
     {
         "sector": "Materials (XLB)",
         "bias": "Bearish",
-        "window": "seasonal SHORT window (May-October). Six-month seasonal headwind.",
+        "direction": "Short",
+        "start_month": "May",
+        "end_month": "October",
+        "window": "seasonal SHORT window (May-October).",
+        "source": "data/almanac/almanac_agent_W22.md and data/almanac/almanac_agent_W23.md",
     },
     {
         "sector": "Oil / Energy (XLE)",
         "bias": "Bearish",
-        "window": "seasonal SHORT begins in early June, but geopolitical oil spikes can override it.",
-    },
-    {
-        "sector": "Healthcare (XLV)",
-        "bias": "Neutral",
-        "window": "defensive sector; not a strong seasonal LONG/SHORT signal in the current sprint notes.",
+        "direction": "Short",
+        "start_month": "early June",
+        "end_month": None,
+        "window": "seasonal SHORT begins in early June.",
+        "source": "data/almanac/almanac_agent_W23.md",
     },
 ]
 
@@ -480,12 +573,24 @@ SECTOR_WINDOWS = [
 # It explains what is already covered and what the support data encoder role
 # should improve later.
 DATA_COVERAGE = {
-    "monthly_records": "Jan-Dec keys exist; exact numeric fields are filled where the team has already used them.",
+    "monthly_records": "Jan-Dec keys exist; exact numeric fields are filled where the team has already verified them.",
     "verified_months": ["May", "June"],
-    "covered_sprint_weeks": ["W4", "W5", "W6", "W7", "W8"],
+    "verified_sources": [
+        "data/almanac/almanac_agent_W22.md",
+        "data/almanac/almanac_agent_W23.md",
+    ],
+    "covered_sprint_weeks": ["W22", "W23", "W25", "W26", "W27", "W28", "W29"],
+    "support_encoder_completed": [
+        "Cross-checked May monthly stats against W22 output.",
+        "Cross-checked June monthly stats against W23 output.",
+        "Encoded Memorial Day week and Early June weekly patterns.",
+        "Added structured sector seasonality windows for current sprint sectors.",
+        "Marked unverified Jan-Dec monthly values as follow-up instead of guessing.",
+    ],
     "encoder_follow_up": [
         "Fill exact S&P 500 average return, rank, and up percentage for months outside May/June.",
         "Fill exact Nasdaq and Russell 2000 monthly stats where not already verified.",
+        "Fill exact midterm-year monthly adjustments for months outside May/June.",
         "Add more named weekly patterns as later sprint dates become clear.",
     ],
 }
@@ -494,8 +599,8 @@ DATA_COVERAGE = {
 # honest about which data is already encoded and which parts still need exact
 # page verification.
 SOURCE_NOTE = (
-    "Stock Trader's Almanac 2026 team notes from W02/W03, plus public Stock "
-    "Trader's Almanac June/July seasonal summaries. W4-W8 entries are encoded "
+    "Stock Trader's Almanac 2026 team notes from W22/W23, plus public Stock "
+    "Trader's Almanac June/July seasonal summaries. W25-W29 entries are encoded "
     "for the first software increment. Jan-Dec monthly records are structured "
     "for data encoder follow-up where exact page figures are not yet verified."
 )
