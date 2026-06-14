@@ -1,31 +1,25 @@
 """
 Sprint 4: Multi-LLM Synthesis Pipeline
-Role: LLM Agent Implementor / Synthesis.
-
-!! Before Running, CREAT YOUR OWN .env file with your OpenRouter Key in this directory as the format of ".env.example" file in this directory(If the .env file does not exist).
+Role: LLM Agent Implementor / Synthesis (R8).
 
 CONTRACT: we own ONLY query() on the BaseLLMAgent subclass. We do NOT modify any
-other base_llm method (build_prompt / parse_response / run / render_md). If base_llm
-needs changes, that is the Development Lead's job — report it, don't patch it here.
+other base_llm method (build_prompt / parse_response / run / render_md).
 
-Per run, for EACH model this produces:
-  Machine artifact (pipeline, ISO week):
-    <repo>/data/outputs/llm/<model>/2026-W25.json        (schema-valid, fed to delta/QA)
-  Human artifacts (team convention, %W week):
-    <repo>/data/llm/synthesis_<model>_W24.txt            (render_md output)
-    <repo>/data/llm/llm_comparison_W24.md                (one file, all models)
+Failure policy:
+  - Config errors (missing key / missing upstream inputs) -> abort LOUDLY before any model runs.
+  - Per-model runtime errors (API / parse) -> caught, marked FAILED in the table, and the
+    process exits non-zero at the end so CI turns red. No silent dummy data anywhere.
 """
 
 import os
 import sys
-import re
 import time
 import json
 from datetime import date
 from pathlib import Path
 
-# === Absolute path injection (so `from agents...` works when run directly) ===
-BASE_DIR = Path(__file__).resolve().parents[2]   # .../backend  (for imports + .env)
+# === Absolute path injection ===
+BASE_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BASE_DIR))
 
 from openai import OpenAI  # type: ignore
@@ -38,53 +32,60 @@ from agents.io import FileSaver
 load_dotenv(find_dotenv())
 load_dotenv(dotenv_path=BASE_DIR / ".env")
 
-# Repo root holds data/. Machine JSON and human files live in different trees.
 REPO_ROOT = BASE_DIR.parent
-OUTPUTS_LLM_DIR = REPO_ROOT / "data" / "outputs" / "llm"   # machine JSON, per model
-HUMAN_LLM_DIR = REPO_ROOT / "data" / "llm"                 # synthesis + comparison
+INPUTS_DIR = REPO_ROOT / "data" / "outputs"            # where the data agents write their JSON
+OUTPUTS_LLM_DIR = REPO_ROOT / "data" / "outputs" / "llm"
+HUMAN_LLM_DIR = REPO_ROOT / "data" / "llm"
 
-# "label" drives the per-model folder, synthesis filename, and comparison column,
-# so it MUST name the real model. (Course template lists Claude/ChatGPT/Gemini/
-# DeepSeek; these are the free OpenRouter substitutes our team is using.)
+# 'slug' = safe file/path identifier; 'label' = human-readable table heading.
 MODELS = [
-    {"label": "NVIDIA Nemotron 3 Super", "id": "nvidia/nemotron-3-super-120b-a12b:free"},  # NVIDIA Nemotron 3 Super
-    {"label": "OpenAI gpt-oss-120b",   "id": "openai/gpt-oss-120b:free"},                  # OpenAI gpt-oss-120b
-    {"label": "Google Gemma 4 31B",    "id": "google/gemma-4-31b-it:free"},                # Google Gemma 4 31B
-    {"label": "Poolside Laguna M.1",   "id": "poolside/laguna-m.1:free"},                  # Poolside Laguna M.1
+    {"slug": "nemotron", "label": "NVIDIA Nemotron 3 Super", "id": "nvidia/nemotron-3-super-120b-a12b:free"},
+    {"slug": "gptoss",   "label": "OpenAI gpt-oss-120b",     "id": "openai/gpt-oss-120b:free"},
+    {"slug": "gemma",    "label": "Google Gemma 4 31B",      "id": "google/gemma-4-31b-it:free"},
+    {"slug": "laguna",   "label": "Poolside Laguna M.1",     "id": "poolside/laguna-m.1:free"},
+]
+
+# Single source of truth for the comparison-table rows: (display name, row key).
+COMPARISON_DIMENSIONS = [
+    ("Weekly Regime",          "regime"),
+    ("Confidence Score",       "confidence"),
+    ("SPX % estimate",         "spx"),
+    ("NDX % estimate",         "ndx"),
+    ("IWM % estimate",         "iwm"),
+    ("Top supporting reason",  "evidence"),
+    ("Top contradiction",      "contradiction"),
+    ("Invalidation condition", "invalidation"),
 ]
 
 
 def iso_tag(d: date) -> str:
-    """Machine/pipeline week tag, e.g. '2026-W25'. Uses isocalendar() — this MUST
-    match what the data agents write to data/outputs/ and what base_llm reads."""
+    """Machine/pipeline week tag, e.g. '2026-W25' (isocalendar). MUST match what the
+    data agents write to data/outputs/ and what base_llm.build_prompt reads."""
     w = d.isocalendar()
     return f"{w.year}-W{w.week:02d}"
 
 
 def human_tag(d: date) -> str:
-    """Human-facing week tag, e.g. 'W24'. Uses Python %W to match the team's
-    existing synthesis_*_WXX / llm_comparison_WXX files (= ISO week - 1 in 2026).
-    NOTE: this differs from iso_tag by 1; see the W23/W25 mismatch discussion."""
+    """Human-facing week tag, e.g. 'W24' (Python %W). Matches the team's existing
+    synthesis_*_WXX / llm_comparison_WXX files (= ISO week - 1 in 2026)."""
     return f"W{d.strftime('%W')}"
 
 
-def _cell(text: str) -> str:
+def _cell(text) -> str:
     """Make a string safe inside a single Markdown table cell."""
-    return (str(text) if text else "—").replace("|", "/").replace("\n", " ").strip() or "—"
+    return (str(text) if text else "—").replace("|", "/").replace("\n", " ").replace("\r", " ").strip() or "—"
 
 
 def _serialize(output) -> str:
-    """Serialize an LLMOutput to schema-valid JSON.
-    Uses the model's own serializer (pydantic v2 -> v1) so the JSON matches
-    schemas.py / validate_output.py. Dataclass fallback is best-effort."""
-    if hasattr(output, "model_dump_json"):       # pydantic v2
+    """Serialize an LLMOutput to schema-valid JSON via the model's own serializer."""
+    if hasattr(output, "model_dump_json"):          # pydantic v2
         return output.model_dump_json(indent=2)
-    if hasattr(output, "json"):                  # pydantic v1
+    if hasattr(output, "json"):                      # pydantic v1
         return output.json(indent=2)
     import dataclasses
     if dataclasses.is_dataclass(output) and not isinstance(output, type):
         return json.dumps(dataclasses.asdict(output), indent=2, default=str)
-    raise TypeError("Cannot serialize LLMOutput — send schemas.py to wire this exactly.")
+    raise TypeError("Cannot serialize LLMOutput.")
 
 
 def _row(output) -> dict:
@@ -104,7 +105,16 @@ def _row(output) -> dict:
     }
 
 
-def build_comparison_md(rows_by_label: dict, tag: str, run_date: date) -> str:
+def _failed_row(exc: Exception) -> dict:
+    """A row that is HONEST about a model failing — not fabricated data.
+    Every data cell reads FAILED so a reviewer can't mistake it for 'no data'."""
+    marker = f"❌ FAIL ({type(exc).__name__})"
+    row = {key: marker for _, key in COMPARISON_DIMENSIONS}
+    row["plain_english"] = f"❌ FAILED — {type(exc).__name__}: {exc}"
+    return row
+
+
+def build_comparison_md(rows_by_slug: dict, tag: str, run_date: date) -> str:
     """Build the Multi-LLM comparison table, matching last week's manual sample shape."""
     labels = [m["label"] for m in MODELS]
 
@@ -117,23 +127,18 @@ def build_comparison_md(rows_by_label: dict, tag: str, run_date: date) -> str:
         "| :--- " + "| :--- " * len(labels) + "|",
     ]
 
-    dimensions = [
-        ("Weekly Regime",          "regime"),
-        ("Confidence Score",       "confidence"),
-        ("SPX % estimate",         "spx"),
-        ("NDX % estimate",         "ndx"),
-        ("IWM % estimate",         "iwm"),
-        ("Top supporting reason",  "evidence"),
-        ("Top contradiction",      "contradiction"),
-        ("Invalidation condition", "invalidation"),
-    ]
     body = [
-        f"| **{display}** | " + " | ".join(_cell(rows_by_label.get(l, {}).get(key, "—")) for l in labels) + " |"
-        for display, key in dimensions
+        f"| **{display}** | "
+        + " | ".join(_cell(rows_by_slug.get(m["slug"], {}).get(key, "—")) for m in MODELS)
+        + " |"
+        for display, key in COMPARISON_DIMENSIONS
     ]
 
     tail = ["", "## Plain-English summaries", ""]
-    tail += [f"- **{l}:** {rows_by_label.get(l, {}).get('plain_english', '—')}" for l in labels]
+    tail += [
+        f"- **{m['label']}:** {rows_by_slug.get(m['slug'], {}).get('plain_english', '—')}"
+        for m in MODELS
+    ]
     tail += ["", "_Disclaimer: model output, not financial advice._", ""]
 
     return "\n".join(head + body + tail)
@@ -145,23 +150,21 @@ class OpenRouterAgent(BaseLLMAgent):
         self.model_id = model_id
 
         api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key:
-            raise RuntimeError(
-                "OPENROUTER_API_KEY not found. Make sure a .env file exists "
-                f"(looked near {BASE_DIR}) and contains OPENROUTER_API_KEY=..."
-            )
-        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
+        if not api_key:  # defensive; the real gate is the pre-flight check in __main__
+            raise RuntimeError(f"FATAL: OPENROUTER_API_KEY missing. Cannot initialize {self.model_name}.")
 
-    # The ONLY method we implement. Send prompt, return raw text. No parsing here.
+        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key, timeout=45.0)
+
     def query(self, prompt: str) -> str:
+        """Send prompt to OpenRouter. Retry on failure; raise if all retries are exhausted.
+        Does NO parsing or sanitization — that is base_llm's responsibility."""
         max_retries = 3
         system_instruction = (
             "You are a strict financial data formatter. "
             "You MUST output exactly the requested keys in PLAIN TEXT format, separated by colons. "
             "DO NOT OUTPUT JSON FORMAT. "
             "For index ranges, you MUST strictly use the word 'to' (e.g., -1.5 to 2.0). "
-            "Do NOT wrap your response in markdown code blocks. "
-            "If the user says 'No agent data available', output realistic dummy prediction."
+            "Do NOT wrap your response in markdown code blocks."
         )
 
         for attempt in range(max_retries):
@@ -175,71 +178,88 @@ class OpenRouterAgent(BaseLLMAgent):
                     ],
                     temperature=0.2,
                 )
-                raw_text = response.choices[0].message.content or ""
 
-                # Normalize *_RANGE lines so base_llm.parse_response's float() can't crash.
-                out_lines = []
-                for line in raw_text.splitlines():
-                    if "_RANGE" in line:
-                        nums = re.findall(r"[-+]?\d*\.\d+|\d+", line)
-                        key = line.split(":")[0].strip()
-                        out_lines.append(f"{key}: {nums[0]} to {nums[1]}" if len(nums) >= 2 else f"{key}: 0 to 0")
-                    else:
-                        out_lines.append(line)
-                return "\n".join(out_lines)
+                # Explicit guard: empty choices or None content -> retry / loud fail,
+                # never hand None to base_llm (which would AttributeError on .strip()).
+                if not response.choices or not response.choices[0].message.content:
+                    raise RuntimeError(f"[{self.model_name}] Empty response from provider.")
+
+                return response.choices[0].message.content
 
             except Exception as e:
-                print(f"[{self.model_name}] API call failed: {e}")
+                print(f"[{self.model_name}] API call failed: {e}", file=sys.stderr)
+                if attempt == max_retries - 1:
+                    raise RuntimeError(f"[{self.model_name}] Exhausted all {max_retries} API retries.") from e
                 time.sleep(2 ** attempt)
 
-        # Fallback if all retries fail (still parseable by parse_response).
-        return (
-            "WEEKLY_REGIME: Uncertain\nCONFIDENCE: Low\n"
-            "SPX_RANGE: 0 to 0\nNDX_RANGE: 0 to 0\nIWM_RANGE: 0 to 0\n"
-            "PLAIN_ENGLISH: API connection failed."
-        )
+        return ""  # unreachable (loop always returns or raises); kept for type-checkers
 
 
 if __name__ == "__main__":
-    # Pass the prediction date explicitly for reproducible week tags, e.g.:
-    #   python backend/agents/llm/multi_model_runner.py 2026-06-16
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
-    iso_t = iso_tag(prediction_date)        # e.g. 2026-W25  -> machine JSON
-    human_t = human_tag(prediction_date)    # e.g. W24       -> synthesis + comparison
+    iso_t = iso_tag(prediction_date)
+    human_t = human_tag(prediction_date)
 
     print(f"\n🚀 Multi-LLM pipeline | run {prediction_date} | machine={iso_t} | human={human_t}\n")
 
-    rows_by_label = {}
+    # =====================================================================
+    # PRE-FLIGHT 1 — Config: missing key is a setup error, not a model failure.
+    # Abort before the loop so it can't degrade into four "FAILED" rows.
+    # =====================================================================
+    if not os.getenv("OPENROUTER_API_KEY"):
+        raise SystemExit("❌ ABORT: OPENROUTER_API_KEY is not set. Add it to your .env and retry.")
+
+    # =====================================================================
+    # PRE-FLIGHT 2 — Inputs: refuse to run if upstream agents haven't delivered.
+    # Prevents the models from fabricating on an empty context.
+    # NOTE: this is only meaningful once the Dev Lead fixes the base_llm root path
+    # (parents[3]); until then base_llm reads backend/data/outputs and this green
+    # light does NOT guarantee the models actually receive the context.
+    # =====================================================================
+    missing = [
+        INPUTS_DIR / t / f"{iso_t}.json"
+        for t in ("technical", "almanac", "macro")
+        if not (INPUTS_DIR / t / f"{iso_t}.json").exists()
+    ]
+    if missing:
+        raise SystemExit(
+            f"❌ ABORT: Missing upstream agent outputs for {iso_t}:\n  "
+            + "\n  ".join(str(p) for p in missing)
+            + "\n\nRun the Technical/Almanac/Macro agents first (or ping R3/R4/R5)."
+        )
+    print(f"✅ Pre-flight passed: key present, all upstream {iso_t} inputs found.\n")
+
+    rows_by_slug = {}
+    pipeline_has_errors = False
 
     for model in MODELS:
-        label, model_id = model["label"], model["id"]
+        slug, label, model_id = model["slug"], model["label"], model["id"]
         print("====================================")
         print(f"🤖 {label}  ({model_id})")
-        agent = OpenRouterAgent(model_name=label, model_id=model_id)
 
         try:
-            # run() = build_prompt (reads data/outputs/<type>/2026-W25.json via base_llm)
-            #         -> query() -> parse_response() -> LLMOutput
+            agent = OpenRouterAgent(model_name=label, model_id=model_id)
             output = agent.run(prediction_date)
 
-            # 1) Machine artifact: data/outputs/llm/<label>/2026-W25.json
-            FileSaver(OUTPUTS_LLM_DIR / label).save(_serialize(output), f"{iso_t}.json")
+            FileSaver(OUTPUTS_LLM_DIR / slug).save(_serialize(output), f"{iso_t}.json")
+            FileSaver(HUMAN_LLM_DIR).save(agent.render_md(output, prediction_date), f"synthesis_{slug}_{human_t}.txt")
 
-            # 2) Human artifact: data/llm/synthesis_<label>_W24.txt  (render_md format)
-            FileSaver(HUMAN_LLM_DIR).save(
-                agent.render_md(output, prediction_date), f"synthesis_{label}_{human_t}.txt"
-            )
-
-            rows_by_label[label] = _row(output)
-            print(f"✅ {label}: data/outputs/llm/{label}/{iso_t}.json + synthesis_{label}_{human_t}.txt")
+            rows_by_slug[slug] = _row(output)
+            print(f"✅ {label}: outputs saved.")
 
         except Exception as e:
-            print(f"❌ {label} failed: {e}")
-            rows_by_label[label] = {}  # empty -> em dashes in the table, never crash
+            # Resilient: one model failing must not block the others. The failure is
+            # recorded honestly (FAILED, not fake numbers) and the run exits non-zero.
+            print(f"❌ {label} failed: {type(e).__name__} - {e}", file=sys.stderr)
+            pipeline_has_errors = True
+            rows_by_slug[slug] = _failed_row(e)
 
-    # 3) Human artifact: the comparison table (one file, all models)
-    FileSaver(HUMAN_LLM_DIR).save(
-        build_comparison_md(rows_by_label, human_t, prediction_date), f"llm_comparison_{human_t}.md"
-    )
+    # Always write the comparison table; failed columns are explicitly marked FAILED.
+    FileSaver(HUMAN_LLM_DIR).save(build_comparison_md(rows_by_slug, human_t, prediction_date), f"llm_comparison_{human_t}.md")
     print(f"\n📊 Wrote data/llm/llm_comparison_{human_t}.md")
+
+    if pipeline_has_errors:
+        print("\n💥 Pipeline finished with partial errors. Exiting non-zero to flag CI for review.", file=sys.stderr)
+        sys.exit(1)
+
     print("🏁 Done.")

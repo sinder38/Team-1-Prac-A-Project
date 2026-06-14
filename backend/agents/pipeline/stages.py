@@ -14,14 +14,14 @@ def _make_openrouter(model_name: str, model_id: str):
     return OpenRouterAgent(model_name=model_name, model_id=model_id)
 
 
-# Registry maps model_key → zero-arg callable returning a BaseLLMAgent instance.
+# Registry maps model_key/slug → zero-arg callable returning a BaseLLMAgent instance.
+# Slugs must match multi_model_runner.MODELS[*]["slug"].
 LLM_REGISTRY: dict[str, Callable[[], BaseLLMAgent]] = {
-    "example": lambda: __import__("agents.llm.example_agent", fromlist=["ExampleAgent"]).ExampleAgent(),
-    # OpenRouter free-tier models — require OPENROUTER_API_KEY in backend/agents/llm/.env
+    "example":  lambda: __import__("agents.llm.example_agent", fromlist=["ExampleAgent"]).ExampleAgent(),
     "nemotron": lambda: _make_openrouter("NVIDIA Nemotron 3 Super", "nvidia/nemotron-3-super-120b-a12b:free"),
-    "gpt-oss":  lambda: _make_openrouter("OpenAI gpt-oss-120b",    "openai/gpt-oss-120b:free"),
-    "gemma":    lambda: _make_openrouter("Google Gemma 4 31B",      "google/gemma-4-31b-it:free"),
-    "laguna":   lambda: _make_openrouter("Poolside Laguna M.1",     "poolside/laguna-m.1:free"),
+    "gptoss":   lambda: _make_openrouter("OpenAI gpt-oss-120b",     "openai/gpt-oss-120b:free"),
+    "gemma":    lambda: _make_openrouter("Google Gemma 4 31B",       "google/gemma-4-31b-it:free"),
+    "laguna":   lambda: _make_openrouter("Poolside Laguna M.1",      "poolside/laguna-m.1:free"),
 }
 
 
@@ -80,7 +80,11 @@ def run_evidence(
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
 
-def run_llm(ctx: PipelineContext, config: dict, model_key: str) -> None:
+def run_llm(ctx: PipelineContext, config: dict, model_key: str) -> tuple[str, dict]:
+    """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
+    from agents.llm.multi_model_runner import _row
+    from agents.io import FileSaver, week_stem
+
     if model_key not in LLM_REGISTRY:
         raise ValueError(
             f"Unknown LLM model_key {model_key!r}. Known models: {list(LLM_REGISTRY)}"
@@ -92,18 +96,12 @@ def run_llm(ctx: PipelineContext, config: dict, model_key: str) -> None:
     output = agent.parse_response(raw, ctx.prediction_date)
     ctx.llm_outputs.append(output)
 
-    from agents.io import DATA_ROOT, FileSaver, week_stem
-
     art = config.get("artifacts", {})
-    if art.get("save_json", True):
-        saver = FileSaver(DATA_ROOT / "llm" / model_key)
-        saver.save(
-            agent.render_json(output, ctx.prediction_date),
-            f"{week_stem(ctx.prediction_date)}_{model_key}.json",
-        )
+
     if art.get("save_md", True):
-        md_path = REPO_ROOT / "data" / "llm"
-        FileSaver(md_path).save(
+        FileSaver(REPO_ROOT / "data" / "llm").save(
             agent.render_md(output, ctx.prediction_date),
-            f"llm_agent_{week_stem(ctx.prediction_date)}_{model_key}.md",
+            f"synthesis_{model_key}_{week_stem(ctx.prediction_date)}.txt",
         )
+
+    return model_key, _row(output)

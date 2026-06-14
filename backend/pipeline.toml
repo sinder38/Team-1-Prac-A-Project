@@ -1,14 +1,15 @@
 [pipeline]
-prediction_date = "auto"
+prediction_date = "2026-06-08"  # W24
+
 [stages]
 almanac   = true
 technical = true
-macro     = false
+macro     = false  # requires FRED_API_KEY in backend/.env
 evidence  = true
 
 [llm]
-models = ["nemotron", "gpt-oss", "gemma", "laguna"]
+models = ["nemotron", "gptoss", "gemma", "laguna"]
 
 [artifacts]
-save_json = true
+save_json = false
 save_md   = true

@@ -18,6 +18,7 @@ from agents.pipeline.stages import (
 )
 
 PIPELINE_TOML = Path(__file__).parent / "pipeline.toml"
+REPO_ROOT = Path(__file__).parent.parent
 
 
 def resolve_date(value: str) -> date:
@@ -55,17 +56,29 @@ def main() -> None:
             sys.exit(1)
         print(f"[pipeline] {name} done.")
 
+    rows_by_slug: dict[str, dict] = {}
     for model_key in models:
         if model_key not in LLM_REGISTRY:
             print(f"[pipeline] ERROR: unknown LLM model '{model_key}'", file=sys.stderr)
             sys.exit(1)
         print(f"[pipeline] running llm:{model_key}...")
         try:
-            run_llm(ctx, config, model_key)
+            slug, row = run_llm(ctx, config, model_key)
+            rows_by_slug[slug] = row
         except Exception as e:
             print(f"[pipeline] ERROR in llm:{model_key}: {e}", file=sys.stderr)
             sys.exit(1)
         print(f"[pipeline] llm:{model_key} done.")
+
+    # Write comparison table if any LLMs ran
+    if rows_by_slug and config.get("artifacts", {}).get("save_md", True):
+        from agents.llm.multi_model_runner import build_comparison_md
+        from agents.io import FileSaver, week_stem
+
+        tag = week_stem(prediction_date)
+        comparison_md = build_comparison_md(rows_by_slug, tag, prediction_date)
+        FileSaver(REPO_ROOT / "data" / "llm").save(comparison_md, f"llm_comparison_{tag}.md")
+        print(f"[pipeline] wrote data/llm/llm_comparison_{tag}.md")
 
     print(f"\n[pipeline] complete. date={prediction_date}, llm_outputs={len(ctx.llm_outputs)}")
 
