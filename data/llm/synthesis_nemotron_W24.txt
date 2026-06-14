@@ -3,15 +3,15 @@
 1. Weekly Regime: Bullish
 2. Confidence Score: Medium
 3. Key Supporting Evidence:
-   - All three indexes bounced back last week, with SPX up 0.46%, NDX up 2.17%, and IWM up 3.93%.
-   - Sector performance showed 10 of 11 sectors up, led by Materials (+3.57%), Consumer staples (+2.77%), and Financials (+2.59%).
-   - Fear gauge (VIX) fell 6.25% and Bitcoin rose 5.24%, indicating improved risk appetite.
+   - All three indexes closed higher last week with SPX +0.46%, NDX +2.17%, IWM +3.93%, indicating a risk-on rebound.
+   - Technical EMAs show price above short- and medium-term averages for all three, with bullish trend bias.
+   - Sector strength was broad, with 10 of 11 sectors up, led by Materials (+3.57%), Consumer Staples (+2.77%), and Financials (+2.59%).
 4. Key Contradictions:
-   - Almanac agent signals bearish monthly and seasonal bias with low confidence.
-   - Macro agent frames the week as binary-risk centered on the upcoming Fed decision, which could shift sentiment.
-5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
-6. Predicted % move — SPX: -2.6% to 2.5%
-   Predicted % move — NDX: -4.9% to 3.8%
-   Predicted % move — IWM: -7.6% to 0.9%
-7. Plain-English brief: Despite some bearish seasonal and macro uncertainties, the technical backdrop and recent price action suggest a bullish tilt for the week ahead, with modest upside potential and limited downside risk based on current support/resistance levels.
+   - Almanac agent signals bearish monthly and seasonal bias with low confidence, suggesting potential headwinds.
+   - Communication services sector was the only down sector (-1.50%), indicating lingering weakness in some growth areas.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision on June 18 that lowers Treasury yields and boosts risk appetite would invalidate the cautious stance and could push indexes higher than projected.
+6. Predicted % move — SPX: 0.5% to 2.0%
+   Predicted % move — NDX: 1.0% to 3.5%
+   Predicted % move — IWM: 0.0% to 1.0%
+7. Plain-English brief: Despite some bearish seasonal cues, the technical picture and recent weekly gains suggest the market may continue to grind higher this week, with large caps leading and small caps facing tighter resistance.
 8. Disclaimer: This is not financial advice.

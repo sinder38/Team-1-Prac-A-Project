@@ -1,17 +1,17 @@
 # LLM Agent Output — Poolside Laguna M.1 — Week of 2026-06-14
 
-1. Weekly Regime: Uncertain
+1. Weekly Regime: Bullish
 2. Confidence Score: Medium
 3. Key Supporting Evidence:
-   - All three indices showing bullish technical bias with prices above their 8-day and 21-day EMAs, supported by strong weekly recoveries (SPX +0.46%, NDX +2.17%, IWM +3.93%)
-   - Risk-on sentiment returned with VIX down 6.25% and small caps leading the recovery, while chip sector surged (Intel +26%, KLA +32%, Applied Materials +25%)
-   - Fed hold probability at 97.4% with slightly hawkish FOMC direction, creating binary risk around June 18 decision that could shift market trajectory
+   - All three indices bounced back after selloff with small caps leading (IWM +3.93%, SPX +0.46%, NDX +2.17%)
+   - Chip sector rally drove tech recovery with Intel +26%, KLA +32%, Applied Materials +25%, Micron +14%
+   - Fear eased significantly with VIX down 6.25% and risk-on mood returned across 10 of 11 sectors
 4. Key Contradictions:
-   - Bullish technical bias across all three indices conflicts with bearish monthly and seasonal Almanac signals
-   - Technology sector shows bullish seasonal window (March-July) while broader market faces seasonal headwinds from financials, materials, and energy shorts
-5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets
-6. Predicted % move — SPX: -1.0% to 2.5%
-   Predicted % move — NDX: -1.5% to 3.5%
-   Predicted % move — IWM: -1.0% to 1.0%
-7. Plain-English brief: Technical indicators point to continued upside with all major indices above their key moving averages, but seasonal headwinds and the upcoming Fed decision on June 18 create significant uncertainty. Small caps and chips are leading the recovery, though IWM is already near resistance. The market is in a binary-risk state awaiting the Fed's next move.
+   - Bullish technical bias conflicts with bearish monthly/seasonal almanac signals (low confidence seasonal backdrop)
+   - Technology sector shows bullish seasonal signal while Communication services (part of tech) was the worst performer (-1.50%)
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision on June 18 that drives Treasury yields lower and increases expectations for Fed rate cuts
+6. Predicted % move — SPX: -2.6% to 2.6%
+   Predicted % move — NDX: -4.9% to 3.8%
+   Predicted % move — IWM: -7.6% to 1.0%
+7. Plain-English brief: Markets are in a bullish technical regime with small caps leading the recovery and chip stocks driving tech gains, but face headwinds from bearish seasonal patterns and binary-risk macro environment ahead of the Fed decision. The technical momentum is strong but the upcoming FOMC event on June 18 creates significant uncertainty.
 8. Disclaimer: This is not financial advice.
