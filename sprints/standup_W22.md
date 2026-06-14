@@ -1,4 +1,4 @@
-# Standup Notes – Week 2
+# Standup Notes – Week 22
 
 ---
 
@@ -51,7 +51,7 @@
 - Submitted pull request and prepared presentation content.
 
 **Doing**
-- Preparing June context for Week 3.
+- Preparing June context for Week 23.
 - Drafting presentation script.
 
 **Blocked**
@@ -76,7 +76,7 @@
 - Verification across multiple data sources is time-consuming.
 - Determining the most significant earnings announcements requires additional analysis.
 
-> **Note:** Aaron did not participate during Week 2 and submitted no work.
+> **Note:** Aaron did not participate during Week 22 and submitted no work.
 
 ---
 
@@ -182,7 +182,7 @@
 - Some team members have limited Git and GitHub experience.
 - Inconsistent file naming conventions created additional review work.
 
-> **Note:** Shary did not participate during Week 2 and submitted no work.
+> **Note:** Shary did not participate during Week 22 and submitted no work.
 
 ---
 
@@ -213,10 +213,10 @@
 ## Non-Participating Team Members
 
 **Aaron**
-Assigned role support responsibilities but did not participate during Week 2. No deliverables, commits, or pull requests submitted.
+Assigned role support responsibilities but did not participate during Week 22. No deliverables, commits, or pull requests submitted.
 
 **Shary**
-Assigned role support responsibilities but did not participate during Week 2. No deliverables, commits, or pull requests submitted.
+Assigned role support responsibilities but did not participate during Week 22. No deliverables, commits, or pull requests submitted.
 
 ---
 

@@ -5,6 +5,7 @@ description = "Weekly market prediction pipeline — SPX, NDX, IWM"
 requires-python = ">=3.13"
 dependencies = [
     "yfinance>=0.2",
+    "pandas>=2.0",
     "requests>=2.32",
 ]
 

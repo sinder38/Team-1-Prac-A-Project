@@ -115,7 +115,7 @@ jobs:
           failed=0
           shopt -s nullglob
 
-          # Collect all week tags present in data/llm/ (e.g. W1, W2, W22)
+          # Collect all week tags present in data/llm/ (e.g. W22, W22)
           weeks=()
           for f in data/llm/synthesis_*_W*.txt; do
             week=$(echo "$f" | grep -oP 'W\d+')

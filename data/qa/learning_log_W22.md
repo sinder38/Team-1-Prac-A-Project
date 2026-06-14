@@ -1,11 +1,11 @@
-# Learning Log - Week 2
+# Learning Log - Week 22
 
 Role: R10 QA and Learning Log Lead  
 Date checked: 6 June 2026
 
 ## What did we predict?
 
-The Week 2 final prediction file gave these calls:
+The Week 22 final prediction file gave these calls:
 
 | Asset | Direction | Range | Confidence |
 | --- | --- | ---: | --- |
@@ -42,7 +42,7 @@ Calibration score: **+5 / +9**
 
 ## LLM horse race update
 
-The R6 LLM comparison table is available in `data/llm/llm_comparison_W2.md`. For SPX, ChatGPT and DeepSeek both included the actual +1.40% result inside their predicted ranges. I recorded DeepSeek as the Week 2 winner because its midpoint was closest to the actual SPX move.
+The R6 LLM comparison table is available in `data/llm/llm_comparison_W2.md`. For SPX, ChatGPT and DeepSeek both included the actual +1.40% result inside their predicted ranges. I recorded DeepSeek as the Week 22 winner because its midpoint was closest to the actual SPX move.
 
 ## What surprised me?
 

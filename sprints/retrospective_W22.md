@@ -1,4 +1,4 @@
-# Sprint Retrospective - Week 2
+# Sprint Retrospective - Week 22
 
 ## What Went Well
 
@@ -38,4 +38,4 @@
 
 ## Scrum Master Reflection
 
-The team completed several important deliverables for Week 2, including sprint planning, technical analysis, data verification, and Human Score evaluation. While overall progress was positive, communication and coordination remain areas for improvement. More frequent updates, clearer role expectations, and earlier collaboration will help reduce last-minute work and improve sprint efficiency in future sprints.
+The team completed several important deliverables for Week 22, including sprint planning, technical analysis, data verification, and Human Score evaluation. While overall progress was positive, communication and coordination remain areas for improvement. More frequent updates, clearer role expectations, and earlier collaboration will help reduce last-minute work and improve sprint efficiency in future sprints.

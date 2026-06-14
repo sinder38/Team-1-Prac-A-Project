@@ -304,11 +304,11 @@ team1-prac-a-project/
 <td>Official course materials</td>
 </tr>
 <tr>
-<td><a href="./tasks/W2Task.html"><b>DT3 Week 2 Task Brief</b></a></td>
+<td><a href="./tasks/W2Task.html"><b>DT3 Week 22 Task Brief</b></a></td>
 <td>Official course materials (backup)</td>
 </tr>
 <tr>
-<td><a href="./tasks/W3Task.html"><b>DT3 Week 3 Task Brief</b></a></td>
+<td><a href="./tasks/W3Task.html"><b>DT3 Week 23 Task Brief</b></a></td>
 <td>Official course materials (backup)</td>
 </tr>
 <tr>

@@ -1,4 +1,4 @@
-# Calibration Log - Week 2
+# Calibration Log - Week 22
 
 Role: R10 QA and Learning Log Lead  
 Checked by: QA Lead  
@@ -17,7 +17,7 @@ Scoring rule used: `data/qa/calibration_scoring_rule_W2.md`
 
 ## Team prediction
 
-The locked Week 2 prediction file gave these calls:
+The locked Week 22 prediction file gave these calls:
 
 | Asset | Direction | Predicted range | Confidence |
 | --- | --- | ---: | --- |
