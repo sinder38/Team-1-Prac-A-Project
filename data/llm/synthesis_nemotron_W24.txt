@@ -1,17 +1,17 @@
-# LLM Agent Output — NVIDIA Nemotron 3 Super — Week of 2026-06-08
+# LLM Agent Output — NVIDIA Nemotron 3 Super — Week of 2026-06-14
 
-1. Weekly Regime: Bullish
+1. Weekly Regime: Uncertain
 2. Confidence Score: Low-Medium
 3. Key Supporting Evidence:
-   - SPX, NDX, and IWM all posted weekly gains (SPX +0.46%, NDX +2.17%, IWM +3.93%) indicating a broad market recovery.
-   - Ten of eleven S&P sectors finished higher, with Materials (+3.57%), Consumer Staples (+2.77%), and Financials (+2.59%) leading, reflecting risk‑on sentiment.
-   - The VIX fell 6.25% and Bitcoin rose 5.24%, showing reduced fear and increased appetite for risk assets.
+   - All three indexes bounced back after last week's selloff, with small caps leading (Russell 2000 up nearly 4%).
+   - Fear eased as VIX dropped 6.25% and Bitcoin rose 5.24%, indicating a shift toward risk-on sentiment.
+   - Materials sector topped the weekly gainers at +3.57%, driven by specialty chemicals and industrial inputs.
 4. Key Contradictions:
-   - Technical indicators show a Neutral trend bias with Low confidence; SPX and NDX close below their 8‑day EMA, suggesting short‑term bearish pressure.
-   - The Almanac agent signals Bearish monthly and seasonal bias (Low confidence), indicating a broader bearish backdrop that could weigh on prices.
-5. Invalidation Conditions: A weekly close below the key support levels (SPX <7,333.68, NDX <28,567.16, IWM <270.63) or a weekly decline exceeding –1% for SPX would invalidate the bullish outlook.
-6. Predicted % move — SPX: -1.0% to 2.9%
-   Predicted % move — NDX: -2.9% to 4.6%
-   Predicted % move — IWM: -4.8% to 3.1%
-7. Plain-English brief: Despite mixed technical and seasonal signals, the market posted a broad weekly rally with all three major indexes higher, most sectors green, and fear gauges easing, supporting a short‑term bullish view; however, the rally could reverse if prices break below recent support or if the underlying bearish seasonal bias reasserts itself.
+   - Technical indicators show a bullish bias across SPX, NDX, and IWM, while the Almanac agent signals a bearish monthly and seasonal bias.
+   - The macro environment is binary‑risk centered on the upcoming Fed decision, which could sway markets either way despite the current technical strength.
+5. Invalidation Conditions: A materially more dovish‑than‑expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
+6. Predicted % move — SPX: -2.6% to 2.6%
+   Predicted % move — NDX: -4.9% to 3.8%
+   Predicted % move — IWM: -7.6% to 1.0%
+7. Plain-English brief: The market is mixed; technical strength suggests modest upside, but seasonal headwinds and uncertainty around the Fed meeting create a wide range of possible outcomes, leaving the weekly direction unclear.
 8. Disclaimer: This is not financial advice.

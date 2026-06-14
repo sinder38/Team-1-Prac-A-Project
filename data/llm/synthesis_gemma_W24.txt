@@ -1,17 +1,17 @@
-# LLM Agent Output — Google Gemma 4 31B — Week of 2026-06-08
+# LLM Agent Output — Google Gemma 4 31B — Week of 2026-06-14
 
-1. Weekly Regime: Neutral
-2. Confidence Score: Low-Medium
+1. Weekly Regime: Uncertain
+2. Confidence Score: Medium
 3. Key Supporting Evidence:
-   - Broad recovery with 10 of 11 S&P sectors finishing green and VIX dropping 6.25%, indicating a shift toward risk-on sentiment.
-   - Strong momentum in small caps (IWM up 3.93%) and a significant chip rally (Intel +26%, KLA +32%) supporting NDX.
-   - Technicals show indexes are hovering near their 21-day EMAs, providing a neutral baseline for the coming week.
+   - Technicals show a Bullish trend bias for all three indexes with prices holding above 8 and 21-day EMAs.
+   - Macro drivers include a high-impact FOMC Interest Rate Decision on June 18, with a 97.4% probability of a hold.
+   - Sector-specific seasonal data supports Technology (XLK) through July, providing a tailwind for the NDX.
 4. Key Contradictions:
-   - Almanac seasonal and monthly biases are Bearish, contradicting the recent bullish price action and risk-on mood.
-   - Almanac signals a seasonal short window for Financials and Materials, yet these were among the top 3 performing sectors last week.
-5. Invalidation Conditions: A break below SPX support at 7333.68 or a sharp spike in the VIX back above 20 would invalidate the neutral-to-bullish recovery thesis.
-6. Predicted % move — SPX: -1.0% to 1.5%
-   Predicted % move — NDX: -1.0% to 2.0%
-   Predicted % move — IWM: -2.0% to 3.0%
-7. Plain-English brief: The market is in a tug-of-war. Recent price action is strongly bullish, led by small caps and semiconductors, but long-term seasonal patterns suggest a bearish trend. Expect choppy, sideways movement as the recent bounce meets seasonal headwinds.
+   - Technicals are Bullish, but the Almanac Agent reports a Bearish monthly and seasonal bias.
+   - Recent price action shows a broad recovery (10 of 11 sectors green), yet the Macro Agent maintains a "Binary-risk" bias due to the upcoming Fed meeting.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower would reverse the cautious stance and support risk assets.
+6. Predicted % move — SPX: -1.5% to 2.0%
+   Predicted % move — NDX: -2.0% to 3.0%
+   Predicted % move — IWM: -3.0% to 4.0%
+7. Plain-English brief: The market is currently in a recovery phase with strong technical momentum, especially in small caps and chips. However, the upcoming Fed meeting on Thursday creates a "binary" risk environment where the market could either surge on dovish news or pull back if the Fed remains hawkish. While tech has seasonal support, the overall seasonal trend is bearish, suggesting a volatile week where the Fed's tone will dictate the direction.
 8. Disclaimer: This is not financial advice.

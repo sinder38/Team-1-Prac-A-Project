@@ -1,17 +1,17 @@
-# LLM Agent Output — OpenAI gpt-oss-120b — Week of 2026-06-08
+# LLM Agent Output — OpenAI gpt-oss-120b — Week of 2026-06-14
 
-1. Weekly Regime: Bullish
-2. Confidence Score: Low-Medium
+1. Weekly Regime: Uncertain
+2. Confidence Score: Medium
 3. Key Supporting Evidence:
-   - Week 04 Market Report shows SPX closed at 7,431.46, up 0.46% for the week.
-   - Technical agent lists SPX EMA‑8 at 7,492.27 above the last close (7405.73) and a neutral trend bias with low confidence.
-   - Almanac agent signals a monthly bearish bias but notes a bullish seasonal window for Technology (XLK) supporting the Nasdaq.
+   - Technical agent shows SPX and NDX bullish EMA crossover and medium confidence, IWM bullish with high confidence.
+   - Week‑04 market report records SPX +0.46%, NDX +2.17%, IWM +3.93% and broad sector strength.
+   - Macro agent notes upcoming Fed rate‑decision (June 18) with a 97.4% hold probability, keeping risk assets on a cautious footing.
 4. Key Contradictions:
-   - Technical view is neutral/low‑confidence while the almanac view is bearish for the month.
-   - Sector performance shows Materials, Consumer Staples and Financials leading gains, contradicting the almanac’s bearish bias for Materials and Financials.
-5. Invalidation Conditions: A break below the key support levels (SPX 7,333.68, NDX 28,567.16, IWM 270.63) would invalidate the bullish weekly regime.
-6. Predicted % move — SPX: -0.3% to 1.2%
-   Predicted % move — NDX: 0.5% to 2.5%
-   Predicted % move — IWM: 2.0% to 4.5%
-7. Plain-English brief: The market bounced back this week, with the S&P 500 edging higher, the Nasdaq gaining over 2%, and small‑cap Russell 2000 climbing nearly 4%. Technical indicators are still neutral and confidence is low, but the recent price action and sector strength point to a short‑term bullish tilt. Watch for a move under the listed support levels, which would flip the outlook.
+   - Almanac agent signals monthly/seasonal bearishness for the market, while technical and recent price action are bullish.
+   - Macro “binary‑risk” stance (cautious) conflicts with the strong upward momentum seen in small‑cap (IWM) and tech‑heavy Nasdaq.
+5. Invalidation Conditions: A materially dovish Fed outcome (rate cut or surprise yield‑curve flattening) that drives Treasury yields lower and lifts risk sentiment would invalidate the current cautious/bearish bias.
+6. Predicted % move — SPX: -0.2% to 0.8%
+   Predicted % move — NDX: 1.5% to 3.0%
+   Predicted % move — IWM: 3.0% to 4.5%
+7. Plain-English brief: The indexes closed higher this week, led by small‑cap stocks, and technical indicators still point to a bullish tilt. However, the broader seasonal calendar is bearish and the market is waiting on the Fed’s June 18 decision, which could quickly swing sentiment. Expect modest upside for the S&P (around 0 to +0.8 %), a stronger move in the Nasdaq (about +1.5 to +3 %), and the Russell 2000 to keep climbing (roughly +3 to +4.5 %). Keep an eye on the Fed meeting – a surprise cut would flip the outlook.
 8. Disclaimer: This is not financial advice.
