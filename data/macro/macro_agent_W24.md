@@ -1,4 +1,4 @@
-Macro Agent Output — Week of 13 June — Source: R4
+Macro Agent Output — Week of 8 June — Source: R4
 
 FED & RATES (FRED & Yfinance):
 
@@ -13,7 +13,7 @@ COMMODITIES & DOLLAR (Yfinance):
 - Gold: 4238.8, weekly change -2.27%, direction: falling
 - DXY (Dollar): 99.75, weekly change -0.32%, direction: falling
 
-WEEK-AHEAD CALENDAR (TradingEconomics): 
+WEEK-AHEAD CALENDAR (TradingEconomics):
 
 - Thursday, June 18: US Fed Interest Rate Decision — Expected: Hold, Previous: 3.50%-3.75% — IMPORTANCE: High
 
@@ -23,7 +23,7 @@ WEEK-AHEAD CALENDAR (TradingEconomics):
 
 - Thursday, June 18: BoE Interest Rate Decision — Expected: 3.75%, Previous: 3.75% — IMPORTANCE: Medium
 
-KEY EARNINGS THIS WEEK (Earnings Whispers): 
+KEY EARNINGS THIS WEEK (Earnings Whispers):
 
 - Accenture Ltd. (ACN) — Thursday, June 18 (Before Open) — Sector: XLK/XLF (Enterprise Tech / Consulting) — What to watch: enterprise IT spending, AI-related transformation budgets, broader software and tech sentiment.
 
@@ -31,7 +31,7 @@ KEY EARNINGS THIS WEEK (Earnings Whispers):
 
 - Jabil Inc. (JBL) — Wednesday, June 17 (Before Open) — Sector: XLK (Tech Hardware / AI Supply Chain) — What to watch: electronics demand and AI infrastructure supply chain momentum.
 
-CONFIRMED NEWS EVENTS (Reuters / AP): 
+CONFIRMED NEWS EVENTS (Reuters / AP):
 
 - US stocks rise after oil prices ease and SpaceX soars in its debut on Wall Street — Source: AP — 13 Jun 2026
 
@@ -47,4 +47,4 @@ CONFIDENCE: Medium
 
 INVALIDATION: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
 
-Sources accessed: 2026-06-13
+Sources accessed: 2026-06-08

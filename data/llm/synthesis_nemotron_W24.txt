@@ -1,17 +1,17 @@
 # LLM Agent Output — NVIDIA Nemotron 3 Super — Week of 2026-06-08
 
-1. Weekly Regime: Bullish
+1. Weekly Regime: Neutral
 2. Confidence Score: Low-Medium
 3. Key Supporting Evidence:
-   - SPX, NDX, and IWM all posted weekly gains (SPX +0.46%, NDX +2.17%, IWM +3.93%) indicating a broad market recovery.
-   - Ten of eleven S&P sectors finished higher, with Materials (+3.57%), Consumer Staples (+2.77%), and Financials (+2.59%) leading, reflecting risk‑on sentiment.
-   - The VIX fell 6.25% and Bitcoin rose 5.24%, showing reduced fear and increased appetite for risk assets.
+   - SPX gained 0.46% for the week ending June 12, 2026, closing at 7,431.46.
+   - NDX rose 2.17% over the same week, reaching 29,635.95, while IWM advanced 3.93% to 292.95.
+   - Sector performance showed Materials up 3.57% and Consumer staples up 2.77% as top performers, with only Communication services down 1.50%.
 4. Key Contradictions:
-   - Technical indicators show a Neutral trend bias with Low confidence; SPX and NDX close below their 8‑day EMA, suggesting short‑term bearish pressure.
-   - The Almanac agent signals Bearish monthly and seasonal bias (Low confidence), indicating a broader bearish backdrop that could weigh on prices.
-5. Invalidation Conditions: A weekly close below the key support levels (SPX <7,333.68, NDX <28,567.16, IWM <270.63) or a weekly decline exceeding –1% for SPX would invalidate the bullish outlook.
+   - All three major indexes posted weekly gains despite technical and almanac indicators showing neutral to bearish bias.
+   - The macro outlook is binary-risk with a high probability of a Fed hold and slight hawkish shift, which would typically weigh on risk assets, yet the market showed strong risk-on momentum.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
 6. Predicted % move — SPX: -1.0% to 2.9%
    Predicted % move — NDX: -2.9% to 4.6%
    Predicted % move — IWM: -4.8% to 3.1%
-7. Plain-English brief: Despite mixed technical and seasonal signals, the market posted a broad weekly rally with all three major indexes higher, most sectors green, and fear gauges easing, supporting a short‑term bullish view; however, the rally could reverse if prices break below recent support or if the underlying bearish seasonal bias reasserts itself.
+7. Plain-English brief: Expect the S&P 500, Nasdaq 100, and Russell 2000 to trade within modest ranges next week, with limited directional bias as traders await the Fed decision; any surprise dovish shift could spark a rally, while a hawkish outcome may keep gains capped.
 8. Disclaimer: This is not financial advice.
