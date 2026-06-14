@@ -2,7 +2,8 @@
 Macro Agent — fetches Fed rates, yields, commodities, and macro calendar data.
 
 Usage:
-    python agents/macro/macro_agent.py 2026-06-16
+    Add Api_key (either by .env file or by command)
+    python backend/agents/macro/macro_agent.py 2026-06-16
 """
 import json
 import os
