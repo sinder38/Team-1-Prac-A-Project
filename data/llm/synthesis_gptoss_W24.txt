@@ -1,17 +1,17 @@
-# LLM Agent Output — OpenAI gpt-oss-120b — Week of 2026-06-08
+# LLM Agent Output — OpenAI gpt-oss-120b — Week of 2026-06-14
 
 1. Weekly Regime: Bullish
-2. Confidence Score: Low-Medium
+2. Confidence Score: Medium
 3. Key Supporting Evidence:
-   - Week 04 Market Report shows SPX closed at 7,431.46, up 0.46% for the week.
-   - Technical agent lists SPX EMA‑8 at 7,492.27 above the last close (7405.73) and a neutral trend bias with low confidence.
-   - Almanac agent signals a monthly bearish bias but notes a bullish seasonal window for Technology (XLK) supporting the Nasdaq.
+   - Week 04 Market Report shows SPX up 0.46%, NDX up 2.17%, IWM up 3.93% (all bullish).
+   - Technical agent lists bullish trend bias for SPX, NDX and IWM with EMA 8/21 cross supporting upside.
+   - Macro agent notes a “Binary‑risk” stance ahead of the June 18 Fed decision, with yields slightly falling and risk assets holding gains.
 4. Key Contradictions:
-   - Technical view is neutral/low‑confidence while the almanac view is bearish for the month.
-   - Sector performance shows Materials, Consumer Staples and Financials leading gains, contradicting the almanac’s bearish bias for Materials and Financials.
-5. Invalidation Conditions: A break below the key support levels (SPX 7,333.68, NDX 28,567.16, IWM 270.63) would invalidate the bullish weekly regime.
-6. Predicted % move — SPX: -0.3% to 1.2%
-   Predicted % move — NDX: 0.5% to 2.5%
-   Predicted % move — IWM: 2.0% to 4.5%
-7. Plain-English brief: The market bounced back this week, with the S&P 500 edging higher, the Nasdaq gaining over 2%, and small‑cap Russell 2000 climbing nearly 4%. Technical indicators are still neutral and confidence is low, but the recent price action and sector strength point to a short‑term bullish tilt. Watch for a move under the listed support levels, which would flip the outlook.
+   - Almanac agent signals a monthly and seasonal bearish bias, especially for Financials, Energy and Metals, which conflicts with the bullish technical and market‑wide rally.
+   - While technicals show strong support levels (SPX 7237.85, NDX 28196.9, IWM 270.63), the almanac warns of sector‑specific headwinds that could cap upside.
+5. Invalidation Conditions: A materially more dovish Fed outcome that drives Treasury yields sharply lower and sparks expectations of near‑term rate cuts would invalidate the current cautious “hold” stance and could flip the regime to strongly bullish.
+6. Predicted % move — SPX: 0.3% to 0.8%
+   Predicted % move — NDX: 1.5% to 2.5%
+   Predicted % move — IWM: 3.0% to 4.5%
+7. Plain-English brief: The indexes closed higher last week, with the S&P 500 gaining about half a percent, the Nasdaq climbing just over 2%, and the Russell 2000 jumping nearly 4%. Technicals are bullish and the market is holding above key moving averages, while the macro picture is cautious ahead of the Fed meeting on June 18. Seasonal almanac signals are mostly bearish, especially for financials and energy, creating a tension between short‑term technical strength and longer‑term seasonal headwinds. Expect modest upside this week unless the Fed surprises on the downside, which would boost risk assets further.
 8. Disclaimer: This is not financial advice.

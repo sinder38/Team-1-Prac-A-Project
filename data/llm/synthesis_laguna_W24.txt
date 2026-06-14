@@ -1,17 +1,17 @@
-# LLM Agent Output — Poolside Laguna M.1 — Week of 2026-06-08
+# LLM Agent Output — Poolside Laguna M.1 — Week of 2026-06-14
 
 1. Weekly Regime: Uncertain
-2. Confidence Score: Low
+2. Confidence Score: Medium
 3. Key Supporting Evidence:
-   - All three indexes recovered last week with Russell 2000 leading (+3.93%), SPX up 0.46%, and Nasdaq up 2.17%
-   - Semiconductor names surged (Intel +26%, KLA +32%, Applied Materials +25%) while mega-cap software lagged (Oracle -14%, Microsoft -6%, Apple -5%)
-   - Fear gauge (VIX) declined 6.25% to 20.17, indicating risk-on sentiment returning to markets
+   - All three indices posted strong weekly gains with Russell 2000 leading at +3.93%, S&P 500 up 0.46%, and Nasdaq 100 up 2.17% amid risk-on sentiment.
+   - Semiconductor/chip stocks surged (Intel +26%, KLA +32%, Applied Materials +25%) while tech sector showed uneven recovery with software laggards.
+   - Fear gauge (VIX) declined 6.25% and bond prices rose slightly as oil fell 6.25% and gold dropped 2.90%, signaling easing tensions.
 4. Key Contradictions:
-   - Technical indicators show Neutral bias across all three instruments while Almanac signals point to Bearish monthly and seasonal context
-   - Technology sector has bullish seasonal window (March-July) supporting Nasdaq, but overall market regime remains uncertain with low confidence
-5. Invalidation Conditions: A decisive break below key support levels (SPX 7333.68, NDX 28567.16, IWM 270.63) or sustained move above resistance (SPX 7620.9, NDX 30762.2, IWM 292.88) would invalidate the current uncertain outlook
-6. Predicted % move — SPX: -0.97% to 2.91%
-   Predicted % move — NDX: -2.88% to 4.58%
-   Predicted % move — IWM: -4.74% to 3.09%
-7. Plain-English brief: Markets are in a tentative recovery phase with mixed signals. Technical indicators suggest range-bound trading, but seasonal headwinds persist. Small caps and chips are leading the bounce while large-cap tech and financials face conflicting signals. Low confidence warrants caution as the market digests recent volatility.
+   - Technical agents show Bullish bias across all three indices while Almanac indicates Bearish monthly and seasonal bias for the broader market.
+   - Technology sector has Bullish seasonal support (March-July window) but Financials and Materials face Bearish seasonal headwinds despite recent sector outperformance.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision on June 18 that drives Treasury yields lower and increases expectations for rate cuts would reverse the cautious stance and support risk assets.
+6. Predicted % move — SPX: -2.6% to 2.5%
+   Predicted % move — NDX: -4.9% to 3.8%
+   Predicted % move — IWM: -7.6% to 1.0%
+7. Plain-English brief: Markets are caught between bullish technical momentum and bearish seasonal patterns ahead of the June 18 Fed decision. Small caps and chips are leading the charge, but the upcoming FOMC event creates binary risk that could quickly shift sentiment. Expect choppy trading within defined ranges until the Fed clarity emerges.
 8. Disclaimer: This is not financial advice.
