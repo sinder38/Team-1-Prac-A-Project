@@ -10,3 +10,6 @@ __pycache__
 
 # GitHub
 !.github
+
+# API Key file
+.env
