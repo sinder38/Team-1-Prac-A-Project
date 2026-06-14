@@ -175,7 +175,7 @@ class OpenRouterAgent(BaseLLMAgent):
                     ],
                     temperature=0.2,
                 )
-                raw_text = response.choices[0].message.content
+                raw_text = response.choices[0].message.content or ""
 
                 # Normalize *_RANGE lines so base_llm.parse_response's float() can't crash.
                 out_lines = []

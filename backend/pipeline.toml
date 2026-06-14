@@ -1,14 +1,13 @@
 [pipeline]
-prediction_date = "auto"  # "auto" = date.today(), or ISO string e.g. "2026-06-16"
-
+prediction_date = "auto"
 [stages]
 almanac   = true
 technical = true
-macro     = true
+macro     = false
 evidence  = true
 
 [llm]
-models = ["example"]
+models = ["nemotron", "gpt-oss", "gemma", "laguna"]
 
 [artifacts]
 save_json = true

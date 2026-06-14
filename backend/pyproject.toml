@@ -8,6 +8,7 @@ dependencies = [
     "pandas>=2.0",
     "requests>=2.32",
     "python-dotenv>=1.2.2",
+    "openai>=2.41.1",
 ]
 
 [tool.uv]

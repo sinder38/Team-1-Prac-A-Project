@@ -1,15 +1,27 @@
 """Pipeline stage functions — one per agent type."""
 
-import importlib
 from datetime import date
 from pathlib import Path
+from typing import Callable
 
 from agents.pipeline.context import PipelineContext
+from agents.llm.base_llm import BaseLLMAgent
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
-LLM_REGISTRY: dict[str, str] = {
-    "example": "agents.llm.example_agent.ExampleAgent",
+def _make_openrouter(model_name: str, model_id: str):
+    from agents.llm.multi_model_runner import OpenRouterAgent
+    return OpenRouterAgent(model_name=model_name, model_id=model_id)
+
+
+# Registry maps model_key → zero-arg callable returning a BaseLLMAgent instance.
+LLM_REGISTRY: dict[str, Callable[[], BaseLLMAgent]] = {
+    "example": lambda: __import__("agents.llm.example_agent", fromlist=["ExampleAgent"]).ExampleAgent(),
+    # OpenRouter free-tier models — require OPENROUTER_API_KEY in backend/agents/llm/.env
+    "nemotron": lambda: _make_openrouter("NVIDIA Nemotron 3 Super", "nvidia/nemotron-3-super-120b-a12b:free"),
+    "gpt-oss":  lambda: _make_openrouter("OpenAI gpt-oss-120b",    "openai/gpt-oss-120b:free"),
+    "gemma":    lambda: _make_openrouter("Google Gemma 4 31B",      "google/gemma-4-31b-it:free"),
+    "laguna":   lambda: _make_openrouter("Poolside Laguna M.1",     "poolside/laguna-m.1:free"),
 }
 
 
@@ -73,11 +85,7 @@ def run_llm(ctx: PipelineContext, config: dict, model_key: str) -> None:
         raise ValueError(
             f"Unknown LLM model_key {model_key!r}. Known models: {list(LLM_REGISTRY)}"
         )
-    class_path = LLM_REGISTRY[model_key]
-    module_path, class_name = class_path.rsplit(".", 1)
-    module = importlib.import_module(module_path)
-    agent_class = getattr(module, class_name)
-    agent = agent_class()
+    agent = LLM_REGISTRY[model_key]()
 
     prompt = agent.build_prompt(ctx.prediction_date, ctx)
     raw = agent.query(prompt)

@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from datetime import date
 from pathlib import Path
+from typing import TYPE_CHECKING
 import json
 
 from agents.base import BaseAgent
 from agents.schemas import LLMOutput, PredictedRange, Regime, Confidence
+
+if TYPE_CHECKING:
+    from agents.pipeline.context import PipelineContext
 
 
 class BaseLLMAgent(BaseAgent):
@@ -16,7 +22,7 @@ class BaseLLMAgent(BaseAgent):
         """Send prompt to the LLM, return raw text response."""
         ...
 
-    def build_prompt(self, prediction_date: date, ctx: "PipelineContext" = None) -> str:
+    def build_prompt(self, prediction_date: date, ctx: PipelineContext | None = None) -> str:
         """
         Assemble a structured prompt from the in-memory PipelineContext.
         """

@@ -88,7 +88,7 @@ class MacroAgent(BaseAgent):
         """Format weekly percentage moves with explicit signs."""
         return f"{value:+.2f}%"
 
-    def fetch_fred(self, series: str, api_key: str) -> float:
+    def fetch_fred(self, series: str, api_key: str) -> float | None:
         """Fetch latest observation from FRED API."""
         url = (
             "https://api.stlouisfed.org/fred/series/observations"
@@ -148,7 +148,7 @@ class MacroAgent(BaseAgent):
             "30y": yield_30y if yield_30y is not None else 0.0,
         }
 
-    def latest_price(self, ticker: str) -> float:
+    def latest_price(self, ticker: str) -> float | None:
         """Get latest closing price for a ticker."""
         try:
             price = yf.Ticker(ticker).history(period="5d")["Close"].iloc[-1]
@@ -160,7 +160,10 @@ class MacroAgent(BaseAgent):
     def get_weekly_return(self, ticker: str) -> float:
         """Get weekly return for a single ticker (last close vs 5 trading days ago)."""
         try:
-            data = yf.download(ticker, period="1mo", interval="1d", auto_adjust=True)["Close"]
+            raw = yf.download(ticker, period="1mo", interval="1d", auto_adjust=True)
+            if raw is None or raw.empty:
+                return 0.0
+            data = raw["Close"]
             if isinstance(data, pd.Series):
                 data = data.to_frame()
 
@@ -429,6 +432,46 @@ class MacroAgent(BaseAgent):
 
         return "\n\n".join(output.confirmed_news)
 
+    def render_md(self, output: MacroOutput, prediction_date: date) -> str:
+        """Return the markdown string for this output (satisfies BaseAgent contract)."""
+        return f"""Macro Agent Output — Week of {self.report_week_label(prediction_date)} — Source: R4
+
+FED & RATES (FRED & Yfinance):
+
+- Current Fed rate: {output.fed_rate}
+- Next FOMC date: {self.full_date_label(output.next_fomc_date)}. Hold probability: {output.hold_probability:.1f}%. Cut probability: {output.cut_probability:.1f}%. Direction vs last week: {output.fomc_direction}
+- 2-year yield: {output.yield_2y:.3f}% 10-year yield: {output.yield_10y:.3f}% 30-year yield: {output.yield_30y:.3f}%
+- Yield curve: {output.yield_curve}. 10-year direction this week: {output.yield_10y_direction}
+
+COMMODITIES & DOLLAR (Yfinance):
+
+- WTI Crude Oil: {self.format_price(output.wti_oil.price)}, weekly change {self.format_percent(output.wti_oil.weekly_change)}, direction: {output.wti_oil.direction}
+- Gold: {self.format_price(output.gold.price)}, weekly change {self.format_percent(output.gold.weekly_change)}, direction: {output.gold.direction}
+- DXY (Dollar): {self.format_price(output.dxy.price)}, weekly change {self.format_percent(output.dxy.weekly_change)}, direction: {output.dxy.direction}
+
+WEEK-AHEAD CALENDAR (TradingEconomics):
+
+{self.render_calendar_events(output)}
+
+KEY EARNINGS THIS WEEK (Earnings Whispers):
+
+{self.render_key_earnings(output)}
+
+CONFIRMED NEWS EVENTS (Reuters / AP):
+
+{self.render_confirmed_news(output)}
+
+MACRO BIAS: {output.macro_bias.value if output.macro_bias else "N/A"}
+
+PRIMARY DRIVER THIS WEEK: {output.primary_driver}
+
+CONFIDENCE: {output.confidence.value if output.confidence else "N/A"}
+
+INVALIDATION: {output.invalidation}
+
+Sources accessed: {prediction_date}
+"""
+
     def save_md(self, output: MacroOutput, prediction_date: date) -> None:
         """Render MacroOutput to MD matching data/formats/macro_agent.md"""
         week = prediction_date.isocalendar()
@@ -480,6 +523,6 @@ if __name__ == "__main__":
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
     agent = MacroAgent()
     output = agent.run(prediction_date)
-    agent.export(output, prediction_date, fmt="json")
-    agent.export(output, prediction_date, fmt="md")
+    agent.save_json(output, prediction_date)
+    agent.save_md(output, prediction_date)
     print("Saved to data/outputs/macro/ and data/macro/")
