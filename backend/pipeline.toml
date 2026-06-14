@@ -4,7 +4,7 @@ prediction_date = "2026-06-08"  # W24
 [stages]
 almanac   = true
 technical = true
-macro     = false  # requires FRED_API_KEY in backend/.env
+macro     = true
 evidence  = true
 
 [llm]
