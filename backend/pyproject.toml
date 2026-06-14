@@ -2,13 +2,13 @@
 name = "market-prediction"
 version = "0.1.0"
 description = "Weekly market prediction pipeline — SPX, NDX, IWM"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "yfinance>=0.2",
     "pandas>=2.0",
     "requests>=2.32",
-    "openai>=1.14.0",
-    "python-dotenv>=1.0.1",
+    "openai>=2.41.1",
+    "python-dotenv>=1.2.2",
 ]
 
 [tool.uv]

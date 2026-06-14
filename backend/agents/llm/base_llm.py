@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from datetime import date
 from pathlib import Path
+from typing import TYPE_CHECKING
 import json
 import re
 import sys
 
 from agents.base import BaseAgent
 from agents.schemas import LLMOutput, PredictedRange, Regime, Confidence
+
+if TYPE_CHECKING:
+    from agents.pipeline.context import PipelineContext
 
 
 class BaseLLMAgent(BaseAgent):
@@ -18,44 +24,61 @@ class BaseLLMAgent(BaseAgent):
         """Send prompt to the LLM, return raw text response."""
         ...
 
-    def build_prompt(self, prediction_date: date) -> str:
+    def build_prompt(self, prediction_date: date, ctx: PipelineContext | None = None) -> str:
         """
-        Load all data agent JSON outputs from <repo>/data/outputs/ and assemble
-        a structured prompt for the LLM.
+        Assemble a structured prompt from the in-memory PipelineContext.
+        Falls back to reading data/outputs/ JSON files if no context is provided
+        (preserves compatibility with multi_model_runner.__main__ standalone mode).
         """
-        # FIX: the data agents write to the REPO-ROOT data/outputs/. base.py lives at
-        # backend/agents/, but this file is one level deeper at backend/agents/llm/, so
-        # the old `.parent.parent.parent` resolved to backend/data/outputs and silently
-        # found nothing. parents[3] == <repo>, matching where the agents actually write.
-        outputs_dir = Path(__file__).resolve().parents[3] / "data" / "outputs"
-        week = prediction_date.isocalendar()
-        week_key = f"{week.year}-W{week.week:02d}.json"
+        from dataclasses import asdict
+        from agents.pipeline.context import PipelineContext as _PC
 
         context_blocks = []
-        for agent_type in ("technical", "almanac", "macro"):
-            agent_file = outputs_dir / agent_type / week_key
-            if not agent_file.exists():
-                # Loud (stderr) but non-fatal: a partial context is real-but-incomplete
-                # data, not fabrication. Full absence is handled below.
-                print(f"⚠️  Missing agent input: {agent_file}", file=sys.stderr)
-                continue
-            try:
-                data = json.loads(agent_file.read_text(encoding="utf-8"))
-            except json.JSONDecodeError as e:
-                # Explicit: name the broken file instead of surfacing a bare JSONDecodeError.
-                raise ValueError(f"Malformed JSON in {agent_file}: {e}") from e
-            context_blocks.append(f"=== {agent_type.upper()} AGENT ===\n{json.dumps(data, indent=2)}")
 
-        if not context_blocks:
-            # No silent fallback. Querying an LLM on an empty context only yields a
-            # baseless, fabricated prediction — refuse loudly instead.
-            raise ValueError(
-                f"No agent inputs found for {week_key} under {outputs_dir}. "
-                "Run the Technical/Almanac/Macro agents first; refusing to query the LLM "
-                "on an empty context."
-            )
+        if ctx is not None:
+            # In-memory pipeline path: use PipelineContext directly
+            for agent_type, output in [
+                ("technical", ctx.technical),
+                ("almanac", ctx.almanac),
+                ("macro", ctx.macro),
+                ("evidence", ctx.evidence),
+            ]:
+                if output is None:
+                    continue
+                if agent_type == "evidence":
+                    context_blocks.append(f"=== EVIDENCE ===\n{output.content}")
+                else:
+                    data = asdict(output)
+                    context_blocks.append(
+                        f"=== {agent_type.upper()} AGENT ===\n{json.dumps(data, indent=2, default=str)}"
+                    )
+        else:
+            # Standalone / legacy path: read JSON from data/outputs/
+            outputs_dir = Path(__file__).resolve().parents[3] / "data" / "outputs"
+            week = prediction_date.isocalendar()
+            week_key = f"{week.year}-W{week.week:02d}.json"
 
-        context = "\n\n".join(context_blocks)
+            for agent_type in ("technical", "almanac", "macro"):
+                agent_file = outputs_dir / agent_type / week_key
+                if not agent_file.exists():
+                    print(f"⚠️  Missing agent input: {agent_file}", file=sys.stderr)
+                    continue
+                try:
+                    data = json.loads(agent_file.read_text(encoding="utf-8"))
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Malformed JSON in {agent_file}: {e}") from e
+                context_blocks.append(f"=== {agent_type.upper()} AGENT ===\n{json.dumps(data, indent=2)}")
+
+            if not context_blocks:
+                week = prediction_date.isocalendar()
+                week_key = f"{week.year}-W{week.week:02d}.json"
+                outputs_dir = Path(__file__).resolve().parents[3] / "data" / "outputs"
+                raise ValueError(
+                    f"No agent inputs found for {week_key} under {outputs_dir}. "
+                    "Run the Technical/Almanac/Macro agents first."
+                )
+
+        context = "\n\n".join(context_blocks) if context_blocks else "No agent data available."
 
         return (
             f"You are a market analyst. Based on the following data for the week of {prediction_date}, "
@@ -79,19 +102,9 @@ class BaseLLMAgent(BaseAgent):
 
     def parse_response(self, raw: str, prediction_date: date) -> LLMOutput:
         """
-        Parse an LLM raw text response into LLMOutput.
-
-        No silent dummy data:
-          - Core fields (regime, confidence, the three ranges) are REQUIRED. If a field
-            is missing or its range has no usable number, this raises — so the caller
-            marks the model FAILED rather than inventing a default like "Uncertain" or
-            "0% to 0%".
-          - Supplementary fields (evidence, contradictions, invalidation, plain_english)
-            are optional: absent -> empty, which is an honest "not provided", not a fake value.
-
-        Subclasses may override if their LLM returns a different format.
-        Note: values are taken from the first line containing each key; multi-line
-        free-text values are not reassembled (the requested format is one line per key).
+        Parse LLM raw text response into LLMOutput.
+        Core fields (regime, confidence, ranges) are required — missing fields raise.
+        Supplementary fields are optional.
         """
         lines = {
             line.split(":", 1)[0].strip(): line.split(":", 1)[1].strip()
@@ -136,7 +149,7 @@ class BaseLLMAgent(BaseAgent):
         )
 
     def run(self, prediction_date: date, **kwargs) -> LLMOutput:
-        prompt = self.build_prompt(prediction_date)
+        prompt = self.build_prompt(prediction_date, kwargs.get("ctx"))
         raw = self.query(prompt)
         return self.parse_response(raw, prediction_date)
 
