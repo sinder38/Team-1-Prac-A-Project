@@ -3,15 +3,15 @@
 1. Weekly Regime: Uncertain
 2. Confidence Score: Medium
 3. Key Supporting Evidence:
-   - Technical bias for all three indexes is Bullish with prices holding above EMA_8 and EMA_21.
-   - Macro driver is the June 18 FOMC meeting with a 97.4% probability of a rate hold and a slightly hawkish shift.
-   - Seasonal Almanac data shows a Bullish window for Technology (XLK) supporting the Nasdaq.
+   - Technical bias is bullish across all three indexes with prices holding above EMA 8 and 21 levels.
+   - Macro risk is concentrated on the June 18 FOMC decision, with a 97.4% probability of a rate hold and a slightly hawkish shift.
+   - Seasonal data shows a bullish window for Technology (XLK) supporting the Nasdaq, while Financials and Energy face seasonal headwinds.
 4. Key Contradictions:
-   - Technicals are Bullish, but the Almanac monthly and seasonal biases are Bearish.
-   - IWM has High technical confidence and recent strong momentum (+3.93%), but the overall macro regime is "Binary-risk" due to the Fed.
-5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower.
-6. Predicted % move — SPX: -1.2% to 1.5%
+   - Technicals are bullish, but the Almanac agent reports a bearish monthly and seasonal bias.
+   - Small caps (IWM) showed high technical confidence and strong recent momentum (+3.93%), but face high sensitivity to the upcoming Fed decision.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower would reverse the cautious stance and support risk assets.
+6. Predicted % move — SPX: -1.5% to 1.0%
    Predicted % move — NDX: -1.0% to 2.0%
-   Predicted % move — IWM: -2.0% to 1.0%
-7. Plain-English brief: The market is in a tug-of-war between strong technical momentum and high-stakes macro uncertainty. While the trend is currently up, the upcoming Fed decision on June 18 creates a binary risk that could either fuel further gains or trigger a pullback. Tech is supported by seasonal trends, but small caps may be volatile as the market awaits interest rate clarity.
+   Predicted % move — IWM: -2.0% to 1.5%
+7. Plain-English brief: The market is in a tug-of-war. While technicals and recent price action are bullish, the upcoming Fed meeting on Thursday creates a binary-risk environment. Tech is supported by seasonal trends, but the broader market may stall if the Fed remains hawkish. Expect volatility around the FOMC event, with potential for a pullback if the Fed surprises to the upside, or a rally if they signal future cuts.
 8. Disclaimer: This is not financial advice.
