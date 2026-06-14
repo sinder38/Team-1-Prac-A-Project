@@ -1,5 +1,5 @@
 [pipeline]
-prediction_date = "auto"
+prediction_date = "2026-06-15"  # W25 — revert to "auto" after testing
 
 [stages]
 almanac   = true
