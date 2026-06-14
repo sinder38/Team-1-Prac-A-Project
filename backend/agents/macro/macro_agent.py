@@ -25,6 +25,7 @@ from macro_event_data import (
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from agents.base import BaseAgent
+from agents.io import FileSaver, week_stem
 from agents.schemas import (
     CalendarEvent,
     CommodityData,
@@ -99,11 +100,15 @@ class MacroAgent(BaseAgent):
             "&limit=1"
         )
         try:
-            data = requests.get(url).json()
+            response = requests.get(url)
+            try:
+                data = response.json()
+            except Exception:
+                return 0.0
             return float(data["observations"][0]["value"])
         except (requests.RequestException, KeyError, ValueError, IndexError) as e:
             print(f"Error fetching {series}: {e}")
-            return None
+            return 0.0
 
     def fetch_fred_weekly_change(self, series: str, api_key: str) -> float:
         """Weekly change in percentage points for FRED series."""
@@ -116,12 +121,20 @@ class MacroAgent(BaseAgent):
             "&limit=8"
         )
         try:
-            data = requests.get(url).json()
+            response = requests.get(url)
+            try:
+                data = response.json()
+            except Exception:
+                return 0.0
+
+            observations = data.get("observations", [])
+
             values = [
                 float(obs["value"])
-                for obs in data["observations"]
-                if obs["value"] != "."
+                for obs in observations
+                if obs.get("value") != "."
             ]
+
             if len(values) >= 7:
                 return round(values[0] - values[5], 2)
             return 0.0
@@ -148,7 +161,7 @@ class MacroAgent(BaseAgent):
             "30y": yield_30y if yield_30y is not None else 0.0,
         }
 
-    def latest_price(self, ticker: str) -> float:
+    def latest_price(self, ticker: str) -> float | None:
         """Get latest closing price for a ticker."""
         try:
             price = yf.Ticker(ticker).history(period="5d")["Close"].iloc[-1]
@@ -160,7 +173,15 @@ class MacroAgent(BaseAgent):
     def get_weekly_return(self, ticker: str) -> float:
         """Get weekly return for a single ticker (last close vs 5 trading days ago)."""
         try:
-            data = yf.download(ticker, period="1mo", interval="1d", auto_adjust=True)["Close"]
+            df = yf.download(ticker, period="1mo", interval="1d", auto_adjust=True)
+            if df is None or df.empty:
+                return 0.0
+
+            if "Close" not in df:
+                return 0.0
+
+            data = df["Close"]
+
             if isinstance(data, pd.Series):
                 data = data.to_frame()
 
@@ -429,10 +450,9 @@ class MacroAgent(BaseAgent):
 
         return "\n\n".join(output.confirmed_news)
 
-    def save_md(self, output: MacroOutput, prediction_date: date) -> None:
+    def render_md(self, output: MacroOutput, prediction_date: date) -> str:
         """Render MacroOutput to MD matching data/formats/macro_agent.md"""
         week = prediction_date.isocalendar()
-        filename = f"macro_agent_W{week.week:02d}.md"
         out_dir = REPO_ROOT / "data" / "macro"
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -473,13 +493,17 @@ INVALIDATION: {output.invalidation}
 
 Sources accessed: {prediction_date}
 """
-        (out_dir / filename).write_text(content, encoding="utf-8")
+        return content
 
 
 if __name__ == "__main__":
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
     agent = MacroAgent()
     output = agent.run(prediction_date)
-    agent.export(output, prediction_date, fmt="json")
-    agent.export(output, prediction_date, fmt="md")
+    json_saver = FileSaver(REPO_ROOT / "data" / "outputs" / agent.agent_type)
+    json_saver.save(agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}.json")
+
+    md_dir = REPO_ROOT / "data" / "macro"
+    md_saver = FileSaver(md_dir)
+    md_saver.save(agent.render_md(output, prediction_date), f"macro_agent_{week_stem(prediction_date)}.md")
     print("Saved to data/outputs/macro/ and data/macro/")
