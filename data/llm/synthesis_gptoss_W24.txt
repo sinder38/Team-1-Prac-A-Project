@@ -1,17 +1,17 @@
-# LLM Agent Output — OpenAI gpt-oss-120b — Week of 2026-06-08
+# LLM Agent Output — OpenAI gpt-oss-120b — Week of 2026-06-14
 
 1. Weekly Regime: Bullish
-2. Confidence Score: Low-Medium
+2. Confidence Score: Medium
 3. Key Supporting Evidence:
-   - Week 04 Market Report shows SPX closed at 7,431.46, up 0.46% for the week.
-   - Week 04 Market Report shows NDX closed at 29,635.95, up 2.17% for the week.
-   - Week 04 Market Report shows IWM closed at 292.95, up 3.93% for the week.
+   - Week 04 Market Report shows SPX up 0.46%, NDX up 2.17%, IWM up 3.93% – all positive weekly moves.
+   - Technical Agent lists bullish trend bias for SPX, NDX and IWM with EMA 8 ≈ EMA 21 and price above both, confidence Medium (SPX/NDX) and High (IWM).
+   - Macro Agent notes a “Binary‑risk” stance ahead of the Fed decision, with a 97.4% probability of a hold, keeping risk assets tilted slightly risk‑on.
 4. Key Contradictions:
-   - Technical agent rates SPX, NDX, IWM trend bias as “Neutral” with low confidence, while weekly price action is clearly bullish.
-   - Almanac agent gives a “Bearish” monthly/seasonal bias, yet sector signals show Technology (XLK) bullish and overall market indexes rose.
-5. Invalidation Conditions: A materially more dovish‑than‑expected Fed decision that drives Treasury yields lower and raises cut probability would invalidate the current cautious stance and could flip the regime to strongly risk‑on.
-6. Predicted % move — SPX: -0.2% to 0.8%
-   Predicted % move — NDX: 1.5% to 2.8%
+   - Almanac Agent signals a monthly and seasonal bearish bias, conflicting with the bullish technical and macro risk‑on signals.
+   - Sector almanac shows bearish outlook for Financials, Energy, Materials and Gold, yet the weekly market report shows Financials up 2.59% and Materials up 3.57%, opposing the almanac view.
+5. Invalidation Conditions: A materially more dovish Fed outcome (rate cut or clear forward guidance) that drives Treasury yields sharply lower and lifts risk sentiment would invalidate the current cautious bullish regime.
+6. Predicted % move — SPX: 0.3% to 0.8%
+   Predicted % move — NDX: 1.5% to 2.5%
    Predicted % move — IWM: 3.0% to 4.5%
-7. Plain-English brief: All three major U.S. indexes recovered last week, with the Russell 2000 leading the rally. The S&P 500 nudged higher, the Nasdaq posted a solid gain, and small‑cap stocks surged. Technical models still see a neutral bias, but the actual price moves and sector strength (especially tech and financials) point to a short‑term bullish environment. The main risk is the Fed’s June 18 meeting – if the Fed signals a quicker path to rate cuts, the bullish bias could strengthen; if it stays hawkish, the upside may be limited.
+7. Plain-English brief: All three major US indexes closed higher last week, with the small‑cap Russell 2000 leading the rally. Technicals are still bullish, and the upcoming Fed hold keeps the market in a modest risk‑on mode, despite a background of monthly bearish seasonality. The most likely weekly moves are modest gains for the S&P 500 (≈0.3‑0.8%), a stronger rise for the Nasdaq 100 (≈1.5‑2.5%) and a solid jump for the Russell 2000 (≈3‑4.5%). Watch the Fed meeting on June 18 – a surprise dovish shift could flip the outlook.
 8. Disclaimer: This is not financial advice.

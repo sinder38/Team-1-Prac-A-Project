@@ -1,17 +1,17 @@
-# LLM Agent Output — Google Gemma 4 31B — Week of 2026-06-08
+# LLM Agent Output — Google Gemma 4 31B — Week of 2026-06-14
 
 1. Weekly Regime: Uncertain
-2. Confidence Score: Low-Medium
+2. Confidence Score: Medium
 3. Key Supporting Evidence:
-   - Macro agent identifies a high-impact binary-risk event with the US Fed Interest Rate Decision on June 18, creating a cautious atmosphere.
-   - Technical agents show all three indexes (SPX, NDX, IWM) with a Neutral trend bias and Low confidence, trading near or below their 8-day EMAs.
-   - Almanac agent indicates a Bearish monthly and seasonal bias, though Technology (XLK) remains in a seasonal long window supporting the Nasdaq.
+   - Technicals show a Bullish trend bias for all three indexes with prices holding above EMA 8 and EMA 21 levels.
+   - Macro driver is the high-impact FOMC Interest Rate Decision on June 18, with a 97.4% probability of a hold and a slightly hawkish shift.
+   - Almanac data indicates a seasonal Bullish window for Technology (XLK) supporting the NDX, but a Bearish monthly bias for the broader market.
 4. Key Contradictions:
-   - Recent evidence shows a broad risk-on recovery with 10 of 11 sectors green and IWM up 3.93%, contradicting the Almanac's bearish seasonal bias.
-   - Macro agent notes falling DXY and oil prices, which typically support equities, yet the overall macro bias remains "Binary-risk" due to the FOMC meeting.
-5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower would reverse the cautious stance and support risk assets.
-6. Predicted % move — SPX: -1.0% to 1.5%
-   Predicted % move — NDX: -1.5% to 2.0%
-   Predicted % move — IWM: -2.0% to 2.5%
-7. Plain-English brief: The market is in a holding pattern ahead of the June 18 Fed meeting. While last week saw a strong bounce led by small caps and chips, the overall seasonal trend is bearish and technicals remain neutral. Expect choppy, range-bound trading as investors weigh the potential for a hawkish Fed against recent positive momentum and geopolitical peace hopes.
+   - Technicals are Bullish, but the Almanac seasonal and monthly biases are Bearish.
+   - Recent price action was strongly risk-on (IWM up 3.93%), but Macro bias is "Binary-risk" due to the upcoming Fed meeting.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower would reverse the cautious stance.
+6. Predicted % move — SPX: -1.2% to 1.5%
+   Predicted % move — NDX: -1.0% to 2.0%
+   Predicted % move — IWM: -2.0% to 1.0%
+7. Plain-English brief: The market is currently in a bullish technical trend, but it is heading into a high-risk week. While tech has seasonal support, the upcoming Fed meeting on Thursday creates a binary risk event that could either fuel further gains or trigger a pullback. Expect volatility and cautious trading until the Fed's direction is clear.
 8. Disclaimer: This is not financial advice.
