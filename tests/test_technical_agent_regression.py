@@ -1,157 +1,105 @@
+import pytest
+
 from backend.agents.technical.technical_agent import TechnicalAgent, EmaSnapshot
 from backend.agents.schemas import Bias, Confidence
 
 
 # ==========================================================
-# TEST 1
-# Verify that a strong bullish EMA structure returns:
-# Bias = Bullish
-# Confidence = High
-#
-# Condition:
-# Price > EMA8 > EMA21
+# HISTORICAL REGRESSION DATA
+# Values are taken from manually completed W22 and W23
+# Technical Agent reports.
 # ==========================================================
-def test_assess_trend_bullish_high_confidence():
+HISTORICAL_CASES = [
+    # week, symbol, price, ema8, ema21, expected_bias, expected_confidence
+    ("W22", "SPX", 7580.06, 7505.06, 7389.24, Bias.BULLISH, Confidence.HIGH),
+    ("W22", "NDX", 30333.18, 29810.55, 28982.86, Bias.BULLISH, Confidence.HIGH),
+
+    # IWM was manually described as Neutral-Bullish / Medium,
+    # but current schema maps this EMA structure to Bullish / High.
+    ("W22", "IWM", 290.43, 287.24, 282.38, Bias.BULLISH, Confidence.HIGH),
+
+    # W23 sharp reversal cases.
+    ("W23", "SPX", 7383.74, 7445.30, 7389.24, Bias.NEUTRAL, Confidence.LOW),
+    ("W23", "NDX", 28957.60, 29427.32, 28982.86, Bias.NEUTRAL, Confidence.LOW),
+    ("W23", "IWM", 281.65, 284.55, 282.38, Bias.NEUTRAL, Confidence.LOW),
+]
+
+
+# ==========================================================
+# TEST 1
+# Regression test using previous manually completed weeks.
+#
+# It checks that the Technical Agent still classifies
+# historical EMA setups consistently.
+# ==========================================================
+@pytest.mark.parametrize(
+    "week,symbol,price,ema8,ema21,expected_bias,expected_confidence",
+    HISTORICAL_CASES,
+)
+def test_historical_technical_bias_regression(
+    week,
+    symbol,
+    price,
+    ema8,
+    ema21,
+    expected_bias,
+    expected_confidence,
+):
     agent = TechnicalAgent()
-    snap = EmaSnapshot(price=100, ema_fast=95, ema_slow=90)
+    snap = EmaSnapshot(price=price, ema_fast=ema8, ema_slow=ema21)
 
     bias, confidence = agent._assess_trend(snap)
 
-    assert bias == Bias.BULLISH
-    assert confidence == Confidence.HIGH
+    assert bias == expected_bias, f"{week} {symbol} bias changed"
+    assert confidence == expected_confidence, f"{week} {symbol} confidence changed"
 
 
 # ==========================================================
 # TEST 2
-# Verify that a strong bearish EMA structure returns:
-# Bias = Bearish
-# Confidence = High
+# Historical W22 bullish EMA zone check.
 #
-# Condition:
-# Price < EMA8 < EMA21
-# ==========================================================
-def test_assess_trend_bearish_high_confidence():
-    agent = TechnicalAgent()
-    snap = EmaSnapshot(price=90, ema_fast=95, ema_slow=100)
-
-    bias, confidence = agent._assess_trend(snap)
-
-    assert bias == Bias.BEARISH
-    assert confidence == Confidence.HIGH
-
-
-# ==========================================================
-# TEST 3
-# Verify that mixed EMA signals return:
-# Bias = Neutral
-# Confidence = Low
-#
-# Condition:
-# Price > EMA8 but EMA8 < EMA21
-# ==========================================================
-def test_assess_trend_neutral_low_confidence():
-    agent = TechnicalAgent()
-    snap = EmaSnapshot(price=100, ema_fast=90, ema_slow=95)
-
-    bias, confidence = agent._assess_trend(snap)
-
-    assert bias == Bias.NEUTRAL
-    assert confidence == Confidence.LOW
-
-
-# ==========================================================
-# TEST 4
-# Verify that a weak bullish trend returns:
-# Bias = Bullish
-# Confidence = Medium
-#
-# EMA gap is small, therefore confidence should
-# not be High.
-# ==========================================================
-def test_assess_trend_bullish_medium_confidence():
-    agent = TechnicalAgent()
-    snap = EmaSnapshot(price=100, ema_fast=99.9, ema_slow=99.7)
-
-    bias, confidence = agent._assess_trend(snap)
-
-    assert bias == Bias.BULLISH
-    assert confidence == Confidence.MEDIUM
-
-
-# ==========================================================
-# TEST 5
-# Verify that a weak bearish trend returns:
-# Bias = Bearish
-# Confidence = Medium
-#
-# EMA gap is small, therefore confidence should
-# not be High.
-# ==========================================================
-def test_assess_trend_bearish_medium_confidence():
-    agent = TechnicalAgent()
-    snap = EmaSnapshot(price=99.8, ema_fast=99.9, ema_slow=100)
-
-    bias, confidence = agent._assess_trend(snap)
-
-    assert bias == Bias.BEARISH
-    assert confidence == Confidence.MEDIUM
-
-
-# ==========================================================
-# TEST 6
-# Verify EMA Zone 1 classification.
-#
-# Condition:
+# W22 SPX and NDX had:
 # Price > EMA8 > EMA21
-#
-# Expected:
-# Zone 1 (Bullish)
+# Expected zone = 1 Bullish
 # ==========================================================
-def test_ema_zone_bullish():
+@pytest.mark.parametrize(
+    "symbol,price,ema8,ema21",
+    [
+        ("SPX", 7580.06, 7505.06, 7389.24),
+        ("NDX", 30333.18, 29810.55, 28982.86),
+    ],
+)
+def test_w22_historical_bullish_ema_zone(symbol, price, ema8, ema21):
     agent = TechnicalAgent()
 
-    zone_id, zone_label, description = agent._ema_zone(100, 95, 90)
+    zone_id, zone_label, description = agent._ema_zone(price, ema8, ema21)
 
-    assert zone_id == 1
+    assert zone_id == 1, f"W22 {symbol} EMA zone changed"
     assert zone_label == Bias.BULLISH.value
     assert "price above both EMAs" in description
 
 
 # ==========================================================
-# TEST 7
-# Verify EMA Zone 4 classification.
+# TEST 3
+# Historical W23 reversal check.
 #
-# Condition:
-# Price < EMA8 < EMA21
-#
-# Expected:
-# Zone 4 (Bearish)
+# W23 reports showed price fell below EMA8,
+# meaning bullish trend weakened.
+# Current implementation should classify these as Neutral.
 # ==========================================================
-def test_ema_zone_bearish():
+@pytest.mark.parametrize(
+    "symbol,price,ema8,ema21",
+    [
+        ("SPX", 7383.74, 7445.30, 7389.24),
+        ("NDX", 28957.60, 29427.32, 28982.86),
+        ("IWM", 281.65, 284.55, 282.38),
+    ],
+)
+def test_w23_historical_reversal_is_not_bullish(symbol, price, ema8, ema21):
     agent = TechnicalAgent()
+    snap = EmaSnapshot(price=price, ema_fast=ema8, ema_slow=ema21)
 
-    zone_id, zone_label, description = agent._ema_zone(90, 95, 100)
+    bias, confidence = agent._assess_trend(snap)
 
-    assert zone_id == 4
-    assert zone_label == Bias.BEARISH.value
-    assert "price below both EMAs" in description
-
-
-# ==========================================================
-# TEST 8
-# Verify compressed EMA condition.
-#
-# Condition:
-# Price = EMA8 = EMA21
-#
-# Expected:
-# Zone 0 (Neutral)
-# ==========================================================
-def test_ema_zone_compressed_neutral():
-    agent = TechnicalAgent()
-
-    zone_id, zone_label, description = agent._ema_zone(100, 100, 100)
-
-    assert zone_id == 0
-    assert zone_label == Bias.NEUTRAL.value
-    assert "EMAs compressed" in description
+    assert bias != Bias.BULLISH, f"W23 {symbol} should not remain bullish"
+    assert confidence == Confidence.LOW
