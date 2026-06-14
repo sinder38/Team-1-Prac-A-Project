@@ -1,5 +1,11 @@
-"""Pipeline entry point. Run with: uv run python run_pipeline.py"""
+"""Pipeline entry point.
 
+Usage:
+    uv run python run_pipeline.py
+    uv run python run_pipeline.py --config pipeline.ci.toml
+"""
+
+import argparse
 import sys
 import tomllib
 from datetime import date
@@ -17,8 +23,8 @@ from agents.pipeline.stages import (
     run_technical,
 )
 
-PIPELINE_TOML = Path(__file__).parent / "pipeline.toml"
 REPO_ROOT = Path(__file__).parent.parent
+DEFAULT_CONFIG = Path(__file__).parent / "pipeline.toml"
 
 
 def resolve_date(value: str) -> date:
@@ -28,7 +34,16 @@ def resolve_date(value: str) -> date:
 
 
 def main() -> None:
-    with open(PIPELINE_TOML, "rb") as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=DEFAULT_CONFIG,
+        help="Path to pipeline TOML config (default: pipeline.toml)",
+    )
+    args = parser.parse_args()
+
+    with open(args.config, "rb") as f:
         config = tomllib.load(f)
 
     prediction_date = resolve_date(config["pipeline"]["prediction_date"])
@@ -72,15 +87,19 @@ def main() -> None:
 
     # Write comparison table if any LLMs ran
     if rows_by_slug and config.get("artifacts", {}).get("save_md", True):
-        from agents.llm.multi_model_runner import build_comparison_md
         from agents.io import FileSaver, week_stem
+        from agents.llm.multi_model_runner import build_comparison_md
 
         tag = week_stem(prediction_date)
         comparison_md = build_comparison_md(rows_by_slug, tag, prediction_date)
-        FileSaver(REPO_ROOT / "data" / "llm").save(comparison_md, f"llm_comparison_{tag}.md")
+        FileSaver(REPO_ROOT / "data" / "llm").save(
+            comparison_md, f"llm_comparison_{tag}.md"
+        )
         print(f"[pipeline] wrote data/llm/llm_comparison_{tag}.md")
 
-    print(f"\n[pipeline] complete. date={prediction_date}, llm_outputs={len(ctx.llm_outputs)}")
+    print(
+        f"\n[pipeline] complete. date={prediction_date}, llm_outputs={len(ctx.llm_outputs)}"
+    )
 
 
 if __name__ == "__main__":

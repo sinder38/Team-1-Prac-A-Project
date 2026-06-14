@@ -1,0 +1,15 @@
+[pipeline]
+prediction_date = "auto"
+
+[stages]
+almanac   = true
+technical = true
+macro     = true
+evidence  = true
+
+[llm]
+models = ["nemotron", "gptoss", "gemma", "laguna"]
+
+[artifacts]
+save_json = false
+save_md   = true

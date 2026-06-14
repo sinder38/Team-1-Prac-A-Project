@@ -145,10 +145,11 @@ No vague calls like "looks bullish" — only measured statements like "bullish w
 
 ```bash
 cd backend
-uv run python run_pipeline.py
+uv run python run_pipeline.py                        # uses pipeline.toml (dev)
+uv run python run_pipeline.py --config pipeline.ci.toml  # uses CI config
 ```
 
-Configure the prediction date, enabled stages, and LLM models in `backend/pipeline.toml`. The pipeline runs automatically every Friday via GitHub Actions.
+Configure prediction date, enabled stages, and LLM models in `backend/pipeline.toml`. `backend/pipeline.ci.toml` is used by GitHub Actions and always runs with `auto` date and all stages enabled. The pipeline runs automatically every Friday.
 
 ---
 
