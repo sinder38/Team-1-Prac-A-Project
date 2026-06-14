@@ -34,6 +34,7 @@ class ExampleAgent(BaseLLMAgent):
 
 if __name__ == "__main__":
     from agents.io import FileSaver, week_stem
+
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
     agent = ExampleAgent()
     output = agent.run(prediction_date)
