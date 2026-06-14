@@ -120,11 +120,14 @@ class BaseLLMAgent(BaseAgent):
 
         def parse_range(field: str) -> PredictedRange:
             val = require(field)
+            # Pull the first two signed decimals from whatever the model wrote, tolerating
+            # surrounding text like "-1.5% to 2.0 (bearish)" or "around -2 to maybe +1".
             nums = re.findall(r"[-+]?\d*\.?\d+", val)
             if len(nums) >= 2:
                 return PredictedRange(low=float(nums[0]), high=float(nums[1]))
             if len(nums) == 1:
                 return PredictedRange(low=float(nums[0]), high=float(nums[0]))
+            # No usable number at all -> fail loudly instead of inventing 0% to 0%.
             raise ValueError(f"Could not parse a numeric range for '{field}' from {val!r}.")
 
         return LLMOutput(
