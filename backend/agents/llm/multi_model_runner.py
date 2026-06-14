@@ -28,8 +28,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]   # .../backend  (for imports + .env)
 sys.path.insert(0, str(BASE_DIR))
 
-from openai import OpenAI
-from dotenv import load_dotenv, find_dotenv
+from openai import OpenAI  # type: ignore
+from dotenv import load_dotenv, find_dotenv  # type: ignore
 
 from agents.llm.base_llm import BaseLLMAgent
 from agents.io import FileSaver
@@ -82,7 +82,7 @@ def _serialize(output) -> str:
     if hasattr(output, "json"):                  # pydantic v1
         return output.json(indent=2)
     import dataclasses
-    if dataclasses.is_dataclass(output):
+    if dataclasses.is_dataclass(output) and not isinstance(output, type):
         return json.dumps(dataclasses.asdict(output), indent=2, default=str)
     raise TypeError("Cannot serialize LLMOutput — send schemas.py to wire this exactly.")
 
