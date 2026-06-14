@@ -2,6 +2,8 @@ from abc import abstractmethod
 from datetime import date
 from pathlib import Path
 import json
+import re
+import sys
 
 from agents.base import BaseAgent
 from agents.schemas import LLMOutput, PredictedRange, Regime, Confidence
@@ -18,21 +20,42 @@ class BaseLLMAgent(BaseAgent):
 
     def build_prompt(self, prediction_date: date) -> str:
         """
-        Load all data agent JSON outputs from data/outputs/ and assemble
+        Load all data agent JSON outputs from <repo>/data/outputs/ and assemble
         a structured prompt for the LLM.
         """
-        outputs_dir = Path(__file__).parent.parent.parent / "data" / "outputs"
+        # FIX: the data agents write to the REPO-ROOT data/outputs/. base.py lives at
+        # backend/agents/, but this file is one level deeper at backend/agents/llm/, so
+        # the old `.parent.parent.parent` resolved to backend/data/outputs and silently
+        # found nothing. parents[3] == <repo>, matching where the agents actually write.
+        outputs_dir = Path(__file__).resolve().parents[3] / "data" / "outputs"
         week = prediction_date.isocalendar()
         week_key = f"{week.year}-W{week.week:02d}.json"
 
         context_blocks = []
         for agent_type in ("technical", "almanac", "macro"):
             agent_file = outputs_dir / agent_type / week_key
-            if agent_file.exists():
+            if not agent_file.exists():
+                # Loud (stderr) but non-fatal: a partial context is real-but-incomplete
+                # data, not fabrication. Full absence is handled below.
+                print(f"⚠️  Missing agent input: {agent_file}", file=sys.stderr)
+                continue
+            try:
                 data = json.loads(agent_file.read_text(encoding="utf-8"))
-                context_blocks.append(f"=== {agent_type.upper()} AGENT ===\n{json.dumps(data, indent=2)}")
+            except json.JSONDecodeError as e:
+                # Explicit: name the broken file instead of surfacing a bare JSONDecodeError.
+                raise ValueError(f"Malformed JSON in {agent_file}: {e}") from e
+            context_blocks.append(f"=== {agent_type.upper()} AGENT ===\n{json.dumps(data, indent=2)}")
 
-        context = "\n\n".join(context_blocks) if context_blocks else "No agent data available."
+        if not context_blocks:
+            # No silent fallback. Querying an LLM on an empty context only yields a
+            # baseless, fabricated prediction — refuse loudly instead.
+            raise ValueError(
+                f"No agent inputs found for {week_key} under {outputs_dir}. "
+                "Run the Technical/Almanac/Macro agents first; refusing to query the LLM "
+                "on an empty context."
+            )
+
+        context = "\n\n".join(context_blocks)
 
         return (
             f"You are a market analyst. Based on the following data for the week of {prediction_date}, "
@@ -56,8 +79,19 @@ class BaseLLMAgent(BaseAgent):
 
     def parse_response(self, raw: str, prediction_date: date) -> LLMOutput:
         """
-        Parse LLM raw text response into LLMOutput.
+        Parse an LLM raw text response into LLMOutput.
+
+        No silent dummy data:
+          - Core fields (regime, confidence, the three ranges) are REQUIRED. If a field
+            is missing or its range has no usable number, this raises — so the caller
+            marks the model FAILED rather than inventing a default like "Uncertain" or
+            "0% to 0%".
+          - Supplementary fields (evidence, contradictions, invalidation, plain_english)
+            are optional: absent -> empty, which is an honest "not provided", not a fake value.
+
         Subclasses may override if their LLM returns a different format.
+        Note: values are taken from the first line containing each key; multi-line
+        free-text values are not reassembled (the requested format is one line per key).
         """
         lines = {
             line.split(":", 1)[0].strip(): line.split(":", 1)[1].strip()
@@ -65,26 +99,40 @@ class BaseLLMAgent(BaseAgent):
             if ":" in line
         }
 
-        def parse_range(val: str) -> PredictedRange:
-            parts = val.replace("%", "").split("to")
-            return PredictedRange(low=float(parts[0].strip()), high=float(parts[1].strip()))
+        def require(key: str) -> str:
+            value = lines.get(key, "").strip()
+            if not value:
+                raise ValueError(f"Missing required field '{key}' in the LLM response.")
+            return value
+
+        def parse_range(field: str) -> PredictedRange:
+            val = require(field)
+            # Pull the first two signed decimals from whatever the model wrote, tolerating
+            # surrounding text like "-1.5% to 2.0 (bearish)" or "around -2 to maybe +1".
+            nums = re.findall(r"[-+]?\d*\.?\d+", val)
+            if len(nums) >= 2:
+                return PredictedRange(low=float(nums[0]), high=float(nums[1]))
+            if len(nums) == 1:
+                return PredictedRange(low=float(nums[0]), high=float(nums[0]))
+            # No usable number at all -> fail loudly instead of inventing 0% to 0%.
+            raise ValueError(f"Could not parse a numeric range for '{field}' from {val!r}.")
 
         return LLMOutput(
             model_name=self.model_name,
             prediction_date=prediction_date,
-            weekly_regime=Regime(lines.get("WEEKLY_REGIME", "Uncertain")),
-            confidence=Confidence(lines.get("CONFIDENCE", "Low")),
-            spx_range=parse_range(lines.get("SPX_RANGE", "0 to 0")),
-            ndx_range=parse_range(lines.get("NDX_RANGE", "0 to 0")),
-            iwm_range=parse_range(lines.get("IWM_RANGE", "0 to 0")),
+            weekly_regime=Regime(require("WEEKLY_REGIME")),
+            confidence=Confidence(require("CONFIDENCE")),
+            spx_range=parse_range("SPX_RANGE"),
+            ndx_range=parse_range("NDX_RANGE"),
+            iwm_range=parse_range("IWM_RANGE"),
             supporting_evidence=[
-                lines[k] for k in ("EVIDENCE_1", "EVIDENCE_2", "EVIDENCE_3") if k in lines
+                lines[k] for k in ("EVIDENCE_1", "EVIDENCE_2", "EVIDENCE_3") if lines.get(k, "").strip()
             ],
             contradictions=[
-                lines[k] for k in ("CONTRADICTION_1", "CONTRADICTION_2") if k in lines
+                lines[k] for k in ("CONTRADICTION_1", "CONTRADICTION_2") if lines.get(k, "").strip()
             ],
-            invalidation=lines.get("INVALIDATION", ""),
-            plain_english=lines.get("PLAIN_ENGLISH", ""),
+            invalidation=lines.get("INVALIDATION", "").strip(),
+            plain_english=lines.get("PLAIN_ENGLISH", "").strip(),
         )
 
     def run(self, prediction_date: date, **kwargs) -> LLMOutput:
