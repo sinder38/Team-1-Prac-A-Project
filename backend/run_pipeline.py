@@ -1,5 +1,11 @@
-"""Pipeline entry point. Run with: uv run python run_pipeline.py"""
+"""Pipeline entry point.
 
+Usage:
+    uv run python run_pipeline.py
+    uv run python run_pipeline.py --config pipeline.ci.toml
+"""
+
+import argparse
 import sys
 import tomllib
 from datetime import date
@@ -17,11 +23,8 @@ from agents.pipeline.stages import (
     run_technical,
 )
 
-_ci_toml = Path(__file__).parent / "pipeline.ci.toml"
-_dev_toml = Path(__file__).parent / "pipeline.toml"
-PIPELINE_TOML = _ci_toml if _ci_toml.exists() else _dev_toml
-
 REPO_ROOT = Path(__file__).parent.parent
+DEFAULT_CONFIG = Path(__file__).parent / "pipeline.toml"
 
 
 def resolve_date(value: str) -> date:
@@ -31,7 +34,16 @@ def resolve_date(value: str) -> date:
 
 
 def main() -> None:
-    with open(PIPELINE_TOML, "rb") as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=DEFAULT_CONFIG,
+        help="Path to pipeline TOML config (default: pipeline.toml)",
+    )
+    args = parser.parse_args()
+
+    with open(args.config, "rb") as f:
         config = tomllib.load(f)
 
     prediction_date = resolve_date(config["pipeline"]["prediction_date"])
