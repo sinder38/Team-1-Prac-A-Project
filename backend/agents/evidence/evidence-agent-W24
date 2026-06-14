@@ -1,0 +1,62 @@
+Evidence Agent Output — Week of 9–13 June 2026 — Source: Evidence Agent
+ 
+WEEK: W24 (9–13 June 2026)
+EVIDENCE SOURCES: Finviz Futures 1W, Yahoo Finance 5D. Accessed: 14 June 2026.
+ 
+---
+ 
+ACTUAL MARKET OUTCOMES (Week of 9–13 June 2026):
+ 
+| Asset             | Predicted Direction | Predicted Range  | Actual Result | Hit?  |
+|-------------------|---------------------|------------------|---------------|-------|
+| S&P 500 (SPX)     | DOWN                | -1.0% to -3.0%   | +0.46%        | MISS  |
+| Nasdaq 100 (NDX)  | DOWN                | -1.5% to -4.0%   | +2.17%        | MISS  |
+| Russell 2000 (IWM)| DOWN                | -1.0% to -3.5%   | +3.93%        | MISS  |
+| Gold              | FLAT-UP             | -1.0% to +2.0%   | -2.90%        | MISS  |
+| WTI Crude Oil     | UP                  | 0% to +4%        | -6.25%        | MISS  |
+| VIX               | UP                  | 18–25 range      | -6.25% (17.68)| MISS  |
+| Bitcoin           | DOWN                | -2% to -8%       | +5.24%        | MISS  |
+ 
+DIRECTIONAL ACCURACY: 0 of 7 correct (0%)
+ 
+---
+ 
+CLOSING PRICES (Friday 13 June 2026):
+- SPX: 7,431.46 (+0.46% weekly, +0.50% on Friday)
+- NDX: 29,635.95 (+2.17% weekly, +0.64% on Friday)
+- Russell 2000: 2,943.99 (+3.93% weekly, +0.79% on Friday)
+- VIX: 17.68 (closed well below predicted 18–25 range)
+- Gold: -2.90% weekly
+- WTI Crude Oil: -6.25% weekly
+- Bitcoin: +5.24% weekly
+---
+ 
+WHAT ACTUALLY HAPPENED:
+ 
+Markets moved against the bearish prediction across all assets. The team predicted a broad risk-off week driven by CPI fears, but the opposite occurred:
+ 
+- SPX, NDX, and Russell 2000 all closed UP on the week
+- Russell 2000 was the strongest equity performer at +3.93% — team predicted -1.0% to -3.5%
+- VIX fell sharply instead of rising — fear decreased, not increased
+- WTI Crude Oil fell -6.25% instead of rising — the energy long thesis was wrong
+- Gold fell -2.90% — consistent with the seasonal short signal from R3 Almanac output
+- Bitcoin surged +5.24% — opposite of the predicted -2% to -8%
+INVALIDATION CONDITIONS MET:
+The team's own invalidation conditions were triggered:
+- (a) CPI likely came in cool — triggering a relief rally
+- (b) Treasury yields reversed lower (10 Year Note +0.40% = bonds rising = yields falling)
+- (c) SPX reclaimed ground and closed higher on the week
+---
+ 
+ALMANAC SIGNALS — REVIEW:
+- Gold seasonal SHORT signal — actual -2.90% — correct call
+- Technology seasonal LONG signal — NDX +2.17% — correct call
+- Overall bearish bias — markets ended UP on the week — incorrect
+---
+ 
+CALIBRATION SCORE THIS WEEK: 0/7 (0%)
+RUNNING NOTES: Team was positioned bearish into a CPI-driven relief rally. The invalidation condition was correctly identified in advance but not weighted heavily enough in the final prediction.
+ 
+---
+ 
+Source: Finviz Futures 1W (finviz.com/futures_performance.ashx), Yahoo Finance 5D (finance.yahoo.com). Accessed: 14 June 2026.
