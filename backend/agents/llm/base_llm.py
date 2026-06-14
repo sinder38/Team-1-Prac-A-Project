@@ -16,21 +16,34 @@ class BaseLLMAgent(BaseAgent):
         """Send prompt to the LLM, return raw text response."""
         ...
 
-    def build_prompt(self, prediction_date: date) -> str:
+    def build_prompt(self, prediction_date: date, ctx: "PipelineContext" = None) -> str:
         """
-        Load all data agent JSON outputs from data/outputs/ and assemble
-        a structured prompt for the LLM.
+        Assemble a structured prompt from the in-memory PipelineContext.
         """
-        outputs_dir = Path(__file__).parent.parent.parent / "data" / "outputs"
-        week = prediction_date.isocalendar()
-        week_key = f"{week.year}-W{week.week:02d}.json"
+        from dataclasses import asdict
+        from agents.pipeline.context import PipelineContext
+
+        # If no context provided, use empty context
+        if ctx is None:
+            ctx = PipelineContext(prediction_date=prediction_date)
 
         context_blocks = []
-        for agent_type in ("technical", "almanac", "macro"):
-            agent_file = outputs_dir / agent_type / week_key
-            if agent_file.exists():
-                data = json.loads(agent_file.read_text(encoding="utf-8"))
-                context_blocks.append(f"=== {agent_type.upper()} AGENT ===\n{json.dumps(data, indent=2)}")
+        for agent_type, output in [
+            ("technical", ctx.technical),
+            ("almanac", ctx.almanac),
+            ("macro", ctx.macro),
+            ("evidence", ctx.evidence),
+        ]:
+            if output is None:
+                continue
+            if agent_type == "evidence":
+                # Evidence is raw markdown, not a structured dataclass
+                context_blocks.append(f"=== EVIDENCE ===\n{output.content}")
+            else:
+                data = asdict(output)
+                context_blocks.append(
+                    f"=== {agent_type.upper()} AGENT ===\n{json.dumps(data, indent=2, default=str)}"
+                )
 
         context = "\n\n".join(context_blocks) if context_blocks else "No agent data available."
 
@@ -88,7 +101,7 @@ class BaseLLMAgent(BaseAgent):
         )
 
     def run(self, prediction_date: date, **kwargs) -> LLMOutput:
-        prompt = self.build_prompt(prediction_date)
+        prompt = self.build_prompt(prediction_date, kwargs.get("ctx"))
         raw = self.query(prompt)
         return self.parse_response(raw, prediction_date)
 

@@ -1,0 +1,15 @@
+[pipeline]
+prediction_date = "auto"  # "auto" = date.today(), or ISO string e.g. "2026-06-16"
+
+[stages]
+almanac   = true
+technical = true
+macro     = true
+evidence  = true
+
+[llm]
+models = ["example"]
+
+[artifacts]
+save_json = true
+save_md   = true
