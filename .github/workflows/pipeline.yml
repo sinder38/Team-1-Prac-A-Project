@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   run-pipeline:
@@ -36,10 +37,23 @@ jobs:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: uv run python run_pipeline.py --config pipeline.ci.toml
 
-      - name: Commit artifacts
+      - name: Open PR with artifacts
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="pipeline/artifacts-$(date -u +%Y-%m-%d)"
+          git checkout -b "$BRANCH"
           git add ../data/almanac/ ../data/technical/ ../data/evidence/ ../data/llm/
-          git diff --cached --quiet || git commit -m "chore: pipeline artifacts $(date -u +%Y-%m-%d)"
-          git push
+          if git diff --cached --quiet; then
+            echo "No new artifacts to commit."
+            exit 0
+          fi
+          git commit -m "chore: pipeline artifacts $(date -u +%Y-%m-%d)"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "chore: pipeline artifacts $(date -u +%Y-%m-%d)" \
+            --body "Automated weekly pipeline artifacts. Merge after reviewing LLM outputs." \
+            --base main \
+            --head "$BRANCH"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
