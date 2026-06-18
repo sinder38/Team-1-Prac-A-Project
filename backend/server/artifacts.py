@@ -139,15 +139,26 @@ def get_runs():
     run_ids: set[str] = set()
 
     # Scan all agent subdirectories for files matching the week stem.
-    # Filename pattern: {agent_type}_{stem}_{run_id}[_{suffix}].json
-    pattern = re.compile(rf"^[a-z]+_{re.escape(stem)}_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$")
+    # Filename patterns:
+    #   Standard: {agent_type}_{stem}_{run_id}[_{suffix}].json (e.g. almanac_W25_run1_7d.json)
+    #   LLM: llm_{model}_{stem}_{run_id}_{horizon_days}d.json (e.g. llm_nemotron_W25_run1_7d.json)
+    stem_escaped = re.escape(stem)
+    standard_pattern = re.compile(rf"^[a-z]+_{stem_escaped}_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$")
+    llm_pattern = re.compile(rf"^llm_[a-z]+_{stem_escaped}_(.+?)_\d+d\.json$")
+
     for subdir in OUTPUTS_ROOT.iterdir():
         if not subdir.is_dir():
             continue
         for f in subdir.glob(f"*_{stem}_*.json"):
-            m = pattern.match(f.name)
+            # Try standard pattern first
+            m = standard_pattern.match(f.name)
             if m:
                 run_ids.add(m.group(1))
+            else:
+                # Try LLM pattern
+                m = llm_pattern.match(f.name)
+                if m:
+                    run_ids.add(m.group(1))
 
     return jsonify({
         "prediction_date": raw_date,

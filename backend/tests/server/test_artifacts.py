@@ -73,11 +73,16 @@ def test_get_runs(client, tmp_path):
     (tmp_path / "almanac" / "almanac_W25_run2_7d.json").write_text("{}")
     (tmp_path / "almanac" / "almanac_W24_other_7d.json").write_text("{}")  # different week
 
+    # Add LLM artifacts to test LLM filename pattern matching
+    (tmp_path / "llm").mkdir()
+    (tmp_path / "llm" / "llm_nemotron_W25_run1_7d.json").write_text("{}")  # same run_id as almanac
+    (tmp_path / "llm" / "llm_nemotron_W25_run3_7d.json").write_text("{}")  # new run_id
+
     with patch("server.artifacts.OUTPUTS_ROOT", tmp_path):
         resp = client.get("/artifacts/runs?prediction_date=2026-06-18")
     assert resp.status_code == 200
     data = json.loads(resp.data)
-    assert set(data["run_ids"]) == {"run1", "run2"}
+    assert set(data["run_ids"]) == {"run1", "run2", "run3"}
     assert data["week"] == "W25"
 
 
