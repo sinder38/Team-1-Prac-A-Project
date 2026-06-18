@@ -49,3 +49,13 @@ def test_err_shape():
         response, status = err("bad input", 400)
         assert status == 400
         assert json.loads(response.data) == {"error": "bad input"}
+
+
+def test_artifact_path_rejects_path_traversal():
+    with pytest.raises(ValueError, match="run_id"):
+        artifact_path("almanac", "W25", "../evil", horizon_days=7)
+
+
+def test_artifact_path_rejects_dotfile():
+    with pytest.raises(ValueError, match="run_id"):
+        artifact_path("almanac", "W25", ".hidden", horizon_days=7)

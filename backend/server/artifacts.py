@@ -136,6 +136,8 @@ def get_runs():
         return err(f"Invalid prediction_date: {raw_date!r}", 400)
 
     stem = week_stem(prediction_date)
+    if not OUTPUTS_ROOT.exists():
+        return jsonify({"prediction_date": raw_date, "week": stem, "run_ids": []}), 200
     run_ids: set[str] = set()
 
     # Scan all agent subdirectories for files matching the week stem.
@@ -144,7 +146,7 @@ def get_runs():
     #   LLM: llm_{model}_{stem}_{run_id}_{horizon_days}d.json (e.g. llm_nemotron_W25_run1_7d.json)
     stem_escaped = re.escape(stem)
     standard_pattern = re.compile(rf"^[a-z]+_{stem_escaped}_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$")
-    llm_pattern = re.compile(rf"^llm_[a-z]+_{stem_escaped}_(.+?)_\d+d\.json$")
+    llm_pattern = re.compile(rf"^llm_[a-z0-9]+_{stem_escaped}_(.+?)_\d+d\.json$")
 
     for subdir in OUTPUTS_ROOT.iterdir():
         if not subdir.is_dir():

@@ -89,3 +89,12 @@ def test_get_runs(client, tmp_path):
 def test_get_runs_missing_date(client):
     resp = client.get("/artifacts/runs")
     assert resp.status_code == 400
+
+
+def test_get_runs_empty_when_no_outputs_dir(client, tmp_path):
+    nonexistent = tmp_path / "nonexistent"
+    with patch("server.artifacts.OUTPUTS_ROOT", nonexistent):
+        resp = client.get("/artifacts/runs?prediction_date=2026-06-18")
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data["run_ids"] == []

@@ -27,6 +27,9 @@ def artifact_path(
     horizon_days: int | None = None,
     model: str | None = None,
 ) -> Path:
+    for name, value in [("run_id", run_id), ("model", model)]:
+        if value is not None and (Path(value).name != value or value.startswith(".")):
+            raise ValueError(f"{name} must not contain path separators or start with '.'")
     base = OUTPUTS_ROOT / agent_type
     if agent_type == "llm":
         filename = f"llm_{model}_{week_stem}_{run_id}_{horizon_days}d.json"
