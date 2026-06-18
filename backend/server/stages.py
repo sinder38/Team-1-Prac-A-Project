@@ -1,4 +1,5 @@
 import json
+import json as _json
 from dataclasses import asdict
 from datetime import date
 from pathlib import Path
@@ -15,6 +16,11 @@ from agents.pipeline.stages import (
     run_llm,
     run_macro,
     run_technical,
+)
+from agents.schemas import (
+    AlmanacOutput, Bias, Confidence, SectorSignal,
+    InstrumentTechnical, MacroBias, CommodityData, CalendarEvent,
+    TechnicalOutput, MacroOutput, EvidenceOutput,
 )
 from server.utils import artifact_path, err, parse_date, require_fields
 
@@ -54,6 +60,7 @@ def post_almanac():
     output_dict["horizon_days"] = horizon_days
     path = artifact_path("almanac", stem, run_id, horizon_days=horizon_days)
     _write_artifact(path, output_dict)
+    output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
 
 
@@ -83,6 +90,7 @@ def post_technical():
     output_dict["horizon_days"] = horizon_days
     path = artifact_path("technical", stem, run_id, horizon_days=horizon_days)
     _write_artifact(path, output_dict)
+    output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
 
 
@@ -112,6 +120,7 @@ def post_macro():
     output_dict["horizon_days"] = horizon_days
     path = artifact_path("macro", stem, run_id, horizon_days=horizon_days)
     _write_artifact(path, output_dict)
+    output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
 
 
@@ -137,6 +146,7 @@ def post_evidence():
     output_dict = asdict(ctx.evidence)
     path = artifact_path("evidence", stem, run_id)
     _write_artifact(path, output_dict)
+    output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
 
 
@@ -180,12 +190,6 @@ def post_llm():
     # Load agent outputs from disk into PipelineContext
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        from agents.schemas import (
-            AlmanacOutput, TechnicalOutput, MacroOutput, EvidenceOutput,
-            Bias, Confidence, SectorSignal,
-            InstrumentTechnical, MacroBias, CommodityData, CalendarEvent,
-        )
-
         def _load(agent_type, **kwargs):
             p = artifact_path(agent_type, stem, run_id, **kwargs)
             return json.loads(p.read_text(encoding="utf-8"))
@@ -272,4 +276,5 @@ def post_llm():
     output_dict["horizon_days"] = horizon_days
     path = artifact_path("llm", stem, run_id, model=model_key, horizon_days=horizon_days)
     _write_artifact(path, output_dict)
+    output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
