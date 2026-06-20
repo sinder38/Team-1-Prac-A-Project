@@ -13,8 +13,8 @@ dependencies = [
     "pydantic>=2.0",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=8.0",
     "pyright>=1.1",
 ]

@@ -1,21 +1,25 @@
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, model_validator
 
 
 class LLMModelEntry(BaseModel):
     id: str
+    slug: str = ""   # short file/path identifier; derived from id if not set in TOML
+    name: str = ""   # human-readable label; derived from slug if not set in TOML
 
-    @computed_field
-    @property
-    def slug(self) -> str:
-        return self.id.split("/", 1)[1].split(":")[0]
+    @model_validator(mode="after")
+    def _fill_derived(self) -> "LLMModelEntry":
+        if not self.slug:
+            self.slug = self.id.split("/", 1)[1].split(":")[0]
+        if not self.name:
+            self.name = self.slug.replace("-", " ").title()
+        return self
 
-    @computed_field
     @property
     def label(self) -> str:
-        return self.slug.replace("-", " ").title()
+        return self.name
 
 
 class PipelineSection(BaseModel):
