@@ -19,7 +19,7 @@ from io import StringIO
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Final, Protocol
+from typing import Final, Protocol, cast
 
 import pandas as pd
 import requests
@@ -99,16 +99,19 @@ class EvidenceSnapshot:
 class EvidenceMarketDataProvider(Protocol):
     def history(self, ticker: str, start: date, end: date) -> pd.Series:
         """Return daily close prices from start through end, inclusive."""
+        ...
 
 
 class ScreenshotProvider(Protocol):
     def capture(self, url: str, path: Path) -> None:
         """Capture url to path as a PNG image."""
+        ...
 
 
 class YieldDataProvider(Protocol):
     def history(self, series_id: str, start: date, end: date) -> pd.Series:
         """Return daily yield values from start through end, inclusive."""
+        ...
 
 
 class YahooFinanceEvidenceProvider:
@@ -126,8 +129,12 @@ class YahooFinanceEvidenceProvider:
             raise ValueError(f"No Yahoo Finance data returned for {ticker}")
 
         close = self._close_column(raw, ticker)
-        close.index = pd.to_datetime(close.index).tz_localize(None)
-        close = close.dropna().sort_index()
+        close = pd.Series(
+            close.to_numpy(),
+            index=pd.DatetimeIndex(pd.to_datetime(close.index)).tz_localize(None),
+            name=close.name,
+        )
+        close = cast(pd.Series, close.dropna().sort_index())
         if close.empty:
             raise ValueError(f"No close prices returned for {ticker}")
         return close
@@ -143,16 +150,16 @@ class YahooFinanceEvidenceProvider:
                 raise ValueError(f"No close column returned for {ticker}")
             if isinstance(close, pd.DataFrame):
                 if ticker in close.columns:
-                    return close[ticker]
-                return close.iloc[:, 0]
-            return close
+                    return cast(pd.Series, close[ticker])
+                return cast(pd.Series, close.iloc[:, 0])
+            return cast(pd.Series, close)
 
         if "Close" not in raw.columns:
             raise ValueError(f"No close column returned for {ticker}")
         close = raw["Close"]
         if isinstance(close, pd.DataFrame):
-            return close.iloc[:, 0]
-        return close
+            return cast(pd.Series, close.iloc[:, 0])
+        return cast(pd.Series, close)
 
 
 class FredYieldProvider:
@@ -171,15 +178,24 @@ class FredYieldProvider:
         if "observation_date" not in df.columns or series_id not in df.columns:
             raise ValueError(f"FRED response missing {series_id} data")
 
-        values = pd.to_numeric(df[series_id], errors="coerce")
-        series = pd.Series(values.to_numpy(), index=pd.to_datetime(df["observation_date"]))
-        series = series.dropna().sort_index()
-        series = series[
-            (series.index.date >= start) & (series.index.date <= end)
+        raw_values = cast(pd.Series, df[series_id])
+        values = cast(pd.Series, pd.to_numeric(raw_values, errors="coerce"))
+        raw_dates = cast(pd.Series, df["observation_date"])
+        dates = pd.DatetimeIndex(pd.to_datetime(raw_dates))
+        series = pd.Series(values.to_numpy(), index=dates)
+        series = cast(pd.Series, series.dropna().sort_index())
+        index = pd.DatetimeIndex(series.index)
+        filtered = [
+            (item, float(value))
+            for item, value in zip(index, series.to_numpy())
+            if start <= item.date() <= end
         ]
-        if series.empty:
+        if not filtered:
             raise ValueError(f"No FRED {series_id} observations returned")
-        return series
+        return pd.Series(
+            [value for _, value in filtered],
+            index=pd.DatetimeIndex([item for item, _ in filtered]),
+        )
 
 
 class PlaywrightScreenshotProvider:
@@ -489,21 +505,28 @@ Saved in the **evidence** folder:
 
     @staticmethod
     def _weekly_prices(series: pd.Series, week_start: date, week_end: date) -> tuple[float, float, list[date]]:
-        cleaned = series.dropna().sort_index()
-        cleaned.index = pd.to_datetime(cleaned.index).tz_localize(None)
-        cleaned = cleaned[cleaned.index.dayofweek <= 4]
-        prior = cleaned[cleaned.index.date < week_start]
-        current_week = cleaned[
-            (cleaned.index.date >= week_start) & (cleaned.index.date <= week_end)
+        cleaned = cast(pd.Series, series.dropna().sort_index())
+        index = pd.DatetimeIndex(pd.to_datetime(cleaned.index)).tz_localize(None)
+        cleaned = pd.Series(cleaned.to_numpy(), index=index, name=cleaned.name)
+        index = pd.DatetimeIndex(cleaned.index)
+        values = [
+            (item.date(), float(value))
+            for item, value in zip(index, cleaned.to_numpy())
+            if item.weekday() <= 4
         ]
 
-        if prior.empty:
+        prior = [value for day, value in values if day < week_start]
+        current_week = [
+            (day, value) for day, value in values if week_start <= day <= week_end
+        ]
+
+        if not prior:
             raise ValueError(f"No prior close available before {week_start}")
-        if current_week.empty:
+        if not current_week:
             raise ValueError(f"No market closes available for {week_start} to {week_end}")
 
-        open_dates = [idx.date() for idx in current_week.index]
-        return float(prior.iloc[-1]), float(current_week.iloc[-1]), open_dates
+        open_dates = [day for day, _ in current_week]
+        return prior[-1], current_week[-1][1], open_dates
 
     @staticmethod
     def _week_bounds(prediction_date: date) -> tuple[date, date]:
