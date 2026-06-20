@@ -1,0 +1,20 @@
+1. Weekly Regime: Bearish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+* Historical Almanac data strongly favors the downside, noting that June of a midterm year ranks dead last (#12) for S&P 500 performance with an average decline of 2.1%.
+* Widespread technical damage occurred at the end of the previous week, with the S&P 500, Nasdaq 100, and Russell 2000 all breaking below near-term trendline supports and their respective 8 EMAs.
+* Macro headwinds are stiffening as rising 10-year Treasury yields (4.534%) and a strengthening US Dollar combine with reduced rate-cut expectations following a strong jobs report.
+
+
+4. Key Contradictions:
+* The Technology sector (XLK) remains in an active seasonal LONG window through July, which could provide underlying support to the Nasdaq.
+* The S&P 500's technical bias is technically "Neutral" rather than completely Bearish, as its 8 EMA remains above the 21 EMA despite the narrowing gap.
+
+
+5. Invalidation Conditions: A cooler-than-expected US CPI print on June 10 (below 3.8%) that revives rate cut hopes and pushes major indices back above their 8 EMAs and previous trendline supports.
+6. Predicted % move
+SPX (S&P 500): [-1.0% to -3.0%]
+NDX (Nasdaq 100): [-1.5% to -4.0%]
+IWM (Russell 2000): [-1.0% to -3.5%]
+7. Plain-English brief: The stock market is facing a difficult setup this week, historically struggling during June of midterm election years. Recent strong job numbers mean interest rates will likely stay higher for longer, which triggered a sharp sell-off last Friday. Investors should expect a bumpy ride, especially leading up to the critical inflation report on Wednesday.
+8. Disclaimer: Please be reminded that this analysis is for informational and educational purposes only and does not constitute financial advice.

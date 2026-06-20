@@ -1,5 +1,8 @@
 # Wildignore
 .*
+.env
+.env.*
+!.env.example
 !.gitignore
 
 # Python
@@ -7,3 +10,6 @@ __pycache__
 
 # GitHub
 !.github
+
+# API Key file
+.env

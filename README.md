@@ -135,6 +135,24 @@ No vague calls like "looks bullish" — only measured statements like "bullish w
 
 ---
 
+## Running The Pipeline
+
+**Dependencies:** Python 3.12+, [uv](https://docs.astral.sh/uv/)
+
+**Environment:** Copy `backend/.env.example` to `backend/.env` and fill in your keys. `OPENROUTER_API_KEY` is always required. `FRED_API_KEY` is only needed when `macro = true` in `pipeline.toml`.
+
+**Run:**
+
+```bash
+cd backend
+uv run python run_pipeline.py                        # uses pipeline.toml (dev)
+uv run python run_pipeline.py --config pipeline.ci.toml  # uses CI config
+```
+
+Configure prediction date, enabled stages, and LLM models in `backend/pipeline.toml`. `backend/pipeline.ci.toml` is used by GitHub Actions and always runs with `auto` date and all stages enabled. The pipeline runs automatically every Friday.
+
+---
+
 ## Multi-LLM Synthesis
 
 After the three agents are built, we paste them into an identical prompt and query all four models. We save all four raw responses and fill a comparison table — where do they agree (high confidence), where do they diverge (flag as uncertainty), and which model's reasoning is strongest this week.
@@ -143,34 +161,34 @@ After the three agents are built, we paste them into an identical prompt and que
 <tr>
 <td width="25%" align="center" valign="top">
 
-**Claude**
-<br><sub>Anthropic</sub>
+**Nemotron 3 Super**
+<br><sub>NVIDIA</sub>
 
-<br><sub><code>synthesis_claude_WXX.txt</code></sub>
+<br><sub><code>synthesis_nemotron_WXX.txt</code></sub>
 
 </td>
 <td width="25%" align="center" valign="top">
 
-**ChatGPT**
+**gpt-oss-120b**
 <br><sub>OpenAI</sub>
 
-<br><sub><code>synthesis_chatgpt_WXX.txt</code></sub>
+<br><sub><code>synthesis_gptoss_WXX.txt</code></sub>
 
 </td>
 <td width="25%" align="center" valign="top">
 
-**Gemini**
+**Gemma 4 31B**
 <br><sub>Google</sub>
 
-<br><sub><code>synthesis_gemini_WXX.txt</code></sub>
+<br><sub><code>synthesis_gemma_WXX.txt</code></sub>
 
 </td>
 <td width="25%" align="center" valign="top">
 
-**DeepSeek**
-<br><sub>DeepSeek</sub>
+**Laguna M.1**
+<br><sub>Poolside</sub>
 
-<br><sub><code>synthesis_deepseek_WXX.txt</code></sub>
+<br><sub><code>synthesis_laguna_WXX.txt</code></sub>
 
 </td>
 </tr>
@@ -304,11 +322,11 @@ team1-prac-a-project/
 <td>Official course materials</td>
 </tr>
 <tr>
-<td><a href="./tasks/W2Task.html"><b>DT3 Week 2 Task Brief</b></a></td>
+<td><a href="./tasks/W2Task.html"><b>DT3 Week 22 Task Brief</b></a></td>
 <td>Official course materials (backup)</td>
 </tr>
 <tr>
-<td><a href="./tasks/W3Task.html"><b>DT3 Week 3 Task Brief</b></a></td>
+<td><a href="./tasks/W3Task.html"><b>DT3 Week 23 Task Brief</b></a></td>
 <td>Official course materials (backup)</td>
 </tr>
 <tr>
