@@ -1,0 +1,72 @@
+{
+  "prediction_week": "vW24",
+  "actuals_week": "W25",
+  "rows": [
+    {
+      "asset": "SPX",
+      "predicted_direction": "FLAT-UP",
+      "predicted_range": "-0.5% to +1.2%",
+      "confidence": "Medium",
+      "actual_move": 0.93,
+      "actual_direction": "UP",
+      "direction_correct": true,
+      "range_hit": true,
+      "error_percent": 0.0
+    },
+    {
+      "asset": "NDX",
+      "predicted_direction": "FLAT-UP",
+      "predicted_range": "-0.5% to +2.0%",
+      "confidence": "Medium",
+      "actual_move": 2.6,
+      "actual_direction": "UP",
+      "direction_correct": true,
+      "range_hit": false,
+      "error_percent": 0.6
+    },
+    {
+      "asset": "IWM",
+      "predicted_direction": "UP",
+      "predicted_range": "+0.5% to +3.0%",
+      "confidence": "Medium",
+      "actual_move": 1.14,
+      "actual_direction": "UP",
+      "direction_correct": true,
+      "range_hit": true,
+      "error_percent": 0.0
+    }
+  ],
+  "weight_adjustments": [
+    {
+      "agent": "almanac",
+      "current_weight": 0.2,
+      "suggested_weight": 0.15,
+      "reason": "Seasonality stays useful, but delta did not show it should dominate."
+    },
+    {
+      "agent": "macro",
+      "current_weight": 0.25,
+      "suggested_weight": 0.25,
+      "reason": "Macro stays important because weekly moves can still depend on rates, oil, and event risk."
+    },
+    {
+      "agent": "technical",
+      "current_weight": 0.25,
+      "suggested_weight": 0.3,
+      "reason": "Technical gets a range-check boost because direction was right but one range was too tight."
+    },
+    {
+      "agent": "llm",
+      "current_weight": 0.2,
+      "suggested_weight": 0.15,
+      "reason": "LLM weight stays stable until we have more weekly history."
+    },
+    {
+      "agent": "human_score",
+      "current_weight": 0.1,
+      "suggested_weight": 0.15,
+      "reason": "Human Score gets a small boost because the final direction call worked."
+    }
+  ],
+  "prescription": "Direction was right, but NDX moved outside the range. Next sprint should widen range checks and use these draft weights: almanac 0.20->0.15, technical 0.25->0.30, llm 0.20->0.15, human_score 0.10->0.15."
+}

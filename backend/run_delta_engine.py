@@ -35,6 +35,12 @@ def main() -> None:
         default=REPO_ROOT / "data" / "qa" / "delta_W24.md",
         help="Output markdown file",
     )
+    parser.add_argument(
+        "--json-output-path",
+        type=Path,
+        default=REPO_ROOT / "data" / "outputs" / "delta" / "delta_W24.json",
+        help="Structured Delta Engine output",
+    )
     args = parser.parse_args()
 
     engine = DeltaEngine(repo_root=REPO_ROOT)
@@ -45,7 +51,9 @@ def main() -> None:
         actuals_week="W25",
     )
     engine.write_markdown(report, args.output_path)
+    engine.write_json(report, args.json_output_path)
     print(f"Wrote {args.output_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {args.json_output_path.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":

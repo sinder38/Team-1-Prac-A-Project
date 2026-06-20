@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import shutil
 
 from agents.delta.delta_engine import (
@@ -71,13 +72,17 @@ def test_delta_engine_scores_direction_and_range():
     assert report.rows[0].range_hit is True
     assert report.rows[1].error_percent == 0.60
     assert report.rows[2].range_hit is True
+    assert "NDX moved outside the range" in report.prescription
+    assert report.weight_adjustments[2].agent == "technical"
+    assert report.weight_adjustments[2].suggested_weight == 0.30
 
 
-def test_delta_engine_writes_markdown():
+def test_delta_engine_writes_markdown_and_json():
     tmp_path = _workspace_tmp("delta-write")
     prediction_path = tmp_path / "prediction.md"
     actuals_path = tmp_path / "actuals.md"
     output_path = tmp_path / "delta_W24.md"
+    json_path = tmp_path / "delta_W24.json"
     prediction_path.write_text(PREDICTION_MD, encoding="utf-8")
     actuals_path.write_text(ACTUALS_MD, encoding="utf-8")
 
@@ -89,9 +94,18 @@ def test_delta_engine_writes_markdown():
         actuals_week="W24",
     )
     written_path = engine.write_markdown(report, output_path)
+    written_json_path = engine.write_json(report, json_path)
 
     assert written_path == output_path
+    assert written_json_path == json_path
     content = Path(output_path).read_text(encoding="utf-8")
     assert "Direction accuracy: 3 / 3" in content
     assert "Range accuracy: 2 / 3" in content
     assert "| NDX | FLAT-UP | -0.5% to +2.0% | Medium | +2.60% | UP | Y | N | 0.60% |" in content
+    assert "Weight adjustment draft" in content
+    assert "technical | 0.25 | 0.30" in content
+
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    assert data["prediction_week"] == "vW24"
+    assert data["actuals_week"] == "W24"
+    assert data["weight_adjustments"][2]["agent"] == "technical"

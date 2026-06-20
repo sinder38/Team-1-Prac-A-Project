@@ -1,11 +1,13 @@
 """Delta Engine for Week 5.
 
 The engine compares a locked prediction against the matching actuals file.
-It keeps the logic small on purpose: parse the three index rows, score them,
-then render a markdown report that R10 can review before submission.
+It works like a fifth agent: parse the old prediction, compare it with actuals,
+then suggest small weight changes for the next sprint.
 """
 
+from dataclasses import asdict
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import re
 from typing import Mapping
@@ -43,10 +45,20 @@ class DeltaRow:
 
 
 @dataclass(frozen=True)
+class WeightAdjustment:
+    agent: str
+    current_weight: float
+    suggested_weight: float
+    reason: str
+
+
+@dataclass(frozen=True)
 class DeltaReport:
     prediction_week: str
     actuals_week: str
     rows: list[DeltaRow]
+    weight_adjustments: list[WeightAdjustment]
+    prescription: str
 
     @property
     def direction_correct_count(self) -> int:
@@ -55,6 +67,15 @@ class DeltaReport:
     @property
     def range_hit_count(self) -> int:
         return sum(1 for row in self.rows if row.range_hit)
+
+    @property
+    def average_error_percent(self) -> float:
+        if not self.rows:
+            return 0.0
+        return round(
+            sum(row.error_percent for row in self.rows) / len(self.rows),
+            2,
+        )
 
 
 class DeltaEngine:
@@ -77,10 +98,13 @@ class DeltaEngine:
             score_asset(predictions[asset], actuals[asset])
             for asset in TRACKED_ASSETS
         ]
+        weight_adjustments = suggest_weight_adjustments(rows)
         return DeltaReport(
             prediction_week=prediction_week,
             actuals_week=actuals_week,
             rows=rows,
+            weight_adjustments=weight_adjustments,
+            prescription=build_prescription(rows, weight_adjustments),
         )
 
     def render_markdown(self, report: DeltaReport) -> str:
@@ -89,6 +113,14 @@ class DeltaEngine:
     def write_markdown(self, report: DeltaReport, output_path: Path) -> Path:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(self.render_markdown(report), encoding="utf-8")
+        return output_path
+
+    def render_json(self, report: DeltaReport) -> str:
+        return json.dumps(asdict(report), indent=2)
+
+    def write_json(self, report: DeltaReport, output_path: Path) -> Path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(self.render_json(report), encoding="utf-8")
         return output_path
 
 
@@ -187,8 +219,84 @@ def score_asset(prediction: PredictionRow, actual: ActualRow) -> DeltaRow:
     )
 
 
+def suggest_weight_adjustments(rows: list[DeltaRow]) -> list[WeightAdjustment]:
+    direction_hits = sum(1 for row in rows if row.direction_correct)
+    range_hits = sum(1 for row in rows if row.range_hit)
+    total = len(rows)
+
+    # Starting weights are simple and visible so the team can debate them.
+    base_weights = {
+        "almanac": 0.20,
+        "macro": 0.25,
+        "technical": 0.25,
+        "llm": 0.20,
+        "human_score": 0.10,
+    }
+    suggested = dict(base_weights)
+    reasons = {
+        "almanac": "Seasonality stays useful, but delta did not show it should dominate.",
+        "macro": "Macro stays important because weekly moves can still depend on rates, oil, and event risk.",
+        "technical": "Technical gets a range-check boost because direction was right but one range was too tight.",
+        "llm": "LLM weight stays stable until we have more weekly history.",
+        "human_score": "Human Score gets a small boost because the final direction call worked.",
+    }
+
+    if direction_hits == total and range_hits < total:
+        suggested["technical"] += 0.05
+        suggested["human_score"] += 0.05
+        suggested["almanac"] -= 0.05
+        suggested["llm"] -= 0.05
+    elif direction_hits < total:
+        suggested["human_score"] += 0.05
+        suggested["macro"] += 0.05
+        suggested["llm"] -= 0.05
+        suggested["almanac"] -= 0.05
+
+    return [
+        WeightAdjustment(
+            agent=agent,
+            current_weight=base_weights[agent],
+            suggested_weight=round(suggested[agent], 2),
+            reason=reasons[agent],
+        )
+        for agent in ("almanac", "macro", "technical", "llm", "human_score")
+    ]
+
+
+def build_prescription(
+    rows: list[DeltaRow],
+    adjustments: list[WeightAdjustment],
+) -> str:
+    missed_ranges = [row.asset for row in rows if not row.range_hit]
+    wrong_directions = [row.asset for row in rows if not row.direction_correct]
+
+    if wrong_directions:
+        return (
+            f"Next sprint should review direction logic for {_join_assets(wrong_directions)} "
+            "before locking the final call."
+        )
+    if missed_ranges:
+        changed = [
+            item for item in adjustments
+            if item.current_weight != item.suggested_weight
+        ]
+        changed_text = ", ".join(
+            f"{item.agent} {item.current_weight:.2f}->{item.suggested_weight:.2f}"
+            for item in changed
+        )
+        return (
+            f"Direction was right, but {_join_assets(missed_ranges)} moved outside the range. "
+            f"Next sprint should widen range checks and use these draft weights: {changed_text}."
+        )
+    return (
+        "Direction and ranges were both strong. Keep the current weights, but keep "
+        "tracking the next result before making a bigger change."
+    )
+
+
 def render_delta_markdown(report: DeltaReport) -> str:
     rows = "\n".join(_render_table_row(row) for row in report.rows)
+    weights = "\n".join(_render_weight_row(row) for row in report.weight_adjustments)
     total = len(report.rows)
     short_note = _build_short_note(report)
 
@@ -211,10 +319,23 @@ This file compares the locked {report.prediction_week} prediction with the match
 
 - Direction accuracy: {report.direction_correct_count} / {total}
 - Range accuracy: {report.range_hit_count} / {total}
+- Average range error: {report.average_error_percent:.2f}%
 
 ## Short note
 
 {short_note}
+
+## Weight adjustment draft
+
+This is the Delta Engine's first draft of how the next sprint weights could change. It is not meant to replace R7 or the team discussion; it is a starting point for the retrospective.
+
+| Agent | Current weight | Suggested weight | Reason |
+| --- | ---: | ---: | --- |
+{weights}
+
+## Prescription for next sprint
+
+{report.prescription}
 """
 
 
@@ -226,6 +347,13 @@ def _render_table_row(row: DeltaRow) -> str:
         f"| {row.asset} | {row.predicted_direction} | {row.predicted_range} | "
         f"{row.confidence} | {actual_move} | {row.actual_direction} | "
         f"{direction} | {range_hit} | {row.error_percent:.2f}% |"
+    )
+
+
+def _render_weight_row(row: WeightAdjustment) -> str:
+    return (
+        f"| {row.agent} | {row.current_weight:.2f} | "
+        f"{row.suggested_weight:.2f} | {row.reason} |"
     )
 
 
