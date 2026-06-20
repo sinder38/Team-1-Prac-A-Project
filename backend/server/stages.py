@@ -4,13 +4,20 @@ from dataclasses import asdict
 from datetime import date
 from pathlib import Path
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import BadRequest
 
 from agents.io import week_stem
+from agents.pipeline.config import (
+    ArtifactsConfig,
+    LLMConfig,
+    LLMModelEntry,
+    PipelineConfig,
+    PipelineSection,
+    StagesConfig,
+)
 from agents.pipeline.context import PipelineContext
 from agents.pipeline.stages import (
-    LLM_REGISTRY,
     run_almanac,
     run_evidence,
     run_llm,
@@ -18,15 +25,37 @@ from agents.pipeline.stages import (
     run_technical,
 )
 from agents.schemas import (
-    AlmanacOutput, Bias, Confidence, SectorSignal,
-    InstrumentTechnical, MacroBias, CommodityData, CalendarEvent,
-    TechnicalOutput, MacroOutput, EvidenceOutput,
+    AlmanacOutput,
+    Bias,
+    CalendarEvent,
+    CommodityData,
+    Confidence,
+    EvidenceOutput,
+    InstrumentTechnical,
+    MacroBias,
+    MacroOutput,
+    SectorSignal,
+    TechnicalOutput,
 )
 from server.utils import artifact_path, err, parse_date, require_fields
 
 stages_bp = Blueprint("stages", __name__, url_prefix="/stages")
+# TODO: move to config instead of manual
+_NO_ARTIFACTS_CONFIG = PipelineConfig(
+    pipeline=PipelineSection(prediction_date="auto"),
+    stages=StagesConfig(),
+    llm=LLMConfig(models=[]),
+    artifacts=ArtifactsConfig(save_json=False, save_md=False),
+)
 
-_NO_ARTIFACTS = {"artifacts": {"save_json": False, "save_md": False}}
+# Registry maps short model keys (as accepted by the /stages/llm endpoint) → LLMModelEntry.
+_MODEL_REGISTRY: dict[str, LLMModelEntry] = {
+    "example": LLMModelEntry(id="example/example:free"),
+    "nemotron": LLMModelEntry(id="nvidia/nemotron-3-super-120b-a12b:free"),
+    "gptoss": LLMModelEntry(id="openai/gpt-oss-120b:free"),
+    "gemma": LLMModelEntry(id="google/gemma-4-31b-it:free"),
+    "laguna": LLMModelEntry(id="poolside/laguna-m.1:free"),
+}
 
 
 def _write_artifact(path: Path, data: dict) -> None:
@@ -51,7 +80,7 @@ def post_almanac():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_almanac(ctx, _NO_ARTIFACTS)
+        run_almanac(ctx, _NO_ARTIFACTS_CONFIG)
     except Exception as e:
         return err(str(e), 500)
 
@@ -81,7 +110,7 @@ def post_technical():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_technical(ctx, _NO_ARTIFACTS)
+        run_technical(ctx, _NO_ARTIFACTS_CONFIG)
     except Exception as e:
         return err(str(e), 500)
 
@@ -111,7 +140,7 @@ def post_macro():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_macro(ctx, _NO_ARTIFACTS)
+        run_macro(ctx, _NO_ARTIFACTS_CONFIG)
     except Exception as e:
         return err(str(e), 500)
 
@@ -138,7 +167,7 @@ def post_evidence():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_evidence(ctx, _NO_ARTIFACTS)
+        run_evidence(ctx, _NO_ARTIFACTS_CONFIG)
     except Exception as e:
         return err(str(e), 500)
 
@@ -166,8 +195,10 @@ def post_llm():
     except (ValueError, TypeError) as e:
         return err(str(e), 400)
 
-    if model_key not in LLM_REGISTRY:
-        return err(f"Unknown model '{model_key}'. Known models: {list(LLM_REGISTRY)}", 400)
+    if model_key not in _MODEL_REGISTRY:
+        return err(
+            f"Unknown model '{model_key}'. Known models: {list(_MODEL_REGISTRY)}", 400
+        )
 
     stem = week_stem(prediction_date)
 
@@ -190,6 +221,7 @@ def post_llm():
     # Load agent outputs from disk into PipelineContext
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
+
         def _load(agent_type, **kwargs):
             p = artifact_path(agent_type, stem, run_id, **kwargs)
             return json.loads(p.read_text(encoding="utf-8"))
@@ -207,7 +239,9 @@ def post_llm():
             thesis=almanac_data["thesis"],
             weekly_pattern=almanac_data.get("weekly_pattern", ""),
             sector_signals=[
-                SectorSignal(sector=s["sector"], bias=Bias(s["bias"]), window=s["window"])
+                SectorSignal(
+                    sector=s["sector"], bias=Bias(s["bias"]), window=s["window"]
+                )
                 for s in almanac_data.get("sector_signals", [])
             ],
         )
@@ -243,7 +277,8 @@ def post_llm():
             invalidation=macro_data["invalidation"],
             next_fomc_date=(
                 date.fromisoformat(macro_data["next_fomc_date"])
-                if macro_data.get("next_fomc_date") else None
+                if macro_data.get("next_fomc_date")
+                else None
             ),
             hold_probability=macro_data.get("hold_probability", 0.0),
             cut_probability=macro_data.get("cut_probability", 0.0),
@@ -267,14 +302,16 @@ def post_llm():
         return err(f"Failed to load agent artifacts: {e}", 500)
 
     try:
-        _slug, _row = run_llm(ctx, _NO_ARTIFACTS, model_key)
+        _slug, _row = run_llm(ctx, _NO_ARTIFACTS_CONFIG, _MODEL_REGISTRY[model_key])
     except Exception as e:
         return err(str(e), 500)
 
     llm_output = ctx.llm_outputs[-1]
     output_dict = asdict(llm_output)
     output_dict["horizon_days"] = horizon_days
-    path = artifact_path("llm", stem, run_id, model=model_key, horizon_days=horizon_days)
+    path = artifact_path(
+        "llm", stem, run_id, model=model_key, horizon_days=horizon_days
+    )
     _write_artifact(path, output_dict)
     output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200

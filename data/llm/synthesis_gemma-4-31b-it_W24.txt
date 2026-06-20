@@ -1,0 +1,17 @@
+# LLM Agent Output — Gemma 4 31B It — Week of 2026-06-08
+
+1. Weekly Regime: Uncertain
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - Technicals show all three indexes in a Neutral trend bias with prices hovering near or below their 8-day and 21-day EMAs.
+   - Macro risk is concentrated on the June 18 FOMC meeting, with a 97.4% probability of a rate hold and a slightly hawkish shift in direction.
+   - Recent price action shows a broad recovery with 10 of 11 sectors green, led by a strong bounce in small caps (IWM +3.93%) and semiconductors.
+4. Key Contradictions:
+   - Almanac seasonal bias is Bearish for the month and for Financials/Energy, yet Financials were a top 3 performer last week (+2.59%).
+   - Macro reports a rising DXY (typically bearish for equities), while the market recently reacted with a risk-on bounce and Bitcoin surge.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower would reverse the cautious stance.
+6. Predicted % move — SPX: -1.0% to 1.5%
+   Predicted % move — NDX: -1.5% to 2.0%
+   Predicted % move — IWM: -2.0% to 2.5%
+7. Plain-English brief: The market is in a "wait-and-see" mode ahead of the Fed's June 18 decision. While last week saw a strong recovery in small caps and chips, the overall trend remains neutral. Expect choppy trading with a slight upward bias if tech strength continues, but significant downside risk if the Fed sounds too hawkish.
+8. Disclaimer: This is not financial advice.

@@ -27,6 +27,7 @@ from dotenv import load_dotenv, find_dotenv  # type: ignore
 
 from agents.llm.base_llm import BaseLLMAgent
 from agents.io import FileSaver
+from agents.pipeline.config import LLMModelEntry, load_config
 
 # === Load environment variables ===
 load_dotenv(find_dotenv())
@@ -37,13 +38,7 @@ INPUTS_DIR = REPO_ROOT / "data" / "outputs"            # where the data agents w
 OUTPUTS_LLM_DIR = REPO_ROOT / "data" / "outputs" / "llm"
 HUMAN_LLM_DIR = REPO_ROOT / "data" / "llm"
 
-# 'slug' = safe file/path identifier; 'label' = human-readable table heading.
-MODELS = [
-    {"slug": "nemotron", "label": "NVIDIA Nemotron 3 Super", "id": "nvidia/nemotron-3-super-120b-a12b:free"},
-    {"slug": "gptoss",   "label": "OpenAI gpt-oss-120b",     "id": "openai/gpt-oss-120b:free"},
-    {"slug": "gemma",    "label": "Google Gemma 4 31B",      "id": "google/gemma-4-31b-it:free"},
-    {"slug": "laguna",   "label": "Poolside Laguna M.1",     "id": "poolside/laguna-m.1:free"},
-]
+DEFAULT_CONFIG = BASE_DIR / "pipeline.toml"
 
 # Single source of truth for the comparison-table rows: (display name, row key).
 COMPARISON_DIMENSIONS = [
@@ -114,9 +109,9 @@ def _failed_row(exc: Exception) -> dict:
     return row
 
 
-def build_comparison_md(rows_by_slug: dict, tag: str, run_date: date) -> str:
+def build_comparison_md(rows_by_slug: dict, models: list[LLMModelEntry], tag: str, run_date: date) -> str:
     """Build the Multi-LLM comparison table, matching last week's manual sample shape."""
-    labels = [m["label"] for m in MODELS]
+    labels = [m.label for m in models]
 
     head = [
         f"# Multi-LLM Comparison Table — {tag} (run {run_date.isoformat()})",
@@ -129,15 +124,15 @@ def build_comparison_md(rows_by_slug: dict, tag: str, run_date: date) -> str:
 
     body = [
         f"| **{display}** | "
-        + " | ".join(_cell(rows_by_slug.get(m["slug"], {}).get(key, "—")) for m in MODELS)
+        + " | ".join(_cell(rows_by_slug.get(m.slug, {}).get(key, "—")) for m in models)
         + " |"
         for display, key in COMPARISON_DIMENSIONS
     ]
 
     tail = ["", "## Plain-English summaries", ""]
     tail += [
-        f"- **{m['label']}:** {rows_by_slug.get(m['slug'], {}).get('plain_english', '—')}"
-        for m in MODELS
+        f"- **{m.label}:** {rows_by_slug.get(m.slug, {}).get('plain_english', '—')}"
+        for m in models
     ]
     tail += ["", "_Disclaimer: model output, not financial advice._", ""]
 
@@ -209,6 +204,8 @@ if __name__ == "__main__":
     if not os.getenv("OPENROUTER_API_KEY"):
         raise SystemExit("❌ ABORT: OPENROUTER_API_KEY is not set. Add it to your .env and retry.")
 
+    config = load_config(DEFAULT_CONFIG)
+
     # =====================================================================
     # PRE-FLIGHT 2 — Inputs: refuse to run if upstream agents haven't delivered.
     # Prevents the models from fabricating on an empty context.
@@ -232,30 +229,32 @@ if __name__ == "__main__":
     rows_by_slug = {}
     pipeline_has_errors = False
 
-    for model in MODELS:
-        slug, label, model_id = model["slug"], model["label"], model["id"]
+    for entry in config.llm.models:
         print("====================================")
-        print(f"🤖 {label}  ({model_id})")
+        print(f"🤖 {entry.label}  ({entry.id})")
 
         try:
-            agent = OpenRouterAgent(model_name=label, model_id=model_id)
+            agent = OpenRouterAgent(model_name=entry.label, model_id=entry.id)
             output = agent.run(prediction_date)
 
-            FileSaver(OUTPUTS_LLM_DIR / slug).save(_serialize(output), f"{iso_t}.json")
-            FileSaver(HUMAN_LLM_DIR).save(agent.render_md(output, prediction_date), f"synthesis_{slug}_{human_t}.txt")
+            FileSaver(OUTPUTS_LLM_DIR / entry.slug).save(_serialize(output), f"{iso_t}.json")
+            FileSaver(HUMAN_LLM_DIR).save(agent.render_md(output, prediction_date), f"synthesis_{entry.slug}_{human_t}.txt")
 
-            rows_by_slug[slug] = _row(output)
-            print(f"✅ {label}: outputs saved.")
+            rows_by_slug[entry.slug] = _row(output)
+            print(f"✅ {entry.label}: outputs saved.")
 
         except Exception as e:
             # Resilient: one model failing must not block the others. The failure is
             # recorded honestly (FAILED, not fake numbers) and the run exits non-zero.
-            print(f"❌ {label} failed: {type(e).__name__} - {e}", file=sys.stderr)
+            print(f"❌ {entry.label} failed: {type(e).__name__} - {e}", file=sys.stderr)
             pipeline_has_errors = True
-            rows_by_slug[slug] = _failed_row(e)
+            rows_by_slug[entry.slug] = _failed_row(e)
 
     # Always write the comparison table; failed columns are explicitly marked FAILED.
-    FileSaver(HUMAN_LLM_DIR).save(build_comparison_md(rows_by_slug, human_t, prediction_date), f"llm_comparison_{human_t}.md")
+    FileSaver(HUMAN_LLM_DIR).save(
+        build_comparison_md(rows_by_slug, config.llm.models, human_t, prediction_date),
+        f"llm_comparison_{human_t}.md",
+    )
     print(f"\n📊 Wrote data/llm/llm_comparison_{human_t}.md")
 
     if pipeline_has_errors:

@@ -1,0 +1,17 @@
+# LLM Agent Output — Laguna M.1 — Week of 2026-06-08
+
+1. Weekly Regime: Neutral
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - All three indices recovered last week with Russell 2000 leading (+3.93%), SPX up 0.46%, and NDX up 2.17%
+   - Chip and equipment names surged while mega-cap software lagged, showing divergent tech performance
+   - Fear eased significantly (VIX down 6.25%) and Bitcoin rebounded sharply (+5.24%)
+4. Key Contradictions:
+   - Technical bias is Neutral for all indices while Almanac shows Bearish monthly/seasonal bias
+   - Technology sector has bullish seasonal window but neutral technical bias; macro shows hawkish Fed stance amid risk-on market action
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision on June 18 that drives Treasury yields lower and increases expectations for rate cuts
+6. Predicted % move — SPX: -1.0% to 3.0%
+   Predicted % move — NDX: -3.0% to 5.0%
+   Predicted % move — IWM: -5.0% to 3.0%
+7. Plain-English brief: Markets are in a tentative recovery phase with mixed signals. Technical indicators suggest sideways trading while seasonal patterns point lower. The Fed decision on June 18 is the primary catalyst that could shift the regime. Small caps are outperforming while tech shows internal divergence between chips and software.
+8. Disclaimer: This is not financial advice.

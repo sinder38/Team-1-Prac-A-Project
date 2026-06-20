@@ -2,56 +2,23 @@
 
 from datetime import date
 from pathlib import Path
-from typing import Callable
 
 from agents.evidence.evidence_agent import EvidenceAgent
 from agents.io import FileSaver, week_stem
-from agents.llm.base_llm import BaseLLMAgent
-from agents.llm.multi_model_runner import _row
 from agents.macro.macro_agent import MacroAgent
+from agents.pipeline.config import LLMModelEntry, PipelineConfig
 from agents.pipeline.context import PipelineContext
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
-def _make_openrouter(model_name: str, model_id: str):
-    from agents.llm.multi_model_runner import OpenRouterAgent
-
-    return OpenRouterAgent(model_name=model_name, model_id=model_id)
-
-
-# TODO: move to config
-# Registry maps model_key/slug → zero-arg callable returning a BaseLLMAgent instance.
-# Slugs must match multi_model_runner.MODELS[*]["slug"].
-LLM_REGISTRY: dict[str, Callable[[], BaseLLMAgent]] = {
-    "example": lambda: __import__(
-        "agents.llm.example_agent", fromlist=["ExampleAgent"]
-    ).ExampleAgent(),
-    "nemotron": lambda: _make_openrouter(
-        "NVIDIA Nemotron 3 Super", "nvidia/nemotron-3-super-120b-a12b:free"
-    ),
-    "gptoss": lambda: _make_openrouter(
-        "OpenAI gpt-oss-120b", "openai/gpt-oss-120b:free"
-    ),
-    "gemma": lambda: _make_openrouter(
-        "Google Gemma 4 31B", "google/gemma-4-31b-it:free"
-    ),
-    "laguna": lambda: _make_openrouter(
-        "Poolside Laguna M.1", "poolside/laguna-m.1:free"
-    ),
-}
-
-
-def _save_artifacts(agent, output, prediction_date: date, config: dict) -> None:
-    from agents.io import FileSaver, week_stem
-
-    art = config.get("artifacts", {})
-    if art.get("save_json", True):
+def _save_artifacts(agent, output, prediction_date: date, config: PipelineConfig) -> None:
+    if config.artifacts.save_json:
         FileSaver.for_agent(agent.agent_type).save(
             agent.render_json(output, prediction_date),
             f"{week_stem(prediction_date)}.json",
         )
-    if art.get("save_md", True):
+    if config.artifacts.save_md:
         md = agent.render_md(output, prediction_date)
         md_path = REPO_ROOT / "data" / agent.agent_type
         FileSaver(md_path).save(
@@ -59,7 +26,7 @@ def _save_artifacts(agent, output, prediction_date: date, config: dict) -> None:
         )
 
 
-def run_almanac(ctx: PipelineContext, config: dict) -> None:
+def run_almanac(ctx: PipelineContext, config: PipelineConfig) -> None:
     from agents.almanac.almanac_agent import AlmanacAgent
 
     agent = AlmanacAgent()
@@ -68,7 +35,7 @@ def run_almanac(ctx: PipelineContext, config: dict) -> None:
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
 
-def run_technical(ctx: PipelineContext, config: dict) -> None:
+def run_technical(ctx: PipelineContext, config: PipelineConfig) -> None:
     from agents.technical.technical_agent import TechnicalAgent
 
     agent = TechnicalAgent()
@@ -77,8 +44,7 @@ def run_technical(ctx: PipelineContext, config: dict) -> None:
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
 
-def run_macro(ctx: PipelineContext, config: dict) -> None:
-
+def run_macro(ctx: PipelineContext, config: PipelineConfig) -> None:
     agent = MacroAgent()
     output = agent.run(ctx.prediction_date)
     ctx.macro = output
@@ -87,36 +53,30 @@ def run_macro(ctx: PipelineContext, config: dict) -> None:
 
 def run_evidence(
     ctx: PipelineContext,
-    config: dict,
+    config: PipelineConfig,
     data_root: Path | None = None,
 ) -> None:
-
     agent = EvidenceAgent(data_root=data_root)
     output = agent.run(ctx.prediction_date)
     ctx.evidence = output
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
 
-def run_llm(ctx: PipelineContext, config: dict, model_key: str) -> tuple[str, dict]:
+def run_llm(ctx: PipelineContext, config: PipelineConfig, entry: LLMModelEntry) -> tuple[str, dict]:
     """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
+    from agents.llm.multi_model_runner import OpenRouterAgent, _row
 
-    if model_key not in LLM_REGISTRY:
-        raise ValueError(
-            f"Unknown LLM model_key {model_key!r}. Known models: {list(LLM_REGISTRY)}"
-        )
-    agent = LLM_REGISTRY[model_key]()
+    agent = OpenRouterAgent(model_name=entry.label, model_id=entry.id)
 
     prompt = agent.build_prompt(ctx.prediction_date, ctx)
     raw = agent.query(prompt)
     output = agent.parse_response(raw, ctx.prediction_date)
     ctx.llm_outputs.append(output)
 
-    art = config.get("artifacts", {})
-
-    if art.get("save_md", True):
+    if config.artifacts.save_md:
         FileSaver(REPO_ROOT / "data" / "llm").save(
             agent.render_md(output, ctx.prediction_date),
-            f"synthesis_{model_key}_{week_stem(ctx.prediction_date)}.txt",
+            f"synthesis_{entry.slug}_{week_stem(ctx.prediction_date)}.txt",
         )
 
-    return model_key, _row(output)
+    return entry.slug, _row(output)
