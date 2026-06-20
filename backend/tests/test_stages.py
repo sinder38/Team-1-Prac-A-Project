@@ -1,4 +1,5 @@
 from datetime import date
+from pathlib import Path
 
 from agents.pipeline.context import PipelineContext
 from agents.llm.base_llm import BaseLLMAgent
@@ -12,6 +13,39 @@ class _StubLLM(BaseLLMAgent):
     model_name = "stub"
     def query(self, prompt: str) -> str:
         return prompt  # echo back so we can inspect
+
+
+DELTA_PREDICTION_MD = """
+| Asset | Direction | Range | Confidence |
+|---|---|---|---|
+| S&P 500 (SPX) | **FLAT-UP** | -0.5% to +1.2% | **MEDIUM** |
+| Nasdaq 100 (NDX) | **FLAT-UP** | -0.5% to +2.0% | **MEDIUM** |
+| Russell 2000 (IWM) | **UP** | +0.5% to +3.0% | **MEDIUM** |
+"""
+
+
+DELTA_ACTUALS_MD = """
+| What it is | Short name | Price at Friday close | Up or down this week |
+|------------|------------|----------------------|----------------------|
+| S&P 500 - large U.S. companies | SPX | 7,500.58 | **Up 0.93%** |
+| Nasdaq 100 - mostly tech | NDX | 30,406.19 | **Up 2.60%** |
+| Russell 2000 - smaller companies | IWM | 295.59 | **Up 1.14%** |
+"""
+
+
+def _write_delta_inputs(repo_root: Path) -> None:
+    prediction_dir = repo_root / "data" / "final prediction"
+    actuals_dir = repo_root / "data" / "evidence"
+    prediction_dir.mkdir(parents=True)
+    actuals_dir.mkdir(parents=True)
+    (prediction_dir / "prediction_2026-W24_Team1.md").write_text(
+        DELTA_PREDICTION_MD,
+        encoding="utf-8",
+    )
+    (actuals_dir / "actuals_W25.md").write_text(
+        DELTA_ACTUALS_MD,
+        encoding="utf-8",
+    )
 
 
 def test_build_prompt_uses_context():
@@ -47,8 +81,7 @@ def test_build_prompt_skips_none_agents():
 
 
 import pytest
-from pathlib import Path
-from agents.pipeline.stages import run_evidence, run_almanac, LLM_REGISTRY
+from agents.pipeline.stages import run_delta, run_evidence, run_almanac, LLM_REGISTRY
 
 
 def test_run_evidence_populates_context(tmp_path):
@@ -81,6 +114,39 @@ def test_run_almanac_populates_context():
     run_almanac(ctx, config)
     assert ctx.almanac is not None
     assert ctx.almanac.agent_type == "almanac"
+
+
+def test_run_delta_populates_context_and_writes_outputs(tmp_path):
+    _write_delta_inputs(tmp_path)
+
+    ctx = PipelineContext(prediction_date=date(2026, 6, 16))
+    config = {
+        "delta": {"prediction_week": "W24", "actuals_week": "W25"},
+        "artifacts": {"save_json": True, "save_md": True},
+    }
+    run_delta(ctx, config, repo_root=tmp_path)
+
+    assert ctx.delta is not None
+    assert ctx.delta.direction_correct_count == 3
+    assert (tmp_path / "data" / "qa" / "delta_W24.md").exists()
+    assert (tmp_path / "data" / "outputs" / "delta" / "delta_W24.json").exists()
+
+
+def test_delta_context_can_feed_llm_prompt(tmp_path):
+    _write_delta_inputs(tmp_path)
+
+    ctx = PipelineContext(prediction_date=date(2026, 6, 16))
+    config = {
+        "delta": {"prediction_week": "W24", "actuals_week": "W25"},
+        "artifacts": {"save_json": False, "save_md": False},
+    }
+    run_delta(ctx, config, repo_root=tmp_path)
+
+    prompt = _StubLLM().build_prompt(date(2026, 6, 16), ctx)
+
+    assert "DELTA AGENT" in prompt
+    assert "weight_adjustments" in prompt
+    assert "prescription" in prompt
 
 
 def test_llm_registry_contains_example():

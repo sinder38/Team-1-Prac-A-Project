@@ -15,8 +15,11 @@ def test_pipeline_toml_has_required_keys():
     assert "pipeline" in config
     assert "prediction_date" in config["pipeline"]
     assert "stages" in config
-    for key in ("almanac", "technical", "macro", "evidence"):
+    for key in ("almanac", "technical", "macro", "evidence", "delta"):
         assert key in config["stages"], f"Missing stage: {key}"
+    assert "delta" in config
+    assert "prediction_week" in config["delta"]
+    assert "actuals_week" in config["delta"]
     assert "llm" in config
     assert "models" in config["llm"]
     assert isinstance(config["llm"]["models"], list)

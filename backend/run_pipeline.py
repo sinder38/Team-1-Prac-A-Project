@@ -17,6 +17,7 @@ from agents.pipeline.context import PipelineContext
 from agents.pipeline.stages import (
     LLM_REGISTRY,
     run_almanac,
+    run_delta,
     run_evidence,
     run_llm,
     run_macro,
@@ -57,6 +58,7 @@ def main() -> None:
         "technical": run_technical,
         "macro": run_macro,
         "evidence": run_evidence,
+        "delta": run_delta,
     }
 
     for name, fn in stage_map.items():

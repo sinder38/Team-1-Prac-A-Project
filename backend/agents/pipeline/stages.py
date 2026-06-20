@@ -80,6 +80,35 @@ def run_evidence(
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
 
+def run_delta(
+    ctx: PipelineContext,
+    config: dict,
+    repo_root: Path | None = None,
+) -> None:
+    from agents.delta import DeltaAgent
+
+    root = repo_root or REPO_ROOT
+    delta_config = config.get("delta", {})
+    prediction_week = delta_config.get("prediction_week", "W24")
+    actuals_week = delta_config.get("actuals_week", "W25")
+
+    agent = DeltaAgent(repo_root=root)
+    output = agent.run(
+        prediction_week=prediction_week,
+        actuals_week=actuals_week,
+    )
+    ctx.delta = output
+
+    artifacts = config.get("artifacts", {})
+    if artifacts.get("save_md", True):
+        markdown_path = root / "data" / "qa" / f"delta_{prediction_week}.md"
+        agent.engine.write_markdown(output, markdown_path)
+
+    if artifacts.get("save_json", True):
+        json_path = root / "data" / "outputs" / "delta" / f"delta_{prediction_week}.json"
+        agent.engine.write_json(output, json_path)
+
+
 def run_llm(ctx: PipelineContext, config: dict, model_key: str) -> tuple[str, dict]:
     """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
     from agents.llm.multi_model_runner import _row

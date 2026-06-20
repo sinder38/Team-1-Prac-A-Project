@@ -6,6 +6,11 @@ almanac   = true
 technical = true
 macro     = true
 evidence  = true
+delta     = false
+
+[delta]
+prediction_week = "W24"
+actuals_week = "W25"
 
 [llm]
 models = ["nemotron", "gptoss", "gemma", "laguna"]
