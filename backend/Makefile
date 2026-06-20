@@ -11,3 +11,6 @@ run:
 
 check:
 	uv run pyright agents/
+
+test:
+	uv run pytest tests/
