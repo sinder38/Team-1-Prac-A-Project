@@ -3,31 +3,37 @@
 from datetime import date
 from pathlib import Path
 
+from agents.almanac.almanac_agent import AlmanacAgent
 from agents.evidence.evidence_agent import EvidenceAgent
 from agents.io import FileSaver, week_stem
+from agents.llm.multi_model_runner import OpenRouterAgent, _row
 from agents.macro.macro_agent import MacroAgent
 from agents.pipeline.config import LLMModelEntry, PipelineConfig
 from agents.pipeline.context import PipelineContext
+from agents.technical.technical_agent import TechnicalAgent
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
-def _save_artifacts(agent, output, prediction_date: date, config: PipelineConfig) -> None:
+def _save_artifacts(
+    agent, output, prediction_date: date, config: PipelineConfig
+) -> None:
+    week_stem_date = week_stem(prediction_date)
+
     if config.artifacts.save_json:
         FileSaver.for_agent(agent.agent_type).save(
             agent.render_json(output, prediction_date),
             f"{week_stem(prediction_date)}.json",
         )
+
     if config.artifacts.save_md:
         md = agent.render_md(output, prediction_date)
+
         md_path = REPO_ROOT / "data" / agent.agent_type
-        FileSaver(md_path).save(
-            md, f"{agent.agent_type}_agent_{week_stem(prediction_date)}.md"
-        )
+        FileSaver(md_path).save(md, f"{agent.agent_type}_agent_{week_stem_date}.md")
 
 
 def run_almanac(ctx: PipelineContext, config: PipelineConfig) -> None:
-    from agents.almanac.almanac_agent import AlmanacAgent
 
     agent = AlmanacAgent()
     output = agent.run(ctx.prediction_date)
@@ -36,7 +42,6 @@ def run_almanac(ctx: PipelineContext, config: PipelineConfig) -> None:
 
 
 def run_technical(ctx: PipelineContext, config: PipelineConfig) -> None:
-    from agents.technical.technical_agent import TechnicalAgent
 
     agent = TechnicalAgent()
     output = agent.run(ctx.prediction_date)
@@ -62,9 +67,10 @@ def run_evidence(
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
 
-def run_llm(ctx: PipelineContext, config: PipelineConfig, entry: LLMModelEntry) -> tuple[str, dict]:
+def run_llm(
+    ctx: PipelineContext, config: PipelineConfig, entry: LLMModelEntry
+) -> tuple[str, dict]:
     """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
-    from agents.llm.multi_model_runner import OpenRouterAgent, _row
 
     agent = OpenRouterAgent(model_name=entry.label, model_id=entry.id)
 

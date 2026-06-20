@@ -36,7 +36,9 @@ EMA_SLOW_SPAN: Final[int] = 21
 LOOKBACK_DAYS: Final[int] = 20
 EXTENDED_LOOKBACK_DAYS: Final[int] = 90
 SWING_WINDOW: Final[int] = 5
-HISTORY_DAYS: Final[int] = 150  # calendar days; gives ~90 trading sessions after weekends/holidays
+HISTORY_DAYS: Final[int] = (
+    150  # calendar days; gives ~90 trading sessions after weekends/holidays
+)
 EMA_GAP_CONFIDENCE_PCT: Final[float] = 0.5
 PRICE_EMA_DISTANCE_CONFIDENCE_PCT: Final[float] = 0.2
 
@@ -91,17 +93,26 @@ class TechnicalAgent(BaseAgent):
         """adjust=False matches most charting platforms."""
         return EmaSnapshot(
             price=float(closes.iloc[-1]),
-            ema_fast=float(closes.ewm(span=EMA_FAST_SPAN, adjust=False).mean().iloc[-1]),
-            ema_slow=float(closes.ewm(span=EMA_SLOW_SPAN, adjust=False).mean().iloc[-1]),
+            ema_fast=float(
+                closes.ewm(span=EMA_FAST_SPAN, adjust=False).mean().iloc[-1]
+            ),
+            ema_slow=float(
+                closes.ewm(span=EMA_SLOW_SPAN, adjust=False).mean().iloc[-1]
+            ),
         )
 
     def _swing_levels(self, df: pd.DataFrame) -> tuple[float, float, float, float]:
         """Returns (support, resistance, secondary_support, secondary_resistance).
         Primary window = recent LOOKBACK_DAYS; secondary = EXTENDED_LOOKBACK_DAYS."""
+
         def hi_lo(n: int) -> tuple[float, float]:
             w = df.tail(n)
-            lo = float(w["Low"].rolling(SWING_WINDOW, min_periods=1).min().to_numpy().min())
-            hi = float(w["High"].rolling(SWING_WINDOW, min_periods=1).max().to_numpy().max())
+            lo = float(
+                w["Low"].rolling(SWING_WINDOW, min_periods=1).min().to_numpy().min()
+            )
+            hi = float(
+                w["High"].rolling(SWING_WINDOW, min_periods=1).max().to_numpy().max()
+            )
             return lo, hi
 
         sup, res = hi_lo(LOOKBACK_DAYS)
@@ -122,7 +133,9 @@ class TechnicalAgent(BaseAgent):
         )
         return bias, Confidence.HIGH if strong else Confidence.MEDIUM
 
-    def fetch_instrument(self, symbol: Symbol, prediction_date: date) -> InstrumentTechnical:
+    def fetch_instrument(
+        self, symbol: Symbol, prediction_date: date
+    ) -> InstrumentTechnical:
         df = self._fetch_ohlcv(symbol, prediction_date)
         self._frames[symbol] = df
 
@@ -226,14 +239,18 @@ class TechnicalAgent(BaseAgent):
             "---",
             "",
         ]
-        symbols: list[Symbol] = [cast(Symbol, s) for s in INSTRUMENTS if s in output.instruments]
+        symbols: list[Symbol] = [
+            cast(Symbol, s) for s in INSTRUMENTS if s in output.instruments
+        ]
         for i, symbol in enumerate(symbols):
             df = self._frames[symbol]
             last_ts = pd.to_datetime(str(df.index[-1]))
             if pd.isna(last_ts):
                 raise ValueError(f"No valid bar date for {symbol}")
             bar_date = cast(date, last_ts.date())
-            lines.extend(self._render_block(symbol, output.instruments[symbol], bar_date))
+            lines.extend(
+                self._render_block(symbol, output.instruments[symbol], bar_date)
+            )
             if i < len(symbols) - 1:
                 lines.extend(["", "---", ""])
         return "\n".join(lines)
@@ -246,7 +263,9 @@ class TechnicalAgent(BaseAgent):
 if __name__ == "__main__":
     from agents.io import FileSaver, week_stem
 
-    prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
+    prediction_date = (
+        date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
+    )
     agent = TechnicalAgent()
     output = agent.run(prediction_date)
 
