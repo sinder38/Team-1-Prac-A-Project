@@ -124,6 +124,60 @@ class DeltaEngine:
         return output_path
 
 
+class DeltaAgent:
+    """Fifth-agent wrapper around DeltaEngine.
+
+    The other agents explain the next prediction. This one reviews the previous
+    prediction and turns the miss into a small prescription for the next sprint.
+    """
+
+    agent_type = "delta"
+
+    def __init__(self, repo_root: Path | None = None):
+        self.repo_root = repo_root or Path(__file__).resolve().parents[3]
+        self.engine = DeltaEngine(repo_root=self.repo_root)
+
+    def run(
+        self,
+        prediction_week: str,
+        actuals_week: str,
+        prediction_path: Path | None = None,
+        actuals_path: Path | None = None,
+    ) -> DeltaReport:
+        prediction_path = prediction_path or self._prediction_path(prediction_week)
+        actuals_path = actuals_path or self._actuals_path(actuals_week)
+        return self.engine.run(
+            prediction_path=prediction_path,
+            actuals_path=actuals_path,
+            prediction_week=f"v{prediction_week}",
+            actuals_week=actuals_week,
+        )
+
+    def write_outputs(
+        self,
+        report: DeltaReport,
+        markdown_path: Path | None = None,
+        json_path: Path | None = None,
+    ) -> tuple[Path, Path]:
+        markdown_path = markdown_path or self.repo_root / "data" / "qa" / "delta_W24.md"
+        json_path = json_path or self.repo_root / "data" / "outputs" / "delta" / "delta_W24.json"
+        return (
+            self.engine.write_markdown(report, markdown_path),
+            self.engine.write_json(report, json_path),
+        )
+
+    def _prediction_path(self, week: str) -> Path:
+        return (
+            self.repo_root
+            / "data"
+            / "final prediction"
+            / f"prediction_2026-{week}_Team1.md"
+        )
+
+    def _actuals_path(self, week: str) -> Path:
+        return self.repo_root / "data" / "evidence" / f"actuals_{week}.md"
+
+
 def parse_prediction_file(path: Path) -> dict[str, PredictionRow]:
     if not path.exists():
         raise FileNotFoundError(f"Prediction file not found: {path}")

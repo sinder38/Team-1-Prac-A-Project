@@ -3,6 +3,7 @@ import json
 import shutil
 
 from agents.delta.delta_engine import (
+    DeltaAgent,
     DeltaEngine,
     parse_actuals_markdown,
     parse_prediction_markdown,
@@ -63,7 +64,7 @@ def test_delta_engine_scores_direction_and_range():
         prediction_path=prediction_path,
         actuals_path=actuals_path,
         prediction_week="vW24",
-        actuals_week="W24",
+        actuals_week="W25",
     )
 
     assert report.direction_correct_count == 3
@@ -91,7 +92,7 @@ def test_delta_engine_writes_markdown_and_json():
         prediction_path=prediction_path,
         actuals_path=actuals_path,
         prediction_week="vW24",
-        actuals_week="W24",
+        actuals_week="W25",
     )
     written_path = engine.write_markdown(report, output_path)
     written_json_path = engine.write_json(report, json_path)
@@ -107,5 +108,29 @@ def test_delta_engine_writes_markdown_and_json():
 
     data = json.loads(json_path.read_text(encoding="utf-8"))
     assert data["prediction_week"] == "vW24"
-    assert data["actuals_week"] == "W24"
+    assert data["actuals_week"] == "W25"
     assert data["weight_adjustments"][2]["agent"] == "technical"
+
+
+def test_delta_agent_uses_week_paths_and_writes_outputs():
+    tmp_path = _workspace_tmp("delta-agent")
+    prediction_dir = tmp_path / "data" / "final prediction"
+    actuals_dir = tmp_path / "data" / "evidence"
+    prediction_dir.mkdir(parents=True)
+    actuals_dir.mkdir(parents=True)
+    (prediction_dir / "prediction_2026-W24_Team1.md").write_text(
+        PREDICTION_MD,
+        encoding="utf-8",
+    )
+    (actuals_dir / "actuals_W25.md").write_text(ACTUALS_MD, encoding="utf-8")
+
+    agent = DeltaAgent(repo_root=tmp_path)
+    report = agent.run(prediction_week="W24", actuals_week="W25")
+    markdown_path, json_path = agent.write_outputs(report)
+
+    assert agent.agent_type == "delta"
+    assert report.prediction_week == "vW24"
+    assert report.actuals_week == "W25"
+    assert markdown_path.name == "delta_W24.md"
+    assert json_path.name == "delta_W24.json"
+    assert "Weight adjustment draft" in markdown_path.read_text(encoding="utf-8")

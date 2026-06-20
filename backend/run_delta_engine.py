@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from agents.delta import DeltaEngine
+from agents.delta import DeltaAgent
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -18,15 +18,25 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate delta_W24.md")
     parser.add_argument(
+        "--prediction-week",
+        default="W24",
+        help="Locked prediction week to score, e.g. W24",
+    )
+    parser.add_argument(
+        "--actuals-week",
+        default="W25",
+        help="Actuals week that matches the prediction result, e.g. W25",
+    )
+    parser.add_argument(
         "--prediction-path",
         type=Path,
-        default=REPO_ROOT / "data" / "final prediction" / "prediction_2026-W24_Team1.md",
+        default=None,
         help="Locked vW24 prediction markdown file",
     )
     parser.add_argument(
         "--actuals-path",
         type=Path,
-        default=REPO_ROOT / "data" / "evidence" / "actuals_W25.md",
+        default=None,
         help="Matching actuals markdown file for the week after vW24",
     )
     parser.add_argument(
@@ -43,17 +53,20 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    engine = DeltaEngine(repo_root=REPO_ROOT)
-    report = engine.run(
+    agent = DeltaAgent(repo_root=REPO_ROOT)
+    report = agent.run(
+        prediction_week=args.prediction_week,
+        actuals_week=args.actuals_week,
         prediction_path=args.prediction_path,
         actuals_path=args.actuals_path,
-        prediction_week="vW24",
-        actuals_week="W25",
     )
-    engine.write_markdown(report, args.output_path)
-    engine.write_json(report, args.json_output_path)
-    print(f"Wrote {args.output_path.relative_to(REPO_ROOT)}")
-    print(f"Wrote {args.json_output_path.relative_to(REPO_ROOT)}")
+    markdown_path, json_path = agent.write_outputs(
+        report,
+        markdown_path=args.output_path,
+        json_path=args.json_output_path,
+    )
+    print(f"Wrote {markdown_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {json_path.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":
