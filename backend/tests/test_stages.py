@@ -1,5 +1,7 @@
 from datetime import date
 
+import pandas as pd
+
 from agents.pipeline.context import PipelineContext
 from agents.llm.base_llm import BaseLLMAgent
 from agents.schemas import (
@@ -46,33 +48,71 @@ def test_build_prompt_skips_none_agents():
     assert "No agent data available" in prompt
 
 
-import pytest
-from pathlib import Path
 from agents.pipeline.stages import run_evidence, run_almanac, LLM_REGISTRY
 
 
-def test_run_evidence_populates_context(tmp_path):
-    evidence_dir = tmp_path / "evidence"
-    evidence_dir.mkdir()
-    (evidence_dir / "actuals_W25.md").write_text("# W25", encoding="utf-8")
+class _FakeEvidenceMarketDataProvider:
+    def history(self, ticker: str, start: date, end: date) -> pd.Series:
+        dates = pd.to_datetime(
+            [
+                "2026-06-12",
+                "2026-06-15",
+                "2026-06-16",
+                "2026-06-17",
+                "2026-06-18",
+                "2026-06-19",
+            ]
+        )
+        current = 101.0
+        return pd.Series([100.0, 100.2, 100.4, 100.6, 100.8, current], index=dates)
 
+
+class _FakeEvidenceYieldDataProvider:
+    def history(self, series_id: str, start: date, end: date) -> pd.Series:
+        dates = pd.to_datetime(
+            [
+                "2026-06-12",
+                "2026-06-15",
+                "2026-06-16",
+                "2026-06-17",
+                "2026-06-18",
+                "2026-06-19",
+            ]
+        )
+        return pd.Series([4.50, 4.48, 4.47, 4.46, 4.45, 4.44], index=dates)
+
+
+def test_run_evidence_populates_context(tmp_path):
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
     config = {"artifacts": {"save_json": False, "save_md": False}}
-    run_evidence(ctx, config, data_root=tmp_path)
+    run_evidence(
+        ctx,
+        config,
+        data_root=tmp_path,
+        market_data_provider=_FakeEvidenceMarketDataProvider(),
+        yield_data_provider=_FakeEvidenceYieldDataProvider(),
+        capture_screenshots=False,
+    )
 
     assert ctx.evidence is not None
     assert ctx.evidence.week == "W25"
-    assert ctx.evidence.content == "# W25"
+    assert ctx.evidence.content.startswith("# Week 05 Market Report (2026)")
 
 
-def test_run_evidence_raises_on_missing_file(tmp_path):
-    evidence_dir = tmp_path / "evidence"
-    evidence_dir.mkdir()
-
+def test_run_evidence_does_not_require_manual_actuals_file(tmp_path):
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
     config = {"artifacts": {"save_json": False, "save_md": False}}
-    with pytest.raises(FileNotFoundError, match="actuals_W25.md"):
-        run_evidence(ctx, config, data_root=tmp_path)
+    run_evidence(
+        ctx,
+        config,
+        data_root=tmp_path,
+        market_data_provider=_FakeEvidenceMarketDataProvider(),
+        yield_data_provider=_FakeEvidenceYieldDataProvider(),
+        capture_screenshots=False,
+    )
+    assert ctx.evidence is not None
+    assert "Finviz futures performance screenshot for 1-week cross-market visual evidence" in ctx.evidence.content
+    assert "10-year Treasury yield from FRED series DGS10" in ctx.evidence.content
 
 
 def test_run_almanac_populates_context():

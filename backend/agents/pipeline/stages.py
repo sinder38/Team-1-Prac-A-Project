@@ -37,7 +37,11 @@ def _save_artifacts(agent, output, prediction_date: date, config: dict) -> None:
     if art.get("save_md", True):
         md = agent.render_md(output, prediction_date)
         md_path = REPO_ROOT / "data" / agent.agent_type
-        FileSaver(md_path).save(md, f"{agent.agent_type}_agent_{week_stem(prediction_date)}.md")
+        if agent.agent_type == "evidence":
+            filename = f"actuals_{week_stem(prediction_date)}.md"
+        else:
+            filename = f"{agent.agent_type}_agent_{week_stem(prediction_date)}.md"
+        FileSaver(md_path).save(md, filename)
 
 
 def run_almanac(ctx: PipelineContext, config: dict) -> None:
@@ -71,10 +75,22 @@ def run_evidence(
     ctx: PipelineContext,
     config: dict,
     data_root: Path | None = None,
+    market_data_provider=None,
+    yield_data_provider=None,
+    screenshot_provider=None,
+    capture_screenshots: bool = True,
+    require_screenshots: bool = True,
 ) -> None:
     from agents.evidence.evidence_agent import EvidenceAgent
 
-    agent = EvidenceAgent(data_root=data_root)
+    agent = EvidenceAgent(
+        data_root=data_root,
+        market_data_provider=market_data_provider,
+        yield_data_provider=yield_data_provider,
+        screenshot_provider=screenshot_provider,
+        capture_screenshots=capture_screenshots,
+        require_screenshots=require_screenshots,
+    )
     output = agent.run(ctx.prediction_date)
     ctx.evidence = output
     _save_artifacts(agent, output, ctx.prediction_date, config)
