@@ -8,6 +8,7 @@ then render a markdown report that R10 can review before submission.
 from dataclasses import dataclass
 from pathlib import Path
 import re
+from typing import Mapping
 
 TRACKED_ASSETS = ("SPX", "NDX", "IWM")
 
@@ -319,7 +320,7 @@ def _format_range(low: float, high: float) -> str:
     return f"{low:+.1f}% to {high:+.1f}%"
 
 
-def _require_assets(rows: dict[str, object], label: str) -> None:
+def _require_assets(rows: Mapping[str, object], label: str) -> None:
     missing = [asset for asset in TRACKED_ASSETS if asset not in rows]
     if missing:
         joined = ", ".join(missing)
