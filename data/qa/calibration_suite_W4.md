@@ -1,59 +1,57 @@
-# Calibration Suite - Week 4 Draft
+# Calibration Suite - Week 4 Final
 
 Role: R10 Calibration Lead  
-Date checked: 12 June 2026  
-Status: Draft for Sprint 4
+Date checked: 20 June 2026
+Status: Ready for review
 
 ## What this file tracks
 
-This file is the R10 calibration suite for Sprint 4. It tracks prediction accuracy, LLM model performance, and process notes that should feed into R7's Human Score discussion.
+This file is my Week 4 R10 calibration suite. It tracks the completed prediction score, LLM performance notes, and process feedback for the next Human Score discussion.
 
 ## Latest completed calibration
 
-The latest completed score is still Week 2 because Week 3's matching actual result is not available until after the week of 8-12 June closes.
+| Prediction week | Actuals used | SPX | NDX | IWM | Total |
+| --- | --- | ---: | ---: | ---: | ---: |
+| W22 | `data/evidence/actuals_W22.md` | +2 | +2 | +1 | +5 / +9 |
+| W23 | `data/evidence/actuals_W24.md` | 0 | 0 | 0 | 0 / +9 |
 
-| Week | SPX | NDX | IWM | Total |
-| --- | ---: | ---: | ---: | ---: |
-| W2 | +2 | +2 | +1 | +5 / +9 |
-| W3 | Pending | Pending | Pending | Pending |
+## W23 prediction scored
 
-## W3 prediction awaiting score
-
-| Asset | Direction | Range | Confidence |
-| --- | --- | ---: | --- |
-| SPX | Down | -1.0% to -3.0% | Medium |
-| NDX | Down | -1.5% to -4.0% | Medium |
-| IWM | Down | -1.0% to -3.5% | Medium |
+| Asset | Direction | Range | Confidence | Actual move | Result |
+| --- | --- | ---: | --- | ---: | --- |
+| SPX | Down | -1.0% to -3.0% | Medium | +0.46% | Direction wrong, range miss |
+| NDX | Down | -1.5% to -4.0% | Medium | +2.17% | Direction wrong, range miss |
+| IWM | Down | -1.0% to -3.5% | Medium | +3.93% | Direction wrong, range miss |
 
 ## LLM track record
 
-| Week | Closest model | Reason |
+| Prediction week | Closest model | Reason |
 | --- | --- | --- |
-| W2 | DeepSeek | It covered the actual SPX move and had the closest midpoint among the models that included the result. |
-| W3 | Pending | Needs the actual SPX result for the week of 8-12 June 2026. |
+| W22 | DeepSeek | It covered the actual SPX move and had the closest midpoint among the models that included the result. |
+| W23 | No clear winner | The actual result moved opposite to the team's bearish call, so I would not count any model as a strong winner for that week. |
 
 ## Directional accuracy tracker
 
-| Week | SPX correct? | NDX correct? | IWM correct? | Note |
+| Prediction week | SPX correct? | NDX correct? | IWM correct? | Note |
 | --- | --- | --- | --- | --- |
-| W2 | Yes | Yes | Yes | Direction was correct across all three indexes, but ranges were too conservative. |
-| W3 | Pending | Pending | Pending | Prediction was bearish with Medium confidence. |
+| W22 | Yes | Yes | Yes | Direction was correct across all three indexes, but ranges were still a bit conservative. |
+| W23 | No | No | No | The bearish call did not match the actual relief rally. |
 
 ## Possible model or process bias
 
-- Week 2 showed that the team got direction right but underestimated upside strength.
-- Week 3 cannot be judged yet, but all four models were bearish, so R10 should watch for possible over-agreement around macro fear.
-- If W3 actuals are not as bearish as predicted, the team should be careful about overweighting one major event such as CPI.
+- W23 showed that strong model agreement can still be wrong.
+- The team may have overweighted the previous selloff, CPI risk, and bearish June seasonality.
+- The final prediction had the required structure, but the range did not leave room for a risk-on rebound.
 
 ## Input for R7 Human Score
 
-For the next Human Score discussion, R10 should remind the team to check:
+For the next Human Score discussion, I would suggest checking:
 
-- whether the AI consensus is too one-sided,
-- whether the range is wide enough for event risk,
-- whether confidence matches the real uncertainty,
-- whether the final prediction week and actuals week are clearly matched.
+- whether all models are repeating the same risk instead of adding new evidence,
+- whether the team is too confident after one sharp selloff,
+- whether the final range includes both the main thesis and a realistic reversal case,
+- whether the prediction week and actuals week are clearly matched before scoring.
 
 ## One process change
 
-Before the W4 release tag is created, R10 should confirm that the final prediction file includes direction, range, confidence, prediction week, and invalidation condition for SPX, NDX, IWM, and the required sector predictions.
+Before the next release tag, R10 should confirm that the final prediction file includes the prediction week, direction, range, confidence, and invalidation condition for SPX, NDX, and IWM. I would also write down which actuals file will be used later, because that is where week-matching mistakes are easiest to make.
