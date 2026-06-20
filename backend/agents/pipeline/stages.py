@@ -4,24 +4,41 @@ from datetime import date
 from pathlib import Path
 from typing import Callable
 
-from agents.pipeline.context import PipelineContext
+from agents.evidence.evidence_agent import EvidenceAgent
+from agents.io import FileSaver, week_stem
 from agents.llm.base_llm import BaseLLMAgent
+from agents.llm.multi_model_runner import _row
+from agents.macro.macro_agent import MacroAgent
+from agents.pipeline.context import PipelineContext
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
+
 def _make_openrouter(model_name: str, model_id: str):
     from agents.llm.multi_model_runner import OpenRouterAgent
+
     return OpenRouterAgent(model_name=model_name, model_id=model_id)
 
 
+# TODO: move to config
 # Registry maps model_key/slug → zero-arg callable returning a BaseLLMAgent instance.
 # Slugs must match multi_model_runner.MODELS[*]["slug"].
 LLM_REGISTRY: dict[str, Callable[[], BaseLLMAgent]] = {
-    "example":  lambda: __import__("agents.llm.example_agent", fromlist=["ExampleAgent"]).ExampleAgent(),
-    "nemotron": lambda: _make_openrouter("NVIDIA Nemotron 3 Super", "nvidia/nemotron-3-super-120b-a12b:free"),
-    "gptoss":   lambda: _make_openrouter("OpenAI gpt-oss-120b",     "openai/gpt-oss-120b:free"),
-    "gemma":    lambda: _make_openrouter("Google Gemma 4 31B",       "google/gemma-4-31b-it:free"),
-    "laguna":   lambda: _make_openrouter("Poolside Laguna M.1",      "poolside/laguna-m.1:free"),
+    "example": lambda: __import__(
+        "agents.llm.example_agent", fromlist=["ExampleAgent"]
+    ).ExampleAgent(),
+    "nemotron": lambda: _make_openrouter(
+        "NVIDIA Nemotron 3 Super", "nvidia/nemotron-3-super-120b-a12b:free"
+    ),
+    "gptoss": lambda: _make_openrouter(
+        "OpenAI gpt-oss-120b", "openai/gpt-oss-120b:free"
+    ),
+    "gemma": lambda: _make_openrouter(
+        "Google Gemma 4 31B", "google/gemma-4-31b-it:free"
+    ),
+    "laguna": lambda: _make_openrouter(
+        "Poolside Laguna M.1", "poolside/laguna-m.1:free"
+    ),
 }
 
 
@@ -37,7 +54,9 @@ def _save_artifacts(agent, output, prediction_date: date, config: dict) -> None:
     if art.get("save_md", True):
         md = agent.render_md(output, prediction_date)
         md_path = REPO_ROOT / "data" / agent.agent_type
-        FileSaver(md_path).save(md, f"{agent.agent_type}_agent_{week_stem(prediction_date)}.md")
+        FileSaver(md_path).save(
+            md, f"{agent.agent_type}_agent_{week_stem(prediction_date)}.md"
+        )
 
 
 def run_almanac(ctx: PipelineContext, config: dict) -> None:
@@ -59,7 +78,6 @@ def run_technical(ctx: PipelineContext, config: dict) -> None:
 
 
 def run_macro(ctx: PipelineContext, config: dict) -> None:
-    from agents.macro.macro_agent import MacroAgent
 
     agent = MacroAgent()
     output = agent.run(ctx.prediction_date)
@@ -72,7 +90,6 @@ def run_evidence(
     config: dict,
     data_root: Path | None = None,
 ) -> None:
-    from agents.evidence.evidence_agent import EvidenceAgent
 
     agent = EvidenceAgent(data_root=data_root)
     output = agent.run(ctx.prediction_date)
@@ -82,8 +99,6 @@ def run_evidence(
 
 def run_llm(ctx: PipelineContext, config: dict, model_key: str) -> tuple[str, dict]:
     """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
-    from agents.llm.multi_model_runner import _row
-    from agents.io import FileSaver, week_stem
 
     if model_key not in LLM_REGISTRY:
         raise ValueError(
