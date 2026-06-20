@@ -20,6 +20,7 @@ def _save_artifacts(
 ) -> None:
     week_stem_date = week_stem(prediction_date)
 
+    # TODO: move saving as json into database
     if config.artifacts.save_json:
         FileSaver.for_agent(agent.agent_type).save(
             agent.render_json(output, prediction_date),
