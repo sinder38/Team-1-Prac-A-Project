@@ -28,60 +28,82 @@ class FomcMarketPricing:
 
 
 FOMC_MARKET_PRICING = FomcMarketPricing(
-    next_fomc_date=date(2026, 6, 18),
-    hold_probability=97.4,
-    cut_probability=2.6,
-    direction_vs_last_week="shifted hawkish slightly",
+    next_fomc_date=date(2026, 7, 29),
+    hold_probability=61.5,
+    cut_probability=0,
+    direction_vs_last_week="shifted hawkish",
 )
 
 
 UPCOMING_EVENTS = [
     Event(
-        name="US Fed Interest Rate Decision",
-        date_label="Thursday, June 18",
+        name="US Non-Farm Payrolls",
+        date_label="Thursday, July 2",
         impact="HIGH",
         priority=100,
-        expected="Hold",
-        previous="3.50%-3.75%",
-        catalyst_name="US Fed Interest Rate Decision",
-        catalyst_date="June 18",
+        expected="70K",
+        previous="172K",
+        catalyst_name="US Employment Report",
+        catalyst_date="July 2",
     ),
     Event(
-        name="FOMC Economic Projections",
-        date_label="Thursday, June 18",
+        name="US Unemployment Rate",
+        date_label="Thursday, July 2",
         impact="HIGH",
         priority=95,
-        catalyst_name="FOMC Economic Projections",
-        catalyst_date="June 18",
+        expected="4.50%",
+        previous="4.30%",
+        catalyst_name="US Employment Report",
+        catalyst_date="July 2",
     ),
     Event(
-        name="Fed Press Conference",
-        date_label="Thursday, June 18",
+        name="US ISM Manufacturing PMI",
+        date_label="Wednesday, July 1",
         impact="HIGH",
         priority=90,
-        catalyst_name="Fed Press Conference",
-        catalyst_date="June 18",
+        expected="52.5",
+        previous="54.0",
+        catalyst_name="US Manufacturing Activity",
+        catalyst_date="July 1",
     ),
     Event(
-        name="BoE Interest Rate Decision",
-        date_label="Thursday, June 18",
+        name="China NBS Manufacturing PMI",
+        date_label="Tuesday, June 30",
+        impact="HIGH",
+        priority=85,
+        expected="50.3",
+        previous="50.0",
+        catalyst_name="China Manufacturing PMI",
+        catalyst_date="June 30",
+    ),
+    Event(
+        name="Euro Area CPI Flash",
+        date_label="Wednesday, July 1",
         impact="MEDIUM",
-        priority=70,
-        expected="3.75%",
-        previous="3.75%",
-        catalyst_name="BoE Interest Rate Decision",
-        catalyst_date="June 18",
+        priority=75,
+        expected="3.2%",
+        previous="3.2%",
+        catalyst_name="Eurozone Inflation",
+        catalyst_date="July 1",
     ),
 ]
 
 KEY_EARNINGS = [
-    "- Accenture Ltd. (ACN) — Thursday, June 18 (Before Open) — Sector: XLK/XLF (Enterprise Tech / Consulting) — What to watch: enterprise IT spending, AI-related transformation budgets, broader software and tech sentiment.",
-    "- Progressive Corp. (PGR) — Wednesday, June 17 (Before Open) — Sector: XLF (Financials) — What to watch: Insurance margin strength and pricing trends",
-    "- Jabil Inc. (JBL) — Wednesday, June 17 (Before Open) — Sector: XLK (Tech Hardware / AI Supply Chain) — What to watch: electronics demand and AI infrastructure supply chain momentum."
+    "- FedEx Corp. (FDX) — Tuesday, June 23 (After Close) — Sector: Industrials / Transportation — What to watch: global shipping demand, freight volumes, economic activity indicators and FY outlook.",
+
+    "- Paychex Inc. (PAYX) — Wednesday, June 24 (Before Open) — Sector: Financials / Payroll Services — What to watch: employment trends, SMB hiring activity and management commentary on labor markets.",
+
+    "- Micron Technology Inc. (MU) — Wednesday, June 24 (After Close) — Sector: Technology / Semiconductors — What to watch: AI memory demand, HBM pricing, data center growth and FY guidance.",
+
+    "- Trip.com Group Ltd. (TCOM) — Wednesday, June 24 (After Close) — Sector: Consumer Discretionary / Travel — What to watch: China travel demand, international bookings and consumer spending trends.",
+
+    "- Darden Restaurants Inc. (DRI) — Thursday, June 25 (Before Open) — Sector: Consumer Discretionary / Restaurants — What to watch: same-store sales, consumer spending trends and forward guidance.",
 ]
 
 CONFIRMED_NEWS = [
-    "- US stocks rise after oil prices ease and SpaceX soars in its debut on Wall Street — Source: AP — 13 Jun 2026",
-    "- US and Iran have agreed to wording of a deal to end their war, Pakistan's prime minister says — Source: AP — 13 Jun 2026",
-    "- Iran peace deal looms while new military action flares near Strait of Hormuz — Source: Reuters, AP — 13 Jun 2026",
+    "- US Vice President JD Vance met senior Iranian officials in Switzerland as Washington seeks to restart negotiations and reduce regional tensions — Source: AP — 21 Jun 2026",
+
+    "- President Trump threatened additional military strikes against Iran while diplomatic talks continue, increasing geopolitical uncertainty in the Middle East — Source: Reuters — 21 Jun 2026",
+
+    "- Markets continue monitoring developments around Iran, the Strait of Hormuz and global energy supply risks as diplomatic and military signals remain mixed — Source: Reuters, AP — 21 Jun 2026",
 ]
