@@ -1,22 +1,16 @@
 """Evidence Agent - generates a weekly R8 actuals report.
 
 It saves the markdown as data/evidence/actuals_WXX.md.
-capture is an explicit separate step; the report keeps Markdown table links to
-the expected PNG filenames without embedding or creating those images.
 """
 
 from __future__ import annotations
 
 import sys
-from io import StringIO
-from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Final, Protocol, cast
+from typing import Any, cast
 
 import pandas as pd
-import requests
-import yfinance as yf
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -24,189 +18,25 @@ from agents.base import BaseAgent
 from agents.io import FileSaver, week_stem
 from agents.evidence.report import EvidenceReportRenderer
 from agents.schemas import EvidenceOutput
+from agents.evidence.data_sources import FredYieldProvider, YahooFinanceEvidenceProvider
+from agents.evidence.models import (
+    BITCOIN_SPEC,
+    BONDS_SPEC,
+    EM_DASH,
+    GOLD_SPEC,
+    INDEX_SPECS,
+    OIL_SPEC,
+    PROJECT_WEEK_OFFSET,
+    SECTOR_SPECS,
+    VIX_SPEC,
+    EvidenceSnapshot,
+    MarketMove,
+    MarketSpec,
+    SectorMove,
+    YieldMove,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-
-
-@dataclass(frozen=True)
-class MarketSpec:
-    label: str
-    short_name: str
-    ticker: str
-    close_kind: str
-
-
-@dataclass(frozen=True)
-class SectorSpec:
-    name: str
-    ticker: str
-    description: str
-
-
-@dataclass(frozen=True)
-class MarketMove:
-    spec: MarketSpec
-    close: float | None
-    weekly_change: float | None
-    error: str | None = None
-
-
-@dataclass(frozen=True)
-class YieldMove:
-    close: float | None
-    weekly_change_points: float | None
-    error: str | None = None
-
-
-@dataclass(frozen=True)
-class SectorMove:
-    spec: SectorSpec
-    weekly_change: float | None
-    error: str | None = None
-
-
-@dataclass(frozen=True)
-class EvidenceSnapshot:
-    prediction_date: date
-    week_start: date
-    week_end: date
-    last_market_date: date
-    open_days: int
-    indexes: list[MarketMove]
-    gold: MarketMove
-    oil: MarketMove
-    ten_year: YieldMove
-    bonds: MarketMove
-    vix: MarketMove
-    bitcoin: MarketMove
-    sectors: list[SectorMove]
-    technical_chart_links: list[tuple[str, str]]
-
-
-GOLD_SPEC: Final[MarketSpec] = MarketSpec("**Gold**", "Gold", "GC=F", "gold")
-OIL_SPEC: Final[MarketSpec] = MarketSpec("**Oil** (U.S. crude)", "Oil", "CL=F", "oil")
-BONDS_SPEC: Final[MarketSpec] = MarketSpec("**Bonds** (TLT fund)", "TLT", "TLT", "etf")
-VIX_SPEC: Final[MarketSpec] = MarketSpec(
-    "**VIX** (how scared traders are; lower = calmer)", "VIX", "^VIX", "vix"
-)
-BITCOIN_SPEC: Final[MarketSpec] = MarketSpec("**Bitcoin**", "Bitcoin", "BTC-USD", "bitcoin")
-
-SECTOR_SPECS: Final[list[SectorSpec]] = [
-    SectorSpec("Technology", "XLK", "software, chips, and hardware"),
-    SectorSpec("Energy (oil & gas companies)", "XLE", "oil and gas producers"),
-    SectorSpec("Financials (banks, insurance)", "XLF", "banks, brokers, and insurers"),
-    SectorSpec("Consumer discretionary (cars, hotels, shopping)", "XLY", "consumer spending-sensitive stocks"),
-    SectorSpec("Consumer staples (food, toothpaste, etc.)", "XLP", "defensive food and household products"),
-    SectorSpec("Industrials", "XLI", "manufacturers, transport, and machinery"),
-    SectorSpec("Materials (chemicals, metals, etc.)", "XLB", "chemicals, metals, and industrial inputs"),
-    SectorSpec("Health care", "XLV", "health care and pharmaceuticals"),
-    SectorSpec("Utilities (power, water)", "XLU", "regulated power and water utilities"),
-    SectorSpec("Real estate", "XLRE", "property and REIT stocks"),
-    SectorSpec("Communication (phones, media, ads)", "XLC", "telecom, media, and internet platforms"),
-]
-
-
-class EvidenceMarketDataProvider(Protocol):
-    def history(self, ticker: str, start: date, end: date) -> pd.Series:
-        """Return daily close prices from start through end, inclusive."""
-        ...
-
-
-class YieldDataProvider(Protocol):
-    def history(self, series_id: str, start: date, end: date) -> pd.Series:
-        """Return daily yield values from start through end, inclusive."""
-        ...
-
-
-class YahooFinanceEvidenceProvider:
-    """Small adapter around yfinance so tests can inject deterministic data."""
-
-    def history(self, ticker: str, start: date, end: date) -> pd.Series:
-        raw = yf.download(
-            ticker,
-            start=start.isoformat(),
-            end=(end + timedelta(days=1)).isoformat(),
-            progress=False,
-            auto_adjust=True,
-        )
-        if raw is None or raw.empty:
-            raise ValueError(f"No Yahoo Finance data returned for {ticker}")
-
-        close = self._close_column(raw, ticker)
-        close = pd.Series(
-            close.to_numpy(),
-            index=pd.DatetimeIndex(pd.to_datetime(close.index)).tz_localize(None),
-            name=close.name,
-        )
-        close = cast(pd.Series, close.dropna().sort_index())
-        if close.empty:
-            raise ValueError(f"No close prices returned for {ticker}")
-        return close
-
-    @staticmethod
-    def _close_column(raw: pd.DataFrame, ticker: str) -> pd.Series:
-        if isinstance(raw.columns, pd.MultiIndex):
-            if "Close" in raw.columns.get_level_values(0):
-                close = raw["Close"]
-            elif "Close" in raw.columns.get_level_values(-1):
-                close = raw.xs("Close", axis=1, level=-1)
-            else:
-                raise ValueError(f"No close column returned for {ticker}")
-            if isinstance(close, pd.DataFrame):
-                if ticker in close.columns:
-                    return cast(pd.Series, close[ticker])
-                return cast(pd.Series, close.iloc[:, 0])
-            return cast(pd.Series, close)
-
-        if "Close" not in raw.columns:
-            raise ValueError(f"No close column returned for {ticker}")
-        close = raw["Close"]
-        if isinstance(close, pd.DataFrame):
-            return cast(pd.Series, close.iloc[:, 0])
-        return cast(pd.Series, close)
-
-
-class FredYieldProvider:
-    """Fetch Treasury yields from FRED's CSV endpoint without requiring an API key."""
-
-    _url: Final[str] = "https://fred.stlouisfed.org/graph/fredgraph.csv"
-
-    def history(self, series_id: str, start: date, end: date) -> pd.Series:
-        response = requests.get(
-            self._url,
-            params={"id": series_id},
-            timeout=30,
-        )
-        response.raise_for_status()
-        df = pd.read_csv(StringIO(response.text))
-        if "observation_date" not in df.columns or series_id not in df.columns:
-            raise ValueError(f"FRED response missing {series_id} data")
-
-        raw_values = cast(pd.Series, df[series_id])
-        values = cast(pd.Series, pd.to_numeric(raw_values, errors="coerce"))
-        raw_dates = cast(pd.Series, df["observation_date"])
-        dates = pd.DatetimeIndex(pd.to_datetime(raw_dates))
-        series = pd.Series(values.to_numpy(), index=dates)
-        series = cast(pd.Series, series.dropna().sort_index())
-        index = pd.DatetimeIndex(series.index)
-        filtered = [
-            (item, float(value))
-            for item, value in zip(index, series.to_numpy())
-            if start <= item.date() <= end
-        ]
-        if not filtered:
-            raise ValueError(f"No FRED {series_id} observations returned")
-        return pd.Series(
-            [value for _, value in filtered],
-            index=pd.DatetimeIndex([item for item, _ in filtered]),
-        )
-
-
-INDEX_SPECS: Final[list[MarketSpec]] = [
-    MarketSpec("S&P 500 \u2014 large U.S. companies", "SPX", "^GSPC", "index"),
-    MarketSpec("Nasdaq 100 \u2014 mostly tech", "NDX", "^NDX", "index"),
-    MarketSpec("Russell 2000 \u2014 smaller companies", "IWM", "IWM", "etf"),
-]
 
 
 class EvidenceAgent(BaseAgent[EvidenceOutput]):
@@ -215,8 +45,8 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
     def __init__(
             self,
             data_root: Path | None = None,
-            market_data_provider: EvidenceMarketDataProvider | None = None,
-            yield_data_provider: YieldDataProvider | None = None
+            market_data_provider: Any | None = None,
+            yield_data_provider: Any | None = None
     ):
         self._data_root = data_root or REPO_ROOT / "data"
         self._market_data = market_data_provider or YahooFinanceEvidenceProvider()
@@ -373,6 +203,7 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
         return week_start, week_end
 
     def _technical_chart_links(self, prediction_date: date) -> list[tuple[str, str]]:
+        """Generate file names to link with technical charts"""
         charts_dir = self._data_root / "charts"
         week = week_stem(prediction_date)
         year = self._week_bounds(prediction_date)[1].year
