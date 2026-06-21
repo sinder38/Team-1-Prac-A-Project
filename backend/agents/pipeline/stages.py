@@ -77,9 +77,6 @@ def run_evidence(
     data_root: Path | None = None,
     market_data_provider=None,
     yield_data_provider=None,
-    screenshot_provider=None,
-    capture_screenshots: bool = True,
-    require_screenshots: bool = True,
 ) -> None:
     from agents.evidence.evidence_agent import EvidenceAgent
 
@@ -87,9 +84,6 @@ def run_evidence(
         data_root=data_root,
         market_data_provider=market_data_provider,
         yield_data_provider=yield_data_provider,
-        screenshot_provider=screenshot_provider,
-        capture_screenshots=capture_screenshots,
-        require_screenshots=require_screenshots,
     )
     output = agent.run(ctx.prediction_date)
     ctx.evidence = output

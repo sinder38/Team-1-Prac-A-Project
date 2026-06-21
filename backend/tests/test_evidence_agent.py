@@ -90,25 +90,6 @@ class _MissingYieldDataProvider:
         return pd.Series(dtype=float)
 
 
-class _FakeScreenshotProvider:
-    def __init__(self):
-        self.calls: list[tuple[str, Path]] = []
-
-    def capture(self, url: str, path: Path) -> None:
-        self.calls.append((url, path))
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
-            b"\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde"
-            b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x01\x01"
-            b"\x01\x00\x18\xdd\x8d\xb0\x00\x00\x00\x00IEND\xaeB`\x82"
-        )
-
-
-class _FailingScreenshotProvider:
-    def capture(self, url: str, path: Path) -> None:
-        raise RuntimeError("browser unavailable")
-
 
 def test_run_returns_generated_evidence_output(tmp_path):
     provider = _FakeMarketDataProvider()
@@ -116,8 +97,7 @@ def test_run_returns_generated_evidence_output(tmp_path):
     agent = EvidenceAgent(
         data_root=tmp_path,
         market_data_provider=provider,
-        yield_data_provider=_FakeYieldDataProvider(),
-        capture_screenshots=False,
+        yield_data_provider=_FakeYieldDataProvider()
     )
     result = agent.run(date(2026, 6, 16))
 
@@ -127,8 +107,6 @@ def test_run_returns_generated_evidence_output(tmp_path):
     assert "**Week ended:** Friday, June 19, 2026" in result.content
     assert "| S&P 500" in result.content
     assert "| SPX | 102.00 | **Up 2.00%** |" in result.content
-    assert "[finviz_1W_2026_W25_Sat.png](./finviz_1W_2026_W25_Sat.png)" in result.content
-    assert "[finviz_sectors_5D_2026_W25_Sat.png](./finviz_sectors_5D_2026_W25_Sat.png)" in result.content
     assert "| **10-Year interest rate** | 4.44% | **Slightly lower (about 0.06 points)** |" in result.content
     assert "## 11 Parts of the Stock Market" in result.content
     assert result.prediction_date == date(2026, 6, 16)
@@ -142,12 +120,10 @@ def test_run_does_not_require_manual_actuals_file(tmp_path):
         data_root=tmp_path,
         market_data_provider=provider,
         yield_data_provider=_FakeYieldDataProvider(),
-        capture_screenshots=False,
     )
     result = agent.run(date(2026, 6, 16))
 
     assert result.week == "W25"
-    assert "Finviz futures performance screenshot for 1-week cross-market visual evidence" in result.content
     assert "10-year Treasury yield from FRED series DGS10" in result.content
 
 
@@ -157,8 +133,7 @@ def test_run_fetches_expected_market_tickers(tmp_path):
     agent = EvidenceAgent(
         data_root=tmp_path,
         market_data_provider=provider,
-        yield_data_provider=_FakeYieldDataProvider(),
-        capture_screenshots=False,
+        yield_data_provider=_FakeYieldDataProvider()
     )
     result = agent.run(date(2026, 6, 16))
 
@@ -180,8 +155,7 @@ def test_render_md_returns_generated_content(tmp_path):
     agent = EvidenceAgent(
         data_root=tmp_path,
         market_data_provider=provider,
-        yield_data_provider=_FakeYieldDataProvider(),
-        capture_screenshots=False,
+        yield_data_provider=_FakeYieldDataProvider()
     )
     result = agent.run(date(2026, 6, 16))
 
@@ -193,45 +167,11 @@ def test_missing_yield_data_does_not_crash(tmp_path):
         data_root=tmp_path,
         market_data_provider=_FakeMarketDataProvider(),
         yield_data_provider=_MissingYieldDataProvider(),
-        capture_screenshots=False,
     )
 
     result = agent.run(date(2026, 6, 16))
 
     assert "| **10-Year interest rate** | N/A | **N/A** |" in result.content
-
-
-def test_run_saves_required_finviz_png_files(tmp_path):
-    screenshot_provider = _FakeScreenshotProvider()
-    agent = EvidenceAgent(
-        data_root=tmp_path,
-        market_data_provider=_FakeMarketDataProvider(),
-        yield_data_provider=_FakeYieldDataProvider(),
-        screenshot_provider=screenshot_provider,
-    )
-
-    agent.run(date(2026, 6, 16))
-
-    evidence_dir = tmp_path / "evidence"
-    performance_path = evidence_dir / "finviz_1W_2026_W25_Sat.png"
-    sector_path = evidence_dir / "finviz_sectors_5D_2026_W25_Sat.png"
-    assert performance_path.exists()
-    assert sector_path.exists()
-    assert performance_path.read_bytes().startswith(b"\x89PNG")
-    assert sector_path.read_bytes().startswith(b"\x89PNG")
-    assert len(screenshot_provider.calls) == 2
-
-
-def test_run_raises_when_required_finviz_png_cannot_be_saved(tmp_path):
-    agent = EvidenceAgent(
-        data_root=tmp_path,
-        market_data_provider=_FakeMarketDataProvider(),
-        yield_data_provider=_FakeYieldDataProvider(),
-        screenshot_provider=_FailingScreenshotProvider(),
-    )
-
-    with pytest.raises(RuntimeError, match="Could not save required Finviz screenshot"):
-        agent.run(date(2026, 6, 16))
 
 
 def test_render_includes_existing_technical_chart_links(tmp_path):
@@ -244,7 +184,6 @@ def test_render_includes_existing_technical_chart_links(tmp_path):
         data_root=tmp_path,
         market_data_provider=_FakeMarketDataProvider(),
         yield_data_provider=_FakeYieldDataProvider(),
-        capture_screenshots=False,
     )
 
     result = agent.run(date(2026, 6, 16))

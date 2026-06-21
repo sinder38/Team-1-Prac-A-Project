@@ -83,6 +83,29 @@ class EvidenceSnapshot:
     technical_chart_links: list[tuple[str, str]]
 
 
+GOLD_SPEC: Final[MarketSpec] = MarketSpec("**Gold**", "Gold", "GC=F", "gold")
+OIL_SPEC: Final[MarketSpec] = MarketSpec("**Oil** (U.S. crude)", "Oil", "CL=F", "oil")
+BONDS_SPEC: Final[MarketSpec] = MarketSpec("**Bonds** (TLT fund)", "TLT", "TLT", "etf")
+VIX_SPEC: Final[MarketSpec] = MarketSpec(
+    "**VIX** (how scared traders are; lower = calmer)", "VIX", "^VIX", "vix"
+)
+BITCOIN_SPEC: Final[MarketSpec] = MarketSpec("**Bitcoin**", "Bitcoin", "BTC-USD", "bitcoin")
+
+SECTOR_SPECS: Final[list[SectorSpec]] = [
+    SectorSpec("Technology", "XLK", "software, chips, and hardware"),
+    SectorSpec("Energy (oil & gas companies)", "XLE", "oil and gas producers"),
+    SectorSpec("Financials (banks, insurance)", "XLF", "banks, brokers, and insurers"),
+    SectorSpec("Consumer discretionary (cars, hotels, shopping)", "XLY", "consumer spending-sensitive stocks"),
+    SectorSpec("Consumer staples (food, toothpaste, etc.)", "XLP", "defensive food and household products"),
+    SectorSpec("Industrials", "XLI", "manufacturers, transport, and machinery"),
+    SectorSpec("Materials (chemicals, metals, etc.)", "XLB", "chemicals, metals, and industrial inputs"),
+    SectorSpec("Health care", "XLV", "health care and pharmaceuticals"),
+    SectorSpec("Utilities (power, water)", "XLU", "regulated power and water utilities"),
+    SectorSpec("Real estate", "XLRE", "property and REIT stocks"),
+    SectorSpec("Communication (phones, media, ads)", "XLC", "telecom, media, and internet platforms"),
+]
+
+
 class EvidenceMarketDataProvider(Protocol):
     def history(self, ticker: str, start: date, end: date) -> pd.Series:
         """Return daily close prices from start through end, inclusive."""
@@ -178,32 +201,11 @@ class FredYieldProvider:
             index=pd.DatetimeIndex([item for item, _ in filtered]),
         )
 
+
 INDEX_SPECS: Final[list[MarketSpec]] = [
     MarketSpec("S&P 500 \u2014 large U.S. companies", "SPX", "^GSPC", "index"),
     MarketSpec("Nasdaq 100 \u2014 mostly tech", "NDX", "^NDX", "index"),
     MarketSpec("Russell 2000 \u2014 smaller companies", "IWM", "IWM", "etf"),
-]
-
-GOLD_SPEC: Final[MarketSpec] = MarketSpec("**Gold**", "Gold", "GC=F", "gold")
-OIL_SPEC: Final[MarketSpec] = MarketSpec("**Oil** (U.S. crude)", "Oil", "CL=F", "oil")
-BONDS_SPEC: Final[MarketSpec] = MarketSpec("**Bonds** (TLT fund)", "TLT", "TLT", "etf")
-VIX_SPEC: Final[MarketSpec] = MarketSpec(
-    "**VIX** (how scared traders are; lower = calmer)", "VIX", "^VIX", "vix"
-)
-BITCOIN_SPEC: Final[MarketSpec] = MarketSpec("**Bitcoin**", "Bitcoin", "BTC-USD", "bitcoin")
-
-SECTOR_SPECS: Final[list[SectorSpec]] = [
-    SectorSpec("Technology", "XLK", "software, chips, and hardware"),
-    SectorSpec("Energy (oil & gas companies)", "XLE", "oil and gas producers"),
-    SectorSpec("Financials (banks, insurance)", "XLF", "banks, brokers, and insurers"),
-    SectorSpec("Consumer discretionary (cars, hotels, shopping)", "XLY", "consumer spending-sensitive stocks"),
-    SectorSpec("Consumer staples (food, toothpaste, etc.)", "XLP", "defensive food and household products"),
-    SectorSpec("Industrials", "XLI", "manufacturers, transport, and machinery"),
-    SectorSpec("Materials (chemicals, metals, etc.)", "XLB", "chemicals, metals, and industrial inputs"),
-    SectorSpec("Health care", "XLV", "health care and pharmaceuticals"),
-    SectorSpec("Utilities (power, water)", "XLU", "regulated power and water utilities"),
-    SectorSpec("Real estate", "XLRE", "property and REIT stocks"),
-    SectorSpec("Communication (phones, media, ads)", "XLC", "telecom, media, and internet platforms"),
 ]
 
 
@@ -211,10 +213,10 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
     agent_type = "evidence"
 
     def __init__(
-        self,
-        data_root: Path | None = None,
-        market_data_provider: EvidenceMarketDataProvider | None = None,
-        yield_data_provider: YieldDataProvider | None = None
+            self,
+            data_root: Path | None = None,
+            market_data_provider: EvidenceMarketDataProvider | None = None,
+            yield_data_provider: YieldDataProvider | None = None
     ):
         self._data_root = data_root or REPO_ROOT / "data"
         self._market_data = market_data_provider or YahooFinanceEvidenceProvider()
@@ -277,13 +279,12 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
     def render_report(self, snapshot: EvidenceSnapshot) -> str:
         return self._report_renderer.render(snapshot)
 
-
     def _market_move(
-        self,
-        spec: MarketSpec,
-        fetch_start: date,
-        week_start: date,
-        week_end: date,
+            self,
+            spec: MarketSpec,
+            fetch_start: date,
+            week_start: date,
+            week_end: date,
     ) -> MarketMove:
         try:
             series = self._market_data.history(spec.ticker, fetch_start, week_end)
@@ -310,11 +311,11 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
             return YieldMove(close=None, weekly_change_points=None, error=str(exc))
 
     def _weekly_change_pct(
-        self,
-        ticker: str,
-        fetch_start: date,
-        week_start: date,
-        week_end: date,
+            self,
+            ticker: str,
+            fetch_start: date,
+            week_start: date,
+            week_end: date,
     ) -> float | None:
         try:
             series = self._market_data.history(ticker, fetch_start, week_end)
@@ -324,10 +325,10 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
             return None
 
     def _market_open_dates(
-        self,
-        fetch_start: date,
-        week_start: date,
-        week_end: date,
+            self,
+            fetch_start: date,
+            week_start: date,
+            week_end: date,
     ) -> list[date]:
         try:
             spx_series = self._market_data.history(INDEX_SPECS[0].ticker, fetch_start, week_end)
@@ -392,6 +393,7 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
                     links.append((label, f"../charts/{path.name}"))
                     break
         return links
+
 
 if __name__ == "__main__":
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
