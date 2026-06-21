@@ -59,27 +59,36 @@ Human Score Analyst
 Main : Henry 
 Support : Sai Ko, Naing Phone Pyae 
 Completed
-Worked on testing tasks and Human Score review activities.
-Created and ran tests to verify agent outputs.
-Checked that JSON files contained the required fields.
-Reviewed AI consensus results and compared them with human judgement before final decisions.
+Worked on Human Score analysis and review activities.
+Reviewed AI consensus outputs and compared them with human judgement.
+Helped ensure final predictions were supported by clear reasoning, evidence, and market analysis.
+Created and ran tests to verify agent outputs and required JSON fields.
+Reviewed prediction results before final submission.
+Contributed to the final prediction file and decision-making process.
+Supported testing and validation activities across the project.
 Blockers / Challenges
-Testing required understanding agent output formats before validation could be performed.
-Evaluating whether AI predictions should be accepted or adjusted required clear reasoning and supporting evidence.
-Human Score decisions required careful review to avoid relying solely on AI outputs.
+Evaluating whether AI predictions should be accepted or adjusted required careful reasoning and supporting evidence.
+Understanding agent output formats was necessary before testing could be completed effectively.
+Some communication occurred through direct messages instead of team channels, reducing visibility.
+A significant amount of work was completed close to the weekend deadline.
 What Went Well
-Testing helped confirm that output files and validation processes were functioning correctly.
-Human Score review provided an additional layer of quality control.
-The review process strengthened the reasoning behind final decisions and recommendations.
+Human Score reviews provided an additional layer of quality control beyond AI-generated outputs.
+Testing confirmed that output files and validation processes were functioning correctly.
+The final prediction process became more structured through AI consensus, Human Score review, and final human judgement.
+Team members understood their responsibilities and contributed to the final prediction workflow.
 Working on Next
-Continue improving integration testing between agents.
-Enhance output validation processes.
-Support Human Score activities by reviewing AI consensus results.
-Identify risks and prepare justification for prediction adjustments or overrides.
+Continue improving integration testing and output validation.
+Support future Human Score reviews and prediction assessments.
+ Review AI consensus results and identify potential risks.
+Prepare justification for prediction adjustments or overrides when necessary.
+Continue supporting final prediction reviews and decision-making activities.
 Improvements
-Improve understanding of agent output formats earlier in development.
-Continue strengthening validation and review processes.
-Increase collaboration between testing and Human Score activities.
+Increase communication through shared team channels rather than direct messages.
+Improve collaboration and information sharing between roles.
+Complete more work earlier in the sprint to reduce weekend pressure.
+Continue strengthening testing, validation, and Human Score review processes.
+Improve understanding of agent outputs and prediction reasoning earlier in the sprint.
+
 
 
 QA
