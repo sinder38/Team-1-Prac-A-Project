@@ -1,0 +1,17 @@
+# LLM Agent Output — Poolside Laguna M.1 — Week of 2026-06-21
+
+1. Weekly Regime: Uncertain
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - All three indices closed above their 8-day and 21-day EMAs with bullish technical bias, led by NDX up 2.60% and SPX up 0.93%
+   - Technology sector outperformed with 3.59% gain in seasonal LONG window (March-July), supporting Nasdaq strength
+   - VIX declined 7.24% indicating easing fear while bonds rose 1.14% on stable 10-year yield at 4.49%
+4. Key Contradictions:
+   - Bullish technical momentum conflicts with bearish seasonal patterns as June is historically the weakest month in midterm-year cycle
+   - Rising dollar (+0.99%) and falling oil (-9.83%) create mixed macro signals amid hawkish Fed stance with 97.4% hold probability
+5. Invalidation Conditions: A surprisingly dovish Fed decision or press conference driving Treasury yields lower and increasing rate cut expectations would reverse the cautious stance and support risk assets
+6. Predicted % move — SPX: -3.5% to 1.6%
+   Predicted % move — NDX: -7.2% to 1.2%
+   Predicted % move — IWM: -6.4% to 0.8%
+7. Plain-English brief: Markets face a tug-of-war between bullish technical momentum and bearish seasonal headwinds. Tech stocks have strong seasonal support but broader market faces June weakness. The Fed's likely hold decision keeps the dollar firm and creates binary risk for equities. Expect choppy trading with modest upside potential but meaningful downside protection needed.
+8. Disclaimer: This is not financial advice.
