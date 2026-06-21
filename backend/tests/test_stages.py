@@ -36,6 +36,7 @@ def test_build_prompt_uses_context():
 
     assert "ALMANAC" in prompt
     assert "EVIDENCE" in prompt
+    assert "EVIDENCE" in prompt
     assert "Test thesis" in prompt
     assert "W25 actuals" in prompt
 
@@ -91,7 +92,6 @@ def test_run_evidence_populates_context(tmp_path):
         data_root=tmp_path,
         market_data_provider=_FakeEvidenceMarketDataProvider(),
         yield_data_provider=_FakeEvidenceYieldDataProvider(),
-        capture_screenshots=False,
     )
 
     assert ctx.evidence is not None
@@ -108,10 +108,8 @@ def test_run_evidence_does_not_require_manual_actuals_file(tmp_path):
         data_root=tmp_path,
         market_data_provider=_FakeEvidenceMarketDataProvider(),
         yield_data_provider=_FakeEvidenceYieldDataProvider(),
-        capture_screenshots=False,
     )
     assert ctx.evidence is not None
-    assert "Finviz futures performance screenshot for 1-week cross-market visual evidence" in ctx.evidence.content
     assert "10-year Treasury yield from FRED series DGS10" in ctx.evidence.content
 
 
