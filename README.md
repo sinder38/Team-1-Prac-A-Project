@@ -135,6 +135,74 @@ No vague calls like "looks bullish" — only measured statements like "bullish w
 
 ---
 
+## Pipeline Architecture
+
+```mermaid
+flowchart LR
+    subgraph Inputs["Market Data Inputs"]
+        MD["S&P 500 · NDX · IWM\n+ 6 Macro Assets"]
+    end
+
+    subgraph Agents["Analysis Agents"]
+        A["Almanac Agent\n75yrs seasonal patterns"]
+        M["Macro Agent\nFed · rates · calendar"]
+        T["Technical Agent\nEMA · S/R · chart levels"]
+        E["Evidence Agent\nActuals & market data"]
+    end
+
+    subgraph LLMs["LLM Synthesis"]
+        L1["Nemotron 3 Super\nNVIDIA"]
+        L2["gpt-oss-120b\nOpenAI"]
+        L3["Gemma 4 31B\nGoogle"]
+        L4["Laguna M.1\nPoolside"]
+    end
+
+    subgraph Outputs["MD Artifacts"]
+        O1["almanac_agent_WXX.md"]
+        O2["macro_agent_WXX.md"]
+        O3["technical_agent_WXX.md"]
+        O4a["actuals_WXX.md"]
+        O4["synthesis_*_WXX.txt"]
+        O5["llm_comparison_WXX.md"]
+        O6["human_score_WXX.md"]
+        O7["prediction_YYYY-WXX.md"]
+    end
+
+    MD --> A
+    MD --> M
+    MD --> T
+    MD --> E
+    A --> O1
+    M --> O2
+    T --> O3
+    E --> O4a
+    A --> L1
+    A --> L2
+    A --> L3
+    A --> L4
+    M --> L1
+    M --> L2
+    M --> L3
+    M --> L4
+    T --> L1
+    T --> L2
+    T --> L3
+    T --> L4
+    L1 --> O4
+    L2 --> O4
+    L3 --> O4
+    L4 --> O4
+    L1 --> O5
+    L2 --> O5
+    L3 --> O5
+    L4 --> O5
+    O5 --> HJ["Human Judgment"]
+    HJ --> O6
+    HJ --> O7
+```
+
+---
+
 ## Running The Pipeline
 
 **Dependencies:** Python 3.12+, [uv](https://docs.astral.sh/uv/)
@@ -196,88 +264,6 @@ After the three agents are built, we paste them into an identical prompt and que
 
 ---
 
-## The Ten Scrum Roles
-
-<table>
-<thead>
-<tr>
-<th align="left">Role</th>
-<th align="left">Responsibility</th>
-<th align="left">GitHub Artifact</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><b>R1 — Product Owner</b></td>
-<td>Sprint goal. Definition of done.</td>
-<td>
-<code>sprints/sprint_goal_WXX.md</code><br>
-<code>sprints/acceptance_criteria_WXX.md</code>
-</td>
-</tr>
-<tr>
-<td><b>R2 — Scrum Master</b></td>
-<td>Stand-ups. Retrospective. Blockers.</td>
-<td>
-<code>sprints/standup_WXX.md</code><br>
-<code>sprints/retrospective_WXX.md</code>
-</td>
-</tr>
-<tr>
-<td><b>R3 — Almanac Agent Lead</b></td>
-<td>Seasonal pattern analysis.</td>
-<td><code>data/almanac/almanac_agent_WXX.md</code></td>
-</tr>
-<tr>
-<td><b>R4 — Macro Agent Lead</b></td>
-<td>Fed, rates, oil, calendar.</td>
-<td><code>data/macro/macro_agent_WXX.md</code></td>
-</tr>
-<tr>
-<td><b>R5 — Technical Agent Lead</b></td>
-<td>Charts. EMA zones. Key levels.</td>
-<td><code>data/technical/technical_agent_WXX.md</code></td>
-</tr>
-<tr>
-<td><b>R6 — LLM Synthesis Operator</b></td>
-<td>Query all four models. Comparison table.</td>
-<td>
-<code>data/llm/synthesis_*_WXX.txt</code><br>
-<code>data/llm/llm_comparison_WXX.md</code>
-</td>
-</tr>
-<tr>
-<td><b>R7 — Human Score Analyst</b></td>
-<td>Five-dimension scoring. Override paragraph. Final prediction.</td>
-<td><code>data/human/human_score_WXX.md</code></td>
-</tr>
-<tr>
-<td><b>R8 — Data &amp; Evidence Lead</b></td>
-<td>Data sourcing. Screenshots. Actuals recording.</td>
-<td><code>data/evidence/actuals_WXX.md</code>
-<code>data/evidence/finviz_*.png</code></td>
-</tr>
-<tr>
-<td><b>R9 — GitHub &amp; Integration Lead</b></td>
-<td>Repository organization. Commits. Release tags.</td>
-<td>All required content merged<br>
-    README up to date<br>
-    Repository maintained
-</td>
-</tr>
-<tr>
-<td><b>R10 — QA &amp; Learning Log Lead</b></td>
-<td>Calibration scoring. LLM horse race. Learning log.</td>
-<td>
-<code>data/qa/calibration_log.md</code><br>
-<code>data/qa/llm_horserace.md</code><br>
-<code>data/qa/learning_log_WXX.md</code>
-</td>
-</tr>
-</tbody>
-</table>
-
----
 
 ## Repository Structure
 
@@ -290,6 +276,7 @@ team1-prac-a-project/
 ├── CODE_OF_CONDUCT.md                 # Code of conduct
 ├── LICENCE.md                         # Project licencing 
 ├── /.github/                          # GitHub Actions
+├── /backend/                          # Automatic fetching code 
 ├── /sprints/                          # Sprint details
 ├── /scripts/                          # Various helper scripts
 ├── /data/
