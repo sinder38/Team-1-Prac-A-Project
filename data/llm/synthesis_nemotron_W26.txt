@@ -1,0 +1,17 @@
+# LLM Agent Output — NVIDIA Nemotron 3 Super — Week of 2026-06-26
+
+1. Weekly Regime: Neutral
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Health care sector led gains (+7.52%) while technology lagged (-5.01%).
+   - VIX rose 14.82% indicating increased fear.
+   - IWM rose 0.94% contrasting with declines in SPX (-1.78%) and NDX (-3.79%).
+4. Key Contradictions:
+   - Technical agent shows IWM bullish while Almanac agent indicates a bearish monthly bias.
+   - Macro agent describes a binary-risk environment with high Fed hold probability, contrasting with the technical bearish trend bias for SPX and NDX.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
+6. Predicted % move — SPX: -1.8% to 3.5%
+   Predicted % move — NDX: -3.6% to 5.2%
+   Predicted % move — IWM: -7.2% to 1.1%
+7. Plain-English brief: The market shows mixed signals with small‑cap strength (IWM) offset by weakness in large‑cap and tech indices; sector breadth is positive but fear is rising, and the upcoming Fed decision remains the key risk.
+8. Disclaimer: This is not financial advice.

@@ -1,0 +1,17 @@
+# LLM Agent Output — Poolside Laguna M.1 — Week of 2026-06-26
+
+1. Weekly Regime: Uncertain
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - SPX down 1.78%, NDX down 3.79%, IWM up 0.94% - mixed index performance with large caps under pressure
+   - Technology sector down 5.01% (worst performer) while Health care up 7.52% (best performer) - defensive rotation underway
+   - VIX up 14.82% indicating rising fear as oil plunged 9.80% and gold fell 2.81%
+4. Key Contradictions:
+   - Technical agent shows SPX bearish but IWM bullish with high confidence - conflicting signals between large-cap and small-cap
+   - Almanac indicates Technology sector bullish (supports NDX) but actual evidence shows Technology down 5.01%
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets
+6. Predicted % move — SPX: -1.78% to 3.3%
+   Predicted % move — NDX: -3.59% to 5.1%
+   Predicted % move — IWM: -7.17% to 1.1%
+7. Plain-English brief: Mixed market signals with large caps under pressure but small caps holding up. Fear is rising as oil crashes and defensive sectors outperform, creating uncertainty ahead of the Fed decision.
+8. Disclaimer: This is not financial advice.
