@@ -159,8 +159,9 @@ class DeltaAgent:
         markdown_path: Path | None = None,
         json_path: Path | None = None,
     ) -> tuple[Path, Path]:
-        markdown_path = markdown_path or self.repo_root / "data" / "qa" / "delta_W24.md"
-        json_path = json_path or self.repo_root / "data" / "outputs" / "delta" / "delta_W24.json"
+        week = _plain_week(report.prediction_week)
+        markdown_path = markdown_path or self.repo_root / "data" / "qa" / f"delta_{week}.md"
+        json_path = json_path or self.repo_root / "data" / "outputs" / "delta" / f"delta_{week}.json"
         return (
             self.engine.write_markdown(report, markdown_path),
             self.engine.write_json(report, json_path),
@@ -353,11 +354,12 @@ def render_delta_markdown(report: DeltaReport) -> str:
     weights = "\n".join(_render_weight_row(row) for row in report.weight_adjustments)
     total = len(report.rows)
     short_note = _build_short_note(report)
+    week = _plain_week(report.prediction_week)
 
-    return f"""# delta_W24.md
+    return f"""# delta_{week}.md
 
-Role: Delta Engine / R10 support
-Status: Draft for team review
+Role: Delta Engine / Calibration Engine
+Status: Generated from locked prediction and matching actuals
 
 ## What this checks
 
@@ -381,7 +383,7 @@ This file compares the locked {report.prediction_week} prediction with the match
 
 ## Weight adjustment draft
 
-This is the Delta Engine's first draft of how the next sprint weights could change. It is not meant to replace R7 or the team discussion; it is a starting point for the retrospective.
+This is the Delta Engine's first draft of how the next sprint weights could change. It is not a final team decision; it is a structured starting point for the next prediction cycle.
 
 | Agent | Current weight | Suggested weight | Reason |
 | --- | ---: | ---: | --- |
@@ -446,6 +448,10 @@ def _join_assets(assets: list[str]) -> str:
     if len(assets) == 1:
         return assets[0]
     return f"{', '.join(assets[:-1])} and {assets[-1]}"
+
+
+def _plain_week(week: str) -> str:
+    return week[1:] if week.startswith("vW") else week
 
 
 def _table_cells(line: str) -> list[str]:

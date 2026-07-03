@@ -1,7 +1,7 @@
 # delta_W24.md
 
-Role: Delta Engine / R10 support
-Status: Draft for team review
+Role: Delta Engine / Calibration Engine
+Status: Generated from locked prediction and matching actuals
 
 ## What this checks
 
@@ -27,7 +27,7 @@ The team got the broad direction right across all three indexes. SPX and IWM lan
 
 ## Weight adjustment draft
 
-This is the Delta Engine's first draft of how the next sprint weights could change. It is not meant to replace R7 or the team discussion; it is a starting point for the retrospective.
+This is the Delta Engine's first draft of how the next sprint weights could change. It is not a final team decision; it is a structured starting point for the next prediction cycle.
 
 | Agent | Current weight | Suggested weight | Reason |
 | --- | ---: | ---: | --- |

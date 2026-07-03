@@ -42,14 +42,14 @@ def main() -> None:
     parser.add_argument(
         "--output-path",
         type=Path,
-        default=REPO_ROOT / "data" / "qa" / "delta_W24.md",
-        help="Output markdown file",
+        default=None,
+        help="Output markdown file. Defaults to data/qa/delta_<prediction-week>.md",
     )
     parser.add_argument(
         "--json-output-path",
         type=Path,
-        default=REPO_ROOT / "data" / "outputs" / "delta" / "delta_W24.json",
-        help="Structured Delta Engine output",
+        default=None,
+        help="Structured Delta Engine output. Defaults to data/outputs/delta/delta_<prediction-week>.json",
     )
     args = parser.parse_args()
 

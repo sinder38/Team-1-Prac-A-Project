@@ -4,13 +4,19 @@ from datetime import date
 from pathlib import Path
 from typing import Callable
 
-from agents.pipeline.context import PipelineContext
+from agents.almanac.almanac_agent import AlmanacAgent
+from agents.delta import DeltaAgent
+from agents.evidence.evidence_agent import EvidenceAgent
+from agents.io import FileSaver, week_stem
 from agents.llm.base_llm import BaseLLMAgent
+from agents.llm.multi_model_runner import OpenRouterAgent, _row
+from agents.macro.macro_agent import MacroAgent
+from agents.pipeline.context import PipelineContext
+from agents.technical.technical_agent import TechnicalAgent
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 def _make_openrouter(model_name: str, model_id: str):
-    from agents.llm.multi_model_runner import OpenRouterAgent
     return OpenRouterAgent(model_name=model_name, model_id=model_id)
 
 
@@ -26,8 +32,6 @@ LLM_REGISTRY: dict[str, Callable[[], BaseLLMAgent]] = {
 
 
 def _save_artifacts(agent, output, prediction_date: date, config: dict) -> None:
-    from agents.io import FileSaver, week_stem
-
     art = config.get("artifacts", {})
     if art.get("save_json", True):
         FileSaver.for_agent(agent.agent_type).save(
@@ -45,8 +49,6 @@ def _save_artifacts(agent, output, prediction_date: date, config: dict) -> None:
 
 
 def run_almanac(ctx: PipelineContext, config: dict) -> None:
-    from agents.almanac.almanac_agent import AlmanacAgent
-
     agent = AlmanacAgent()
     output = agent.run(ctx.prediction_date)
     ctx.almanac = output
@@ -54,8 +56,6 @@ def run_almanac(ctx: PipelineContext, config: dict) -> None:
 
 
 def run_technical(ctx: PipelineContext, config: dict) -> None:
-    from agents.technical.technical_agent import TechnicalAgent
-
     agent = TechnicalAgent()
     output = agent.run(ctx.prediction_date)
     ctx.technical = output
@@ -63,8 +63,6 @@ def run_technical(ctx: PipelineContext, config: dict) -> None:
 
 
 def run_macro(ctx: PipelineContext, config: dict) -> None:
-    from agents.macro.macro_agent import MacroAgent
-
     agent = MacroAgent()
     output = agent.run(ctx.prediction_date)
     ctx.macro = output
@@ -78,8 +76,6 @@ def run_evidence(
     market_data_provider=None,
     yield_data_provider=None,
 ) -> None:
-    from agents.evidence.evidence_agent import EvidenceAgent
-
     agent = EvidenceAgent(
         data_root=data_root,
         market_data_provider=market_data_provider,
@@ -95,8 +91,6 @@ def run_delta(
     config: dict,
     repo_root: Path | None = None,
 ) -> None:
-    from agents.delta import DeltaAgent
-
     root = repo_root or REPO_ROOT
     delta_config = config.get("delta", {})
     prediction_week = delta_config.get("prediction_week", "W24")
@@ -121,9 +115,6 @@ def run_delta(
 
 def run_llm(ctx: PipelineContext, config: dict, model_key: str) -> tuple[str, dict]:
     """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
-    from agents.llm.multi_model_runner import _row
-    from agents.io import FileSaver, week_stem
-
     if model_key not in LLM_REGISTRY:
         raise ValueError(
             f"Unknown LLM model_key {model_key!r}. Known models: {list(LLM_REGISTRY)}"
