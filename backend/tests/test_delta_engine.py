@@ -127,9 +127,11 @@ def test_delta_agent_uses_week_paths_and_writes_outputs():
     agent = DeltaAgent(repo_root=tmp_path)
     report = agent.run(prediction_week="W24", actuals_week="W25")
     markdown_path, json_path = agent.write_outputs(report)
+    prefixed_report = agent.run(prediction_week="vW24", actuals_week="W25")
 
     assert agent.agent_type == "delta"
     assert report.prediction_week == "vW24"
+    assert prefixed_report.prediction_week == "vW24"
     assert report.actuals_week == "W25"
     assert markdown_path.name == "delta_W24.md"
     assert json_path.name == "delta_W24.json"

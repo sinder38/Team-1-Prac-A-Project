@@ -1,4 +1,4 @@
-"""Pipeline stage functions — one per agent type."""
+"""Pipeline stage functions - one per agent type."""
 
 from datetime import date
 from pathlib import Path
@@ -9,6 +9,7 @@ from agents.delta import DeltaAgent
 from agents.evidence.evidence_agent import EvidenceAgent
 from agents.io import FileSaver, week_stem
 from agents.llm.base_llm import BaseLLMAgent
+from agents.llm.example_agent import ExampleAgent
 from agents.llm.multi_model_runner import OpenRouterAgent, _row
 from agents.macro.macro_agent import MacroAgent
 from agents.pipeline.context import PipelineContext
@@ -16,18 +17,31 @@ from agents.technical.technical_agent import TechnicalAgent
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
+
 def _make_openrouter(model_name: str, model_id: str):
     return OpenRouterAgent(model_name=model_name, model_id=model_id)
 
 
-# Registry maps model_key/slug → zero-arg callable returning a BaseLLMAgent instance.
+# Registry maps model_key/slug to a zero-arg callable returning a BaseLLMAgent.
 # Slugs must match multi_model_runner.MODELS[*]["slug"].
 LLM_REGISTRY: dict[str, Callable[[], BaseLLMAgent]] = {
-    "example":  lambda: __import__("agents.llm.example_agent", fromlist=["ExampleAgent"]).ExampleAgent(),
-    "nemotron": lambda: _make_openrouter("NVIDIA Nemotron 3 Super", "nvidia/nemotron-3-super-120b-a12b:free"),
-    "gptoss":   lambda: _make_openrouter("OpenAI gpt-oss-120b",     "openai/gpt-oss-120b:free"),
-    "gemma":    lambda: _make_openrouter("Google Gemma 4 31B",       "google/gemma-4-31b-it:free"),
-    "laguna":   lambda: _make_openrouter("Poolside Laguna M.1",      "poolside/laguna-m.1:free"),
+    "example": lambda: ExampleAgent(),
+    "nemotron": lambda: _make_openrouter(
+        "NVIDIA Nemotron 3 Super",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+    ),
+    "gptoss": lambda: _make_openrouter(
+        "OpenAI gpt-oss-120b",
+        "openai/gpt-oss-120b:free",
+    ),
+    "gemma": lambda: _make_openrouter(
+        "Google Gemma 4 31B",
+        "google/gemma-4-31b-it:free",
+    ),
+    "laguna": lambda: _make_openrouter(
+        "Poolside Laguna M.1",
+        "poolside/laguna-m.1:free",
+    ),
 }
 
 

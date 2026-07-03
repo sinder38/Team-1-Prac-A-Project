@@ -144,12 +144,14 @@ class DeltaAgent:
         prediction_path: Path | None = None,
         actuals_path: Path | None = None,
     ) -> DeltaReport:
+        prediction_week = _plain_week(prediction_week)
+        actuals_week = _plain_week(actuals_week)
         prediction_path = prediction_path or self._prediction_path(prediction_week)
         actuals_path = actuals_path or self._actuals_path(actuals_week)
         return self.engine.run(
             prediction_path=prediction_path,
             actuals_path=actuals_path,
-            prediction_week=f"v{prediction_week}",
+            prediction_week=_versioned_week(prediction_week),
             actuals_week=actuals_week,
         )
 
@@ -160,8 +162,14 @@ class DeltaAgent:
         json_path: Path | None = None,
     ) -> tuple[Path, Path]:
         week = _plain_week(report.prediction_week)
-        markdown_path = markdown_path or self.repo_root / "data" / "qa" / f"delta_{week}.md"
-        json_path = json_path or self.repo_root / "data" / "outputs" / "delta" / f"delta_{week}.json"
+        markdown_path = (
+            markdown_path
+            or self.repo_root / "data" / "qa" / f"delta_{week}.md"
+        )
+        json_path = (
+            json_path
+            or self.repo_root / "data" / "outputs" / "delta" / f"delta_{week}.json"
+        )
         return (
             self.engine.write_markdown(report, markdown_path),
             self.engine.write_json(report, json_path),
@@ -452,6 +460,10 @@ def _join_assets(assets: list[str]) -> str:
 
 def _plain_week(week: str) -> str:
     return week[1:] if week.startswith("vW") else week
+
+
+def _versioned_week(week: str) -> str:
+    return week if week.startswith("v") else f"v{week}"
 
 
 def _table_cells(line: str) -> list[str]:

@@ -3,8 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from agents.pipeline.context import PipelineContext
 from agents.llm.base_llm import BaseLLMAgent
+from agents.pipeline.context import PipelineContext
+from agents.pipeline.stages import LLM_REGISTRY, run_almanac, run_delta, run_evidence
 from agents.schemas import (
     AlmanacOutput, Bias, Confidence,
     EvidenceOutput,
@@ -76,13 +77,10 @@ def test_build_prompt_uses_context():
 
 def test_build_prompt_skips_none_agents():
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
-    # No agents set — context is empty
+    # No agents set, so context is empty.
     agent = _StubLLM()
     prompt = agent.build_prompt(date(2026, 6, 16), ctx)
     assert "No agent data available" in prompt
-
-
-from agents.pipeline.stages import run_delta, run_evidence, run_almanac, LLM_REGISTRY
 
 
 class _FakeEvidenceMarketDataProvider:
