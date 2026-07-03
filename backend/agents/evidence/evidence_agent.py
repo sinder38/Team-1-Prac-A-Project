@@ -43,23 +43,6 @@ from agents.evidence.evidence_images import (
 )
 from agents.io import FileSaver, week_stem
 from agents.schemas import EvidenceOutput
-from agents.evidence.data_sources import FredYieldProvider, YahooFinanceEvidenceProvider
-from agents.evidence.models import (
-    BITCOIN_SPEC,
-    BONDS_SPEC,
-    EM_DASH,
-    GOLD_SPEC,
-    INDEX_SPECS,
-    OIL_SPEC,
-    PROJECT_WEEK_OFFSET,
-    SECTOR_SPECS,
-    VIX_SPEC,
-    EvidenceSnapshot,
-    MarketMove,
-    MarketSpec,
-    SectorMove,
-    YieldMove,
-)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
