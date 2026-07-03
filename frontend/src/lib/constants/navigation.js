@@ -1,14 +1,13 @@
 /**
  * Menu labels and page names for sidebar and header.
  */
-import { Home, CandlestickChart, ScrollText, BarChart3, ClipboardCheck, Info } from 'lucide-react'
+import { Home, CandlestickChart, ScrollText, BarChart3, Info } from 'lucide-react'
 
 export const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
   { id: 'charts', label: 'Charts', icon: CandlestickChart },
   { id: 'logs', label: 'Logs', icon: ScrollText },
   { id: 'calibration', label: 'Calibration', icon: BarChart3 },
-  { id: 'review', label: 'Review', icon: ClipboardCheck },
   { id: 'settings', label: 'About', icon: Info },
 ]
 
@@ -17,6 +16,5 @@ export const PAGE_TITLES = {
   charts: { section: 'Charts', page: 'Market Charts' },
   logs: { section: 'Logs', page: 'Execution Logs' },
   calibration: { section: 'Calibration', page: 'Accuracy Tracker' },
-  review: { section: 'Review', page: 'Human Score Report' },
   settings: { section: 'About', page: 'About' },
 }

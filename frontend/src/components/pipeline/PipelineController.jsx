@@ -1,19 +1,20 @@
 /**
  * Manual pipeline control — the human runs each stage one at a time.
- * Stages 1-4 have a Run button; stage 5 (Human Score) opens the Review page.
+ * Stages 1-4 have a Run button; stage 5 (Human Score) is filled in on the Dashboard.
  */
+import PropTypes from 'prop-types'
 import {
   Play,
   CheckCircle2,
   AlertCircle,
   Clock,
   Lock,
-  ClipboardCheck,
   RotateCcw,
   ScrollText,
   BarChart3,
 } from 'lucide-react'
 import WeekPicker from './WeekPicker'
+import { ErrorBanner } from '../common'
 
 function StatusBadge({ label, tone }) {
   const tones = {
@@ -34,7 +35,7 @@ function StageIcon({ status, locked }) {
 }
 
 export default function PipelineController({ pipeline, controls, weekPicker, onNavigate }) {
-  const { doneCount, isRunning, allDone, aiStages, runStage, runNext, resetRun } = controls
+  const { doneCount, isRunning, allDone, aiStages, error, clearError, runStage, runNext, resetRun } = controls
   const stages = pipeline.stages
 
   const statusLabel = isRunning ? 'Running' : allDone ? 'Complete' : doneCount > 0 ? 'In progress' : 'Idle'
@@ -64,7 +65,7 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
               <RotateCcw className="w-4 h-4" />
               Reset
             </button>
-            {doneCount < aiStages ? (
+            {doneCount < aiStages && (
               <button
                 onClick={runNext}
                 disabled={isRunning}
@@ -77,24 +78,18 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
                 <Play className="w-4 h-4" />
                 {isRunning ? 'Running…' : `Run stage ${doneCount + 1}`}
               </button>
-            ) : (
-              <button
-                onClick={() => onNavigate?.('review')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium ${
-                  allDone
-                    ? 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
-                }`}
-              >
-                <ClipboardCheck className="w-4 h-4" />
-                {allDone ? 'View Human Score' : 'Open Human Score'}
-              </button>
             )}
           </div>
         </div>
 
         <WeekPicker {...weekPicker} disabled={isRunning} />
       </div>
+
+      {error && (
+        <div className="mt-4">
+          <ErrorBanner message={error} onDismiss={clearError} />
+        </div>
+      )}
 
       <div className="mt-5 space-y-2">
         {stages.map((stage, i) => {
@@ -137,15 +132,7 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
               <div className="shrink-0">
                 {stage.status === 'success' ? (
                   <span className="text-xs text-green-600 font-medium">✓</span>
-                ) : isHumanStage ? (
-                  <button
-                    onClick={() => onNavigate?.('review')}
-                    disabled={doneCount < aiStages}
-                    className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:text-gray-300 disabled:hover:bg-white"
-                  >
-                    Open report
-                  </button>
-                ) : (
+                ) : isHumanStage ? null : (
                   <button
                     onClick={() => runStage(i)}
                     disabled={!isNext}
@@ -184,4 +171,24 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
       )}
     </div>
   )
+}
+
+StatusBadge.propTypes = {
+  label: PropTypes.string.isRequired,
+  tone: PropTypes.oneOf(['idle', 'running', 'done', 'error']).isRequired,
+}
+
+StageIcon.propTypes = {
+  status: PropTypes.string,
+  locked: PropTypes.bool,
+}
+
+PipelineController.propTypes = {
+  pipeline: PropTypes.shape({
+    stages: PropTypes.array.isRequired,
+    accuracy: PropTypes.number,
+  }).isRequired,
+  controls: PropTypes.object.isRequired,
+  weekPicker: PropTypes.object,
+  onNavigate: PropTypes.func,
 }

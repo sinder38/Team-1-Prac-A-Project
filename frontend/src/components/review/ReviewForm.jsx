@@ -6,8 +6,9 @@
  * TODO (backend task): submitHumanScore() → POST /api/validation/human-score
  */
 import { useState, useMemo } from 'react'
+import PropTypes from 'prop-types'
 import { CheckCircle2, AlertCircle, Send, Copy, Check } from 'lucide-react'
-import { submitHumanScore } from '../../api'
+import { submitHumanScore, HUMAN_SCORE_DECISION } from '../../api'
 import { defaultReviewForm } from '../../lib/defaults'
 import {
   HUMAN_DIMENSIONS,
@@ -16,62 +17,7 @@ import {
   CONFIDENCE_LEVELS,
   EVIDENCE_SOURCES,
 } from '../../lib/constants'
-import { prepareAgentCard } from '../../lib/agentDisplay'
-
-const PLACEHOLDER = '________';
-
-function aiSaidFor(outputs) {
-  const almanac = prepareAgentCard('almanac', outputs.almanac)
-  const macro = prepareAgentCard('macro', outputs.macro)
-  const technical = prepareAgentCard('technical', outputs.technical)
-  const llm = outputs.llmComparison
-
-  let agreement = '—'
-  if (llm?.models?.length) {
-    const consensus = llm.finalConsensus || ''
-    const direction = consensus.toLowerCase().includes('bear')
-      ? 'Bearish'
-      : consensus.toLowerCase().includes('bull')
-        ? 'Bullish'
-        : 'mixed'
-    const matching = llm.models.filter(m =>
-      (m.consensus || '').toLowerCase().includes(direction.toLowerCase()),
-    ).length
-    agreement = `${matching} of ${llm.models.length} models ${direction.toLowerCase()}`
-  }
-
-  return {
-    macro: macro?.bias || '—',
-    technical: technical?.bias || '—',
-    almanac: almanac?.bias || '—',
-    aiAgreement: agreement,
-    wildCard: 'nothing specifically flagged',
-  }
-}
-
-function buildMarkdown(form, ctx) {
-  const lines = []
-  lines.push(`# Human Score Report — ${ctx.week}`, '')
-  lines.push('## AI Consensus', '', `**${ctx.consensus}**`, '', '---', '')
-  lines.push('## Human Score Table', '')
-  lines.push('| Dimension | AI Said | Team Score | Team Reasoning |')
-  lines.push('| --- | --- | --- | --- |')
-  HUMAN_DIMENSIONS.forEach(d => {
-    const score = form.scores[d.key]
-    lines.push(
-      `| ${d.label} | ${ctx.aiSaid[d.key]} | ${score > 0 ? `+${score}` : score} | ${form.reasoning[d.key] || PLACEHOLDER} |`,
-    )
-  })
-  lines.push('', '## Human Score Total', '', `**${ctx.total > 0 ? `+${ctx.total}` : ctx.total}**`, '', '---', '')
-  lines.push('## Human Call', '', `**${form.humanCall}**`, '', '---', '')
-  lines.push('## Confidence', '', `**${form.confidence}**`, '', '---', '')
-  lines.push('## Override Paragraph', '', form.overrideParagraph || PLACEHOLDER, '', '---', '')
-  lines.push('## Wild Card Insight', '', form.wildCardInsight || PLACEHOLDER, '', '---', '')
-  lines.push('## Invalidation Condition', '', form.invalidation || PLACEHOLDER, '', '---', '')
-  lines.push('## Evidence Used', '')
-  EVIDENCE_SOURCES.filter(s => form.evidence[s.key]).forEach(s => lines.push(`* ${s.label}`))
-  return lines.join('\n')
-}
+import { aiSaidFor, buildHumanScoreMarkdown, humanScoreTotal } from '../../lib/humanScore'
 
 function Section({ title, children }) {
   return (
@@ -89,7 +35,7 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
 
   const aiSaid = useMemo(() => aiSaidFor(outputs), [outputs])
   const consensus = outputs.llmComparison?.finalConsensus || 'Pending — run the pipeline'
-  const total = HUMAN_DIMENSIONS.reduce((sum, d) => sum + (form.scores[d.key] || 0), 0)
+  const total = humanScoreTotal(form)
 
   function setScore(key, value) {
     setForm(prev => ({ ...prev, scores: { ...prev.scores, [key]: value } }))
@@ -106,7 +52,7 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
 
   async function submit() {
     try {
-      await submitHumanScore(form, 'submitted')
+      await submitHumanScore(form, HUMAN_SCORE_DECISION.SUBMITTED)
       onComplete?.()
       setStatus('ok')
     } catch {
@@ -116,7 +62,7 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
   }
 
   async function copyMarkdown() {
-    const md = buildMarkdown(form, { week, consensus, aiSaid, total })
+    const md = buildHumanScoreMarkdown(form, { week, consensus, aiSaid, total })
     try {
       await navigator.clipboard.writeText(md)
       setCopied(true)
@@ -286,4 +232,16 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
       )}
     </div>
   )
+}
+
+Section.propTypes = {
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node,
+}
+
+ReviewForm.propTypes = {
+  outputs: PropTypes.object,
+  week: PropTypes.string,
+  aiComplete: PropTypes.bool,
+  onComplete: PropTypes.func,
 }

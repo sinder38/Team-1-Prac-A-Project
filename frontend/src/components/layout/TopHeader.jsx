@@ -1,6 +1,7 @@
 /**
  * Top bar showing the current page name.
  */
+import PropTypes from 'prop-types'
 import { PAGE_TITLES } from '../../lib/constants'
 
 export default function TopHeader({ page = 'dashboard' }) {
@@ -15,4 +16,8 @@ export default function TopHeader({ page = 'dashboard' }) {
       <span className="text-xs text-gray-400">Market Intelligence · Team 1</span>
     </header>
   )
+}
+
+TopHeader.propTypes = {
+  page: PropTypes.string,
 }

@@ -1,9 +1,12 @@
 /**
  * One card for a single agent (Almanac, Macro, or Technical).
  */
+import PropTypes from 'prop-types'
 import { BookOpen, TrendingUp, LineChart, ChevronDown } from 'lucide-react'
 import { AGENTS } from '../../lib/constants'
 import { prepareAgentCard, biasBadgeClass } from '../../lib/agentDisplay'
+
+const AGENT_ID = PropTypes.oneOf(['almanac', 'macro', 'technical'])
 
 const ICONS = {
   almanac: BookOpen,
@@ -32,6 +35,11 @@ function MetricRow({ label, value }) {
   )
 }
 
+MetricRow.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.node,
+}
+
 export function AgentCardPlaceholder({ id }) {
   const Icon = ICONS[id]
   const meta = AGENTS[id]
@@ -54,6 +62,10 @@ export function AgentCardPlaceholder({ id }) {
       </div>
     </div>
   )
+}
+
+AgentCardPlaceholder.propTypes = {
+  id: AGENT_ID.isRequired,
 }
 
 export default function AgentCard({ id, data, open, onToggle }) {
@@ -123,4 +135,11 @@ export default function AgentCard({ id, data, open, onToggle }) {
       </div>
     </div>
   )
+}
+
+AgentCard.propTypes = {
+  id: AGENT_ID.isRequired,
+  data: PropTypes.object,
+  open: PropTypes.bool,
+  onToggle: PropTypes.func,
 }

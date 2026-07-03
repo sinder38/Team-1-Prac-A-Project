@@ -3,31 +3,38 @@
  * TODO (backend task): load live scores via getCalibrationScores() → GET /api/calibration/accuracy-tracker
  */
 import { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { BarChart3, RefreshCw, Target, TrendingUp, TrendingDown } from 'lucide-react'
 import { getCalibrationScores } from '../api'
 import { defaultCalibration } from '../lib/defaults'
 import { AGENTS, AGENT_BAR_COLORS } from '../lib/constants'
 import { formatDateTime } from '../lib/date'
+import { ErrorBanner } from '../components/common'
 
 export default function CalibrationPage({ pipeline }) {
   const [scores, setScores] = useState(defaultCalibration)
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
 
   function load() {
     setBusy(true)
+    setError(null)
     getCalibrationScores()
       .then(setScores)
-      .catch(() => {})
+      .catch(err =>
+        setError(err?.message ? `Could not load calibration: ${err.message}` : 'Could not load calibration'),
+      )
       .finally(() => setBusy(false))
   }
 
   useEffect(() => { load() }, [pipeline.lastRun])
 
-  const delta = scores.weeklyTrend.length >= 2
-    ? scores.currentAccuracy - scores.weeklyTrend[0]
-    : 0
-  const progress = Math.min(100, (scores.currentAccuracy / scores.targetAccuracy) * 100)
-  const maxBar = Math.max(...scores.weeklyTrend, scores.targetAccuracy, 1)
+  const trend = Array.isArray(scores.weeklyTrend) ? scores.weeklyTrend : []
+  const agentAccuracies = scores.agentAccuracies || {}
+  const targetAccuracy = scores.targetAccuracy || 0
+  const delta = trend.length >= 2 ? scores.currentAccuracy - trend[0] : 0
+  const progress = targetAccuracy ? Math.min(100, (scores.currentAccuracy / targetAccuracy) * 100) : 0
+  const maxBar = Math.max(...trend, targetAccuracy, 1)
 
   return (
     <div className="flex-1 overflow-auto p-4 md:p-6 space-y-4">
@@ -45,6 +52,8 @@ export default function CalibrationPage({ pipeline }) {
           Refresh
         </button>
       </div>
+
+      <ErrorBanner message={error} onRetry={load} onDismiss={() => setError(null)} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2 bg-white border border-gray-200 rounded-md p-5">
@@ -95,23 +104,23 @@ export default function CalibrationPage({ pipeline }) {
             <p className="text-sm font-medium">Weekly Trend</p>
           </div>
           <div className="flex items-end gap-2 h-40">
-            {scores.weeklyTrend.map((v, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            {trend.map((v, i) => (
+              <div key={`week-${i}`} className="flex-1 flex flex-col items-center gap-1">
                 <span className="text-xs font-medium">{v}%</span>
                 <div className="w-full bg-gray-200 rounded-t-md relative" style={{ height: 120 }}>
                   <div
-                    className={`absolute bottom-0 w-full rounded-t-md ${i === scores.weeklyTrend.length - 1 ? 'bg-gray-800' : 'bg-gray-400'}`}
+                    className={`absolute bottom-0 w-full rounded-t-md ${i === trend.length - 1 ? 'bg-gray-800' : 'bg-gray-400'}`}
                     style={{ height: `${(v / maxBar) * 100}%` }}
                   />
                 </div>
               </div>
             ))}
             <div className="flex-1 flex flex-col items-center gap-1">
-              <span className="text-xs font-medium text-green-700">{scores.targetAccuracy}%</span>
+              <span className="text-xs font-medium text-green-700">{targetAccuracy}%</span>
               <div className="w-full bg-gray-200 rounded-t-md relative" style={{ height: 120 }}>
                 <div
                   className="absolute bottom-0 w-full bg-green-500 rounded-t-md opacity-60"
-                  style={{ height: `${(scores.targetAccuracy / maxBar) * 100}%` }}
+                  style={{ height: `${(targetAccuracy / maxBar) * 100}%` }}
                 />
               </div>
               <span className="text-xs text-gray-400">Target</span>
@@ -122,7 +131,7 @@ export default function CalibrationPage({ pipeline }) {
         <div className="bg-white border border-gray-200 rounded-md p-5">
           <p className="text-sm font-medium mb-4">Per Agent</p>
           <div className="space-y-4">
-            {Object.entries(scores.agentAccuracies).map(([id, pct]) => (
+            {Object.entries(agentAccuracies).map(([id, pct]) => (
               <div key={id}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-700">{AGENTS[id]?.label || id}</span>
@@ -141,4 +150,11 @@ export default function CalibrationPage({ pipeline }) {
       </div>
     </div>
   )
+}
+
+CalibrationPage.propTypes = {
+  pipeline: PropTypes.shape({
+    lastRun: PropTypes.string,
+    accuracy: PropTypes.number,
+  }).isRequired,
 }

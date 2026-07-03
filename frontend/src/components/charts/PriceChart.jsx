@@ -3,6 +3,7 @@
  * Renders candles plus 8 EMA and 21 EMA overlays and a volume histogram.
  */
 import { useEffect, useRef } from 'react'
+import PropTypes from 'prop-types'
 import { createChart } from 'lightweight-charts'
 
 export default function PriceChart({ data }) {
@@ -10,7 +11,7 @@ export default function PriceChart({ data }) {
 
   useEffect(() => {
     const el = containerRef.current
-    if (!el || !data) return
+    if (!el || !data?.candles) return
 
     const decimals = data.decimals ?? 2
     const chart = createChart(el, {
@@ -38,7 +39,7 @@ export default function PriceChart({ data }) {
       wickDownColor: '#dc2626',
       priceFormat: { type: 'price', precision: decimals, minMove: 1 / 10 ** decimals },
     })
-    candle.setData(data.candles)
+    candle.setData(data.candles || [])
 
     const ema8 = chart.addLineSeries({
       color: '#2563eb',
@@ -47,7 +48,7 @@ export default function PriceChart({ data }) {
       lastValueVisible: false,
       crosshairMarkerVisible: false,
     })
-    ema8.setData(data.ema8)
+    ema8.setData(data.ema8 || [])
 
     const ema21 = chart.addLineSeries({
       color: '#f59e0b',
@@ -56,7 +57,7 @@ export default function PriceChart({ data }) {
       lastValueVisible: false,
       crosshairMarkerVisible: false,
     })
-    ema21.setData(data.ema21)
+    ema21.setData(data.ema21 || [])
 
     if (data.volume && data.volume.length) {
       const vol = chart.addHistogramSeries({
@@ -73,4 +74,14 @@ export default function PriceChart({ data }) {
   }, [data])
 
   return <div ref={containerRef} className="w-full h-[440px]" />
+}
+
+PriceChart.propTypes = {
+  data: PropTypes.shape({
+    decimals: PropTypes.number,
+    candles: PropTypes.array,
+    ema8: PropTypes.array,
+    ema21: PropTypes.array,
+    volume: PropTypes.array,
+  }),
 }

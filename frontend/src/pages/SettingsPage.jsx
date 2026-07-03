@@ -2,6 +2,7 @@
  * About page — app info and data-source notice. No user account or login
  * (this is a static, single-user demo with no server).
  */
+import PropTypes from 'prop-types'
 import { Info, Database, GitBranch } from 'lucide-react'
 
 function Card({ icon: Icon, title, children }) {
@@ -14,6 +15,12 @@ function Card({ icon: Icon, title, children }) {
       <div className="text-sm text-gray-600 space-y-1">{children}</div>
     </section>
   )
+}
+
+Card.propTypes = {
+  icon: PropTypes.elementType.isRequired,
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node,
 }
 
 export default function SettingsPage() {

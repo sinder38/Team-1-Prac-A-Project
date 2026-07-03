@@ -8,7 +8,6 @@ import {
   ChartsPage,
   LogsPage,
   CalibrationPage,
-  ReviewPage,
   SettingsPage,
 } from '../pages'
 import { usePipeline } from '../hooks/usePipeline'
@@ -31,6 +30,8 @@ export default function App() {
     allDone: pipeline.allDone,
     aiComplete: pipeline.aiComplete,
     aiStages: pipeline.aiStages,
+    error: pipeline.error,
+    clearError: pipeline.clearError,
     runStage: pipeline.runStage,
     runNext: pipeline.runNext,
     resetRun: pipeline.resetRun,
@@ -43,6 +44,7 @@ export default function App() {
         outputs={pipeline.outputs}
         controls={controls}
         onNavigate={setPage}
+        onCompleteReview={pipeline.completeReview}
         weekPicker={weekPicker}
       />
     ),
@@ -50,21 +52,12 @@ export default function App() {
     logs: (
       <LogsPage
         pipeline={pipeline.pipeline}
-        logs={pipeline.logs}
         controls={controls}
         week={pipeline.selectedWeek}
         predictionDate={pipeline.predictionDate}
       />
     ),
     calibration: <CalibrationPage pipeline={pipeline.pipeline} />,
-    review: (
-      <ReviewPage
-        outputs={pipeline.outputs}
-        week={pipeline.selectedWeek}
-        aiComplete={pipeline.aiComplete}
-        onComplete={pipeline.completeReview}
-      />
-    ),
     settings: <SettingsPage />,
   }
 

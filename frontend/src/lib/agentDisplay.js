@@ -1,6 +1,7 @@
 /**
  * Turn raw agent API data into clean card content (bias, trimmed metrics).
  */
+import { classifyBias, DIRECTIONS } from './bias'
 
 const MAX_VALUE = 90
 const MAX_METRICS = 4
@@ -24,17 +25,9 @@ function trimValue(text) {
   return `${value.slice(0, MAX_VALUE - 1)}…`
 }
 
-export function biasTone(bias) {
-  if (!bias) return 'neutral'
-  const b = bias.toLowerCase()
-  if (b.includes('bull')) return 'bullish'
-  if (b.includes('bear')) return 'bearish'
-  return 'neutral'
-}
-
 export function biasBadgeClass(tone) {
-  if (tone === 'bullish') return 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
-  if (tone === 'bearish') return 'bg-red-50 text-red-700 ring-red-600/20'
+  if (tone === DIRECTIONS.BULLISH) return 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
+  if (tone === DIRECTIONS.BEARISH) return 'bg-red-50 text-red-700 ring-red-600/20'
   return 'bg-amber-50 text-amber-800 ring-amber-600/20'
 }
 
@@ -62,7 +55,7 @@ export function prepareAgentCard(id, data) {
   return {
     name: data.agent,
     bias,
-    biasTone: biasTone(bias),
+    biasTone: classifyBias(bias),
     confidence,
     headline,
     details,

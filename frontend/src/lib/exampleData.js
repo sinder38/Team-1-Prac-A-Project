@@ -143,9 +143,6 @@ export const STAGE_LOGS = [
   },
 ]
 
-/** Flat log list (used for the historical/saved-week view). */
-export const EXAMPLE_LOGS = STAGE_LOGS.flatMap(s => [...s.start, ...s.done])
-
 export function stageLogs(index) {
   return STAGE_LOGS[index] || { start: [], done: [] }
 }
@@ -162,37 +159,37 @@ export function exampleStages(doneCount, runningIndex = -1) {
     return {
       ...s,
       status,
-      progress: status === 'success' ? 100 : status === 'in-progress' ? 50 : 0,
       timestamp: status === 'idle' ? null : '2026-06-08T14:30:00Z',
-      errorMessage: null,
     }
   })
 }
 
-export function exampleCompletedPipeline() {
-  return {
-    id: 'pipeline-demo',
-    isRunning: false,
-    startTime: null,
-    currentStage: 4,
-    stages: exampleStages(5),
-    accuracy: 82,
-    lastRun: '2026-06-08T14:30:00Z',
-    week: EXAMPLE_CURRENT_WEEK,
-    predictionDate: EXAMPLE_CURRENT_DATE,
-  }
-}
+/** Demo accuracy shown once a run completes. */
+export const DEMO_FINAL_ACCURACY = 82
 
 /** Fresh pipeline with nothing run yet — the human runs stages one at a time. */
 export function exampleIdlePipeline(week = EXAMPLE_CURRENT_WEEK, date = EXAMPLE_CURRENT_DATE) {
   return {
     id: 'pipeline-demo',
     isRunning: false,
-    startTime: null,
     currentStage: 0,
     stages: exampleStages(0, -1),
     accuracy: 0,
     lastRun: null,
+    week,
+    predictionDate: date,
+  }
+}
+
+/** A fully-complete pipeline, used when viewing a saved week. */
+export function exampleSavedWeekPipeline(week, date) {
+  return {
+    id: 'pipeline-demo',
+    isRunning: false,
+    currentStage: STAGE_DEFS.length - 1,
+    stages: exampleStages(STAGE_DEFS.length),
+    accuracy: DEMO_FINAL_ACCURACY,
+    lastRun: '2026-06-08T14:30:00Z',
     week,
     predictionDate: date,
   }

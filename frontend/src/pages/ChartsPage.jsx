@@ -5,8 +5,10 @@
  * to the real yfinance-backed endpoint (see src/api/market.js).
  */
 import { useEffect, useState } from 'react'
+import PropTypes from 'prop-types'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { PriceChart } from '../components/charts'
+import { ErrorBanner } from '../components/common'
 import { getInstruments, getMarketHistory } from '../api'
 
 const instruments = getInstruments()
@@ -27,25 +29,37 @@ function StatBox({ label, value }) {
   )
 }
 
+StatBox.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+}
+
 export default function ChartsPage() {
   const [symbol, setSymbol] = useState(instruments[0].symbol)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let active = true
     setLoading(true)
-    getMarketHistory(symbol).then(d => {
-      if (active) {
-        setData(d)
-        setLoading(false)
-      }
-    })
+    setError(null)
+    getMarketHistory(symbol)
+      .then(d => {
+        if (active) setData(d)
+      })
+      .catch(err => {
+        if (active) setError(err?.message ? `Could not load ${symbol}: ${err.message}` : `Could not load ${symbol}`)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
     return () => { active = false }
-  }, [symbol])
+  }, [symbol, reloadKey])
 
   const decimals = data?.decimals ?? 2
-  const up = (data?.stats.change ?? 0) >= 0
+  const up = (data?.stats?.change ?? 0) >= 0
 
   return (
     <div className="flex-1 overflow-auto p-4 md:p-6 space-y-4">
@@ -72,8 +86,10 @@ export default function ChartsPage() {
         ))}
       </div>
 
+      <ErrorBanner message={error} onRetry={() => setReloadKey(k => k + 1)} onDismiss={() => setError(null)} />
+
       <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-5">
-        {data && (
+        {data?.stats && (
           <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -111,7 +127,7 @@ export default function ChartsPage() {
         )}
       </div>
 
-      {data && (
+      {data?.stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <StatBox label="Period High" value={formatNumber(data.stats.periodHigh, decimals)} />
           <StatBox label="Period Low" value={formatNumber(data.stats.periodLow, decimals)} />

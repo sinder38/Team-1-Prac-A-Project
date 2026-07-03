@@ -1,6 +1,7 @@
 /**
  * Left sidebar with icons to open each page.
  */
+import PropTypes from 'prop-types'
 import { NAV_ITEMS } from '../../lib/constants'
 
 export default function LeftNavigation({ active, onChange }) {
@@ -27,4 +28,9 @@ export default function LeftNavigation({ active, onChange }) {
       </nav>
     </div>
   )
+}
+
+LeftNavigation.propTypes = {
+  active: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
 }

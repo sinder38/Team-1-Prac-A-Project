@@ -2,12 +2,13 @@
  * Grid of three agent cards plus the LLM comparison section.
  */
 import { useState } from 'react'
+import PropTypes from 'prop-types'
 import AgentCard, { AgentCardPlaceholder } from './AgentCard'
 import LlmComparisonPanel from './LlmComparisonPanel'
 
 const AGENT_IDS = ['almanac', 'macro', 'technical']
 
-export default function AgentOutputsGrid({ outputs }) {
+export default function AgentOutputsGrid({ outputs = {} }) {
   const [open, setOpen] = useState({})
   const hasAny = AGENT_IDS.some(id => outputs[id])
 
@@ -48,4 +49,8 @@ export default function AgentOutputsGrid({ outputs }) {
       />
     </div>
   )
+}
+
+AgentOutputsGrid.propTypes = {
+  outputs: PropTypes.object,
 }

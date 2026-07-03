@@ -1,12 +1,13 @@
 /**
  * Pick a date or choose a saved week.
  */
+import PropTypes from 'prop-types'
 import { Calendar } from 'lucide-react'
 
 export default function WeekPicker({
   predictionDate,
   selectedWeek,
-  savedWeeks,
+  savedWeeks = [],
   onDateChange,
   onWeekSelect,
   disabled,
@@ -43,4 +44,13 @@ export default function WeekPicker({
       )}
     </div>
   )
+}
+
+WeekPicker.propTypes = {
+  predictionDate: PropTypes.string,
+  selectedWeek: PropTypes.string,
+  savedWeeks: PropTypes.array,
+  onDateChange: PropTypes.func,
+  onWeekSelect: PropTypes.func,
+  disabled: PropTypes.bool,
 }

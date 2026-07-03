@@ -1,8 +1,8 @@
 /**
- * Shows pipeline run logs. You can search and filter them.
+ * Shows pipeline run info and per-stage status.
  */
-import { useState } from 'react'
-import { Terminal, Search, CheckCircle2, AlertCircle, Clock, Play } from 'lucide-react'
+import PropTypes from 'prop-types'
+import { CheckCircle2, AlertCircle, Clock, Play } from 'lucide-react'
 import { formatDateTime } from '../lib/date'
 
 function StageIcon({ status }) {
@@ -12,26 +12,12 @@ function StageIcon({ status }) {
   return <Clock className="w-4 h-4 text-gray-300" />
 }
 
-function logColor(line) {
-  if (line.includes('✓')) return 'text-green-400'
-  if (line.toLowerCase().includes('error')) return 'text-red-400'
-  return 'text-gray-300'
+StageIcon.propTypes = {
+  status: PropTypes.string,
 }
 
-export default function LogsPage({ pipeline, logs, controls, week, predictionDate }) {
+export default function LogsPage({ pipeline, controls, week, predictionDate }) {
   const { isRunning, allDone, aiStages, doneCount, runNext } = controls
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('all')
-
-  const filtered = logs.filter(line => {
-    if (search && !line.toLowerCase().includes(search.toLowerCase())) return false
-    const ok = line.includes('✓')
-    const err = line.toLowerCase().includes('error')
-    if (filter === 'success') return ok
-    if (filter === 'error') return err
-    if (filter === 'info') return !ok && !err
-    return true
-  })
 
   return (
     <div className="flex-1 overflow-auto p-4 md:p-6 space-y-4">
@@ -80,7 +66,7 @@ export default function LogsPage({ pipeline, logs, controls, week, predictionDat
       </div>
 
       <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100">
+        <div className="px-4 py-3">
           <p className="text-xs text-gray-500 uppercase mb-3">Stages</p>
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-2">
             {pipeline.stages.map((stage, i) => (
@@ -105,52 +91,21 @@ export default function LogsPage({ pipeline, logs, controls, week, predictionDat
             ))}
           </div>
         </div>
-
-        <div className="px-4 py-3 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search logs..."
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-gray-400"
-            />
-          </div>
-          <div className="flex gap-1.5">
-            {['all', 'info', 'success', 'error'].map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-2 text-xs rounded-md border capitalize ${
-                  filter === f
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
-          <Terminal className="w-4 h-4" />
-          <span>{filtered.length} / {logs.length} entries</span>
-        </div>
-
-        <div className="bg-gray-900 px-4 py-4 min-h-[320px] max-h-[480px] overflow-y-auto font-mono text-xs">
-          {filtered.length === 0 ? (
-            <p className="text-gray-500">
-              {logs.length === 0 ? 'No logs yet. Run the pipeline first.' : 'No matches.'}
-            </p>
-          ) : (
-            filtered.map((line, i) => (
-              <div key={i} className={logColor(line)}>{line}</div>
-            ))
-          )}
-        </div>
       </div>
     </div>
   )
+}
+
+LogsPage.propTypes = {
+  pipeline: PropTypes.shape({
+    id: PropTypes.string,
+    isRunning: PropTypes.bool,
+    lastRun: PropTypes.string,
+    accuracy: PropTypes.number,
+    stages: PropTypes.array.isRequired,
+    week: PropTypes.string,
+  }).isRequired,
+  controls: PropTypes.object.isRequired,
+  week: PropTypes.string,
+  predictionDate: PropTypes.string,
 }
