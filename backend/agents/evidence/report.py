@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Final
 
-EM_DASH: Final[str] = "\u2014"
-PROJECT_WEEK_OFFSET: Final[int] = 20
+from agents.evidence.models import PROJECT_WEEK_OFFSET, EM_DASH, EvidenceSnapshot
+from agents.evidence.evidence_images import screenshot_filenames
 
 
 class EvidenceReportRenderer:
-    def render(self, snapshot: Any) -> str:
+    def render(self, snapshot: EvidenceSnapshot) -> str:
         project_week = self._project_week_number(snapshot.prediction_date)
         available_sectors = [
             sector for sector in snapshot.sectors if sector.weekly_change is not None
@@ -95,15 +94,16 @@ Saved in the **evidence** folder:
         project_week = prediction_date.isocalendar().week - PROJECT_WEEK_OFFSET
         return project_week if project_week > 0 else prediction_date.isocalendar().week
 
-    def _render_screenshot_rows(self, snapshot: Any) -> str:
+    def _render_screenshot_rows(self, snapshot: EvidenceSnapshot) -> str:
+        performance_filename, sector_filename = screenshot_filenames(snapshot.prediction_date)
         rows = [
             (
-                "| 1-week performance (Finviz) | "
-                f" |"
+                "| 1-week performance chart (Yahoo Finance) | "
+                f"[{performance_filename}](./{performance_filename}) |"
             ),
             (
-                "| S&P 500 map by sector (Finviz) | "
-                f" |"
+                "| S&P 500 sector heatmap (Yahoo Finance) | "
+                f"[{sector_filename}](./{sector_filename}) |"
             ),
         ]
         rows.extend(
@@ -112,10 +112,10 @@ Saved in the **evidence** folder:
         )
         return "\n".join(rows)
 
-    def _render_source_lines(self, snapshot: Any) -> str:
+    def _render_source_lines(self, snapshot: EvidenceSnapshot) -> str:
         sources = [
-            "- Finviz futures performance screenshot for 1-week cross-market visual evidence",
-            "- Finviz S&P 500 sector map screenshot for sector visual evidence",
+            "- 1-week performance chart generated from Yahoo Finance weekly returns (matplotlib)",
+            "- S&P 500 sector heatmap generated from Yahoo Finance sector ETF weekly returns (matplotlib)",
             "- Yahoo Finance adjusted daily close data via yfinance for SPX (^GSPC), NDX (^NDX), IWM, Gold (GC=F), Oil (CL=F), TLT, VIX (^VIX), Bitcoin (BTC-USD), and sector ETFs",
             "- 10-year Treasury yield from FRED series DGS10",
             "- Sector ETF proxies: XLK, XLE, XLF, XLY, XLP, XLI, XLB, XLV, XLU, XLRE, XLC",
@@ -131,7 +131,7 @@ Saved in the **evidence** folder:
     def _format_full_date(value: date) -> str:
         return f"{value:%A}, {value:%B} {value.day}, {value.year}"
 
-    def _render_index_rows(self, indexes: list[Any]) -> str:
+    def _render_index_rows(self, indexes: list) -> str:
         return "\n".join(
             (
                 f"| {move.spec.label} | {move.spec.short_name} | "
@@ -140,7 +140,7 @@ Saved in the **evidence** folder:
             for move in indexes
         )
 
-    def _render_sector_rows(self, sectors: list[Any]) -> str:
+    def _render_sector_rows(self, sectors: list) -> str:
         rows = []
         for rank, sector in enumerate(sectors, start=1):
             direction = self._format_direction(sector.weekly_change)
@@ -149,7 +149,7 @@ Saved in the **evidence** folder:
             rows.append(f"| {rank} | {sector.spec.name} | {direction} |")
         return "\n".join(rows)
 
-    def _render_sector_summary(self, sectors: list[Any]) -> str:
+    def _render_sector_summary(self, sectors: list) -> str:
         if not sectors:
             return "No sector ETF data was available from Yahoo Finance for this completed week."
         return "\n".join(
@@ -191,7 +191,7 @@ Saved in the **evidence** folder:
         return f"{direction} (about {abs(change_points):.2f} points)"
 
     @staticmethod
-    def _format_close(move: Any) -> str:
+    def _format_close(move) -> str:
         if move.close is None:
             return "N/A"
         if move.spec.close_kind == "gold":
@@ -205,15 +205,15 @@ Saved in the **evidence** folder:
         return f"{move.close:,.2f}"
 
     @staticmethod
-    def _format_yield_close(move: Any) -> str:
+    def _format_yield_close(move) -> str:
         if move.close is None:
             return "N/A"
         return f"{move.close:.2f}%"
 
-    def _plain_words_indexes(self, indexes: list[Any]) -> str:
+    def _plain_words_indexes(self, indexes: list) -> str:
         available = [move for move in indexes if move.weekly_change is not None]
         if not available:
-            return "Yahoo Finance index table data was not available for this completed week. The saved Finviz 1-week screenshot is the visual evidence source."
+            return "Yahoo Finance index table data was not available for this completed week. The saved 1-week performance chart is the visual evidence source."
 
         up_count = sum(1 for move in available if move.weekly_change and move.weekly_change > 0)
         down_count = sum(1 for move in available if move.weekly_change and move.weekly_change < 0)
@@ -234,7 +234,7 @@ Saved in the **evidence** folder:
             f"{self._format_direction_sentence(worst.weekly_change)}."
         )
 
-    def _plain_words_other_markets(self, snapshot: Any) -> str:
+    def _plain_words_other_markets(self, snapshot: EvidenceSnapshot) -> str:
         if snapshot.vix.weekly_change is None:
             fear = "was unavailable"
         else:
@@ -257,10 +257,10 @@ Saved in the **evidence** folder:
             f"{bond_direction} as the 10-year yield {yield_direction}."
         )
 
-    def _plain_words_sectors(self, sectors: list[Any]) -> str:
+    def _plain_words_sectors(self, sectors: list) -> str:
         available = [sector for sector in sectors if sector.weekly_change is not None]
         if not available:
-            return "Yahoo Finance sector ETF table data was not available for this completed week. The saved Finviz sector map screenshot is the visual evidence source."
+            return "Yahoo Finance sector ETF table data was not available for this completed week. The saved sector heatmap is the visual evidence source."
 
         positive_count = sum(1 for sector in available if sector.weekly_change and sector.weekly_change > 0)
         best = available[0]

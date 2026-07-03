@@ -77,6 +77,7 @@ def run_evidence(
     data_root: Path | None = None,
     market_data_provider=None,
     yield_data_provider=None,
+    chart_provider=None,
 ) -> None:
     from agents.evidence.evidence_agent import EvidenceAgent
 
@@ -84,6 +85,7 @@ def run_evidence(
         data_root=data_root,
         market_data_provider=market_data_provider,
         yield_data_provider=yield_data_provider,
+        chart_provider=chart_provider,
     )
     output = agent.run(ctx.prediction_date)
     ctx.evidence = output
