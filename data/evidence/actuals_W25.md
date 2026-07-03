@@ -27,14 +27,14 @@ Gold, oil, bonds, fear gauge (VIX), and crypto.
 
 | What it is | Friday close | Up or down this week |
 |------------|--------------|----------------------|
-| **Gold** | $4,173 per ounce | **Down 1.00%** |
-| **Oil** (U.S. crude) | $76.54 per barrel | **Down 9.83%** |
-| **10-Year interest rate** | 4.49% | **Flat (less than 0.01 points)** |
+| **Gold** | $4,224 per ounce | **Up 0.22%** |
+| **Oil** (U.S. crude) | $76.60 per barrel | **Down 9.75%** |
+| **10-Year interest rate** | 4.49% | **Flat (about 0.00 points)** |
 | **Bonds** (TLT fund) | 86.75 | **Up 1.14%** |
-| **VIX** (how scared traders are; lower = calmer) | 16.78 | **Down 5.09%** |
-| **Bitcoin** | $62,896 | **Down 1.02%** |
+| **VIX** (how scared traders are; lower = calmer) | 16.40 | **Down 7.24%** |
+| **Bitcoin** | $63,541 | **Down 0.00%** |
 
-**In plain words:** Fear eased as VIX moved down 5.09%. Oil was down 9.83%, Bitcoin was down 1.02%, and bonds were up 1.14% as the 10-year yield was little changed.
+**In plain words:** Fear eased as VIX moved down 7.24%. Oil was down 9.75%, Bitcoin was down 0.00%, and bonds were up 1.14% as the 10-year yield was little changed.
 
 ---
 
@@ -76,8 +76,8 @@ Saved in the **evidence** folder:
 
 | What the picture shows | File name |
 |------------------------|-----------|
-| 1-week performance (Finviz) | [finviz_1W_2026_W25.png](./finviz_1W_2026_W25.png) |
-| S&P 500 map by sector (Finviz) | [finviz_sectors_5D_2026_W25.png](./finviz_sectors_5D_2026_W25.png) |
+| 1-week performance (Finviz) |  |
+| S&P 500 map by sector (Finviz) |  |
 
 ## Where the numbers came from
 
@@ -86,4 +86,4 @@ Saved in the **evidence** folder:
 - Yahoo Finance adjusted daily close data via yfinance for SPX (^GSPC), NDX (^NDX), IWM, Gold (GC=F), Oil (CL=F), TLT, VIX (^VIX), Bitcoin (BTC-USD), and sector ETFs
 - 10-year Treasury yield from FRED series DGS10
 - Sector ETF proxies: XLK, XLE, XLF, XLY, XLP, XLI, XLB, XLV, XLU, XLRE, XLC
-- Sources accessed: Saturday, June 20, 2026
+- Sources accessed: Sunday, June 21, 2026
