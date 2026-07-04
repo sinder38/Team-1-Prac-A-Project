@@ -7,8 +7,9 @@ dependencies = [
     "yfinance>=0.2",
     "pandas>=2.0",
     "requests>=2.32",
-    "openai>=1.14.0",
-    "python-dotenv>=1.0.1",
+    "openai>=2.41.1",
+    "python-dotenv>=1.2.2",
+    "playwright>=1.60.0",
 ]
 
 [tool.uv]

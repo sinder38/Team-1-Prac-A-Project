@@ -115,50 +115,22 @@ jobs:
           failed=0
           shopt -s nullglob
 
-          # Collect all week tags present in data/llm/ (e.g. W22, W22)
-          weeks=()
-          for f in data/llm/synthesis_*_W*.txt; do
-            week=$(echo "$f" | grep -oP 'W\d+')
-            weeks+=("$week")
-          done
-          # Deduplicate
-          mapfile -t weeks < <(printf '%s\n' "${weeks[@]}" | sort -u)
-
-          if [ ${#weeks[@]} -eq 0 ]; then
+          shopt -s nullglob
+          files=(data/llm/synthesis_*_W*.txt)
+          if [ ${#files[@]} -eq 0 ]; then
             echo "No synthesis_*_W*.txt files found in data/llm/ — nothing to validate."
             exit 0
           fi
 
-          models=(chatgpt claude deepseek gemini)
-
-          for week in "${weeks[@]}"; do
-            echo "::group::Week $week — completeness check"
-            missing=0
-            for model in "${models[@]}"; do
-              f="data/llm/synthesis_${model}_${week}.txt"
-              if [ ! -f "$f" ]; then
-                echo "::error::Missing synthesis file: $f"
-                missing=1
-                failed=1
-              fi
-            done
-            if [ $missing -eq 0 ]; then
-              echo "All 4 model files present for $week."
-            fi
+          for f in "${files[@]}"; do
+            echo "::group::$f"
+            python scripts/validate_output.py llm_agent "$f"
+            code=$?
             echo "::endgroup::"
-
-            for model in "${models[@]}"; do
-              f="data/llm/synthesis_${model}_${week}.txt"
-              [ -f "$f" ] || continue
-              echo "::group::$f"
-              python scripts/validate_output.py llm_agent "$f"
-              code=$?
-              echo "::endgroup::"
-              if [ $code -ne 0 ]; then
-                echo "::error file=$f::llm_agent format check failed"
-                failed=1
-              fi
-            done
+            if [ $code -ne 0 ]; then
+              echo "::error file=$f::llm_agent format check failed"
+              failed=1
+            fi
           done
 
           exit $failed

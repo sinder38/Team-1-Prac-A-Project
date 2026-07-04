@@ -133,3 +133,11 @@ class LLMOutput:
     supporting_evidence: list[str] = field(default_factory=list)  # max 3
     contradictions: list[str] = field(default_factory=list)  # max 2
     agent_type: str = "llm"
+
+
+@dataclass
+class EvidenceOutput:
+    prediction_date: date
+    week: str          # e.g. "W25"
+    content: str       # raw markdown text
+    agent_type: str = "evidence"
