@@ -29,81 +29,81 @@ class FomcMarketPricing:
 
 FOMC_MARKET_PRICING = FomcMarketPricing(
     next_fomc_date=date(2026, 7, 29),
-    hold_probability=61.5,
+    hold_probability=78.1,
     cut_probability=0,
-    direction_vs_last_week="shifted hawkish",
+    direction_vs_last_week="shifted dovish",
 )
 
 
 UPCOMING_EVENTS = [
     Event(
-        name="US Non-Farm Payrolls",
-        date_label="Thursday, July 2",
+        name="US ISM Services PMI",
+        date_label="Monday, July 6",
         impact="HIGH",
         priority=100,
-        expected="70K",
-        previous="172K",
-        catalyst_name="US Employment Report",
-        catalyst_date="July 2",
+        expected="54.2",
+        previous="54.5",
+        catalyst_name="US Services Activity",
+        catalyst_date="July 6",
     ),
     Event(
-        name="US Unemployment Rate",
-        date_label="Thursday, July 2",
+        name="FOMC Minutes",
+        date_label="Thursday, July 9",
         impact="HIGH",
         priority=95,
-        expected="4.50%",
-        previous="4.30%",
-        catalyst_name="US Employment Report",
-        catalyst_date="July 2",
+        expected=None,
+        previous=None,
+        catalyst_name="Federal Reserve Minutes",
+        catalyst_date="July 9",
     ),
     Event(
-        name="US ISM Manufacturing PMI",
-        date_label="Wednesday, July 1",
+        name="China Inflation Rate YoY",
+        date_label="Thursday, July 9",
         impact="HIGH",
         priority=90,
-        expected="52.5",
-        previous="54.0",
-        catalyst_name="US Manufacturing Activity",
-        catalyst_date="July 1",
+        expected="1.2%",
+        previous="1.2%",
+        catalyst_name="China Inflation",
+        catalyst_date="July 9",
     ),
     Event(
-        name="China NBS Manufacturing PMI",
-        date_label="Tuesday, June 30",
-        impact="HIGH",
-        priority=85,
-        expected="50.3",
-        previous="50.0",
-        catalyst_name="China Manufacturing PMI",
-        catalyst_date="June 30",
-    ),
-    Event(
-        name="Euro Area CPI Flash",
-        date_label="Wednesday, July 1",
+        name="US Existing Home Sales",
+        date_label="Thursday, July 9",
         impact="MEDIUM",
-        priority=75,
-        expected="3.2%",
-        previous="3.2%",
-        catalyst_name="Eurozone Inflation",
-        catalyst_date="July 1",
+        priority=80,
+        expected="4.20M",
+        previous="4.17M",
+        catalyst_name="US Housing Market",
+        catalyst_date="July 9",
+    ),
+    Event(
+        name="Canada Unemployment Rate",
+        date_label="Friday, July 10",
+        impact="MEDIUM",
+        priority=70,
+        expected="6.6%",
+        previous="6.6%",
+        catalyst_name="Canada Employment Report",
+        catalyst_date="July 10",
     ),
 ]
 
 KEY_EARNINGS = [
-    "- FedEx Corp. (FDX) — Tuesday, June 23 (After Close) — Sector: Industrials / Transportation — What to watch: global shipping demand, freight volumes, economic activity indicators and FY outlook.",
+    "- PepsiCo, Inc. (PEP) — Thursday, July 9 (Before Open) — Sector: Consumer Staples / Food & Beverages — What to watch: consumer demand, pricing power, snack and beverage volumes, margin trends and FY guidance.",
 
-    "- Paychex Inc. (PAYX) — Wednesday, June 24 (Before Open) — Sector: Financials / Payroll Services — What to watch: employment trends, SMB hiring activity and management commentary on labor markets.",
+    "- Delta Air Lines, Inc. (DAL) — Friday, July 10 (Before Open) — Sector: Industrials / Airlines — What to watch: domestic and international travel demand, corporate bookings, fuel costs and full-year outlook.",
 
-    "- Micron Technology Inc. (MU) — Wednesday, June 24 (After Close) — Sector: Technology / Semiconductors — What to watch: AI memory demand, HBM pricing, data center growth and FY guidance.",
+    "- Levi Strauss & Co. (LEVI) — Wednesday, July 8 (After Close) — Sector: Consumer Discretionary / Apparel — What to watch: consumer spending, inventory levels, wholesale demand, DTC sales and tariff commentary.",
 
-    "- Trip.com Group Ltd. (TCOM) — Wednesday, June 24 (After Close) — Sector: Consumer Discretionary / Travel — What to watch: China travel demand, international bookings and consumer spending trends.",
+    "- Penguin Solutions, Inc. (PENG) — Tuesday, July 7 (After Close) — Sector: Technology / Enterprise Infrastructure — What to watch: AI infrastructure demand, enterprise spending, storage and memory solutions growth and guidance.",
 
-    "- Darden Restaurants Inc. (DRI) — Thursday, June 25 (Before Open) — Sector: Consumer Discretionary / Restaurants — What to watch: same-store sales, consumer spending trends and forward guidance.",
+    "- Kura Sushi USA, Inc. (KRUS) — Tuesday, July 7 (After Close) — Sector: Consumer Discretionary / Restaurants — What to watch: same-store sales, restaurant traffic, consumer spending trends and expansion plans.",
 ]
 
 CONFIRMED_NEWS = [
-    "- US Vice President JD Vance met senior Iranian officials in Switzerland as Washington seeks to restart negotiations and reduce regional tensions — Source: AP — 21 Jun 2026",
+    "- U.S. oil companies are expected to report their strongest quarterly profits in years, potentially setting up a clash with President Trump over gasoline prices ahead of the November midterm elections — Source: Reuters — 4 Jul 2026",
 
-    "- President Trump threatened additional military strikes against Iran while diplomatic talks continue, increasing geopolitical uncertainty in the Middle East — Source: Reuters — 21 Jun 2026",
+    "- Iran is exploring the resumption of crude oil sales to Japan as buyers seek a longer U.S. sanctions waiver, highlighting ongoing uncertainty around global energy supplies — Source: Reuters — 4 Jul 2026",
 
-    "- Markets continue monitoring developments around Iran, the Strait of Hormuz and global energy supply risks as diplomatic and military signals remain mixed — Source: Reuters, AP — 21 Jun 2026",
+    "- Reuters analysis found the recent U.S.-Iran conflict has resulted in significantly smaller oil supply disruptions than the 1979 oil shock, easing fears of a prolonged energy crisis — Source: Reuters — 4 Jul 2026",
 ]

@@ -7,25 +7,22 @@ Usage:
 """
 import json
 import os
+import sys
 from datetime import date
 from dataclasses import asdict
 from pathlib import Path
-import sys
 import requests
 import yfinance as yf
 import pandas as pd
 from dotenv import load_dotenv
-from macro_event_data import (
+
+from agents.macro.macro_event_data import (
     UPCOMING_EVENTS,
     CONFIRMED_NEWS,
     FOMC_MARKET_PRICING,
     KEY_EARNINGS,
 )
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from agents.base import BaseAgent
-from agents.io import FileSaver, week_stem
 from agents.schemas import (
     CalendarEvent,
     CommodityData,
@@ -89,7 +86,7 @@ class MacroAgent(BaseAgent):
         """Format weekly percentage moves with explicit signs."""
         return f"{value:+.2f}%"
 
-    def fetch_fred(self, series: str, api_key: str) -> float:
+    def fetch_fred(self, series: str, api_key: str) -> float | None:
         """Fetch latest observation from FRED API."""
         url = (
             "https://api.stlouisfed.org/fred/series/observations"
@@ -100,15 +97,11 @@ class MacroAgent(BaseAgent):
             "&limit=1"
         )
         try:
-            response = requests.get(url)
-            try:
-                data = response.json()
-            except Exception:
-                return 0.0
+            data = requests.get(url).json()
             return float(data["observations"][0]["value"])
         except (requests.RequestException, KeyError, ValueError, IndexError) as e:
             print(f"Error fetching {series}: {e}")
-            return 0.0
+            return None
 
     def fetch_fred_weekly_change(self, series: str, api_key: str) -> float:
         """Weekly change in percentage points for FRED series."""
@@ -121,20 +114,12 @@ class MacroAgent(BaseAgent):
             "&limit=8"
         )
         try:
-            response = requests.get(url)
-            try:
-                data = response.json()
-            except Exception:
-                return 0.0
-
-            observations = data.get("observations", [])
-
+            data = requests.get(url).json()
             values = [
                 float(obs["value"])
-                for obs in observations
-                if obs.get("value") != "."
+                for obs in data["observations"]
+                if obs["value"] != "."
             ]
-
             if len(values) >= 7:
                 return round(values[0] - values[5], 2)
             return 0.0
@@ -173,15 +158,10 @@ class MacroAgent(BaseAgent):
     def get_weekly_return(self, ticker: str) -> float:
         """Get weekly return for a single ticker (last close vs 5 trading days ago)."""
         try:
-            df = yf.download(ticker, period="1mo", interval="1d", auto_adjust=True)
-            if df is None or df.empty:
+            raw = yf.download(ticker, period="1mo", interval="1d", auto_adjust=True)
+            if raw is None or raw.empty:
                 return 0.0
-
-            if "Close" not in df:
-                return 0.0
-
-            data = df["Close"]
-
+            data = raw["Close"]
             if isinstance(data, pd.Series):
                 data = data.to_frame()
 
@@ -451,8 +431,49 @@ class MacroAgent(BaseAgent):
         return "\n\n".join(output.confirmed_news)
 
     def render_md(self, output: MacroOutput, prediction_date: date) -> str:
+        """Return the markdown string for this output (satisfies BaseAgent contract)."""
+        return f"""Macro Agent Output — Week of {self.report_week_label(prediction_date)} — Source: R4
+
+FED & RATES (FRED & Yfinance):
+
+- Current Fed rate: {output.fed_rate}
+- Next FOMC date: {self.full_date_label(output.next_fomc_date)}. Hold probability: {output.hold_probability:.1f}%. Cut probability: {output.cut_probability:.1f}%. Direction vs last week: {output.fomc_direction}
+- 2-year yield: {output.yield_2y:.3f}% 10-year yield: {output.yield_10y:.3f}% 30-year yield: {output.yield_30y:.3f}%
+- Yield curve: {output.yield_curve}. 10-year direction this week: {output.yield_10y_direction}
+
+COMMODITIES & DOLLAR (Yfinance):
+
+- WTI Crude Oil: {self.format_price(output.wti_oil.price)}, weekly change {self.format_percent(output.wti_oil.weekly_change)}, direction: {output.wti_oil.direction}
+- Gold: {self.format_price(output.gold.price)}, weekly change {self.format_percent(output.gold.weekly_change)}, direction: {output.gold.direction}
+- DXY (Dollar): {self.format_price(output.dxy.price)}, weekly change {self.format_percent(output.dxy.weekly_change)}, direction: {output.dxy.direction}
+
+WEEK-AHEAD CALENDAR (TradingEconomics):
+
+{self.render_calendar_events(output)}
+
+KEY EARNINGS THIS WEEK (Earnings Whispers):
+
+{self.render_key_earnings(output)}
+
+CONFIRMED NEWS EVENTS (Reuters / AP):
+
+{self.render_confirmed_news(output)}
+
+MACRO BIAS: {output.macro_bias.value if output.macro_bias else "N/A"}
+
+PRIMARY DRIVER THIS WEEK: {output.primary_driver}
+
+CONFIDENCE: {output.confidence.value if output.confidence else "N/A"}
+
+INVALIDATION: {output.invalidation}
+
+Sources accessed: {prediction_date}
+"""
+
+    def save_md(self, output: MacroOutput, prediction_date: date) -> None:
         """Render MacroOutput to MD matching data/formats/macro_agent.md"""
         week = prediction_date.isocalendar()
+        filename = f"macro_agent_W{week.week:02d}.md"
         out_dir = REPO_ROOT / "data" / "macro"
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -493,17 +514,13 @@ INVALIDATION: {output.invalidation}
 
 Sources accessed: {prediction_date}
 """
-        return content
+        (out_dir / filename).write_text(content, encoding="utf-8")
 
 
 if __name__ == "__main__":
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
     agent = MacroAgent()
     output = agent.run(prediction_date)
-    json_saver = FileSaver(REPO_ROOT / "data" / "outputs" / agent.agent_type)
-    json_saver.save(agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}.json")
-
-    md_dir = REPO_ROOT / "data" / "macro"
-    md_saver = FileSaver(md_dir)
-    md_saver.save(agent.render_md(output, prediction_date), f"macro_agent_{week_stem(prediction_date)}.md")
+    agent.save_json(output, prediction_date)
+    agent.save_md(output, prediction_date)
     print("Saved to data/outputs/macro/ and data/macro/")
