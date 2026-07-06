@@ -1,0 +1,17 @@
+# LLM Agent Output — NVIDIA Nemotron 3 Super — Week of 2026-07-06
+
+1. Weekly Regime: Bullish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Bitcoin closed the week up 1.30% indicating risk‑on sentiment in crypto markets.
+   - Almanac notes early‑July strength as the best seasonal window in the covered period.
+   - Technical analysis shows SPX trading above its 8‑ and 21‑day EMAs with a bullish trend bias.
+4. Key Contradictions:
+   - Macro agent flags a binary‑risk environment driven by the upcoming Fed decision, which could reverse the current cautious stance.
+   - Almanac’s monthly bias is mixed, suggesting uncertainty despite the seasonal bullish tilt.
+5. Invalidation Conditions: A materially more dovish‑than‑expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
+6. Predicted % move — SPX: -3.3% to 1.5%
+   Predicted % move — NDX: -3.9% to 4.5%
+   Predicted % move — IWM: -6.9% to 1.7%
+7. Plain-English brief: The market is expected to trade with a modest bullish tilt this week, with the S&P 500 likely to fluctuate between a modest decline and a small gain, the Nasdaq 100 showing wider potential moves, and the Russell 2000 having the greatest downside risk but also some upside potential. Seasonal strength in early July and supportive technical cues for large‑cap stocks outweigh the mixed macro signals, though a dovish Fed surprise could quickly shift sentiment.
+8. Disclaimer: This is not financial advice.

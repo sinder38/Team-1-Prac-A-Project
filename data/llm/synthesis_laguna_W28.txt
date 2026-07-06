@@ -1,0 +1,17 @@
+# LLM Agent Output — Poolside Laguna M.1 — Week of 2026-07-06
+
+1. Weekly Regime: Uncertain
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - SPX trading above both 8-day and 21-day EMAs with bullish trend bias and key support at 7237.85
+   - Seasonal almanac favors Early-July strength with Technology sector in bullish window supporting Nasdaq
+   - Fed maintaining 3.50%-3.75% rate range with 97.4% hold probability and hawkish shift in FOMC direction
+4. Key Contradictions:
+   - SPX technical bullish bias conflicts with macro binary-risk environment and hawkish Fed stance
+   - NDX neutral technicals with price below EMAs contradict bullish seasonal tech sector window
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision driving Treasury yields lower and increasing rate cut expectations would reverse cautious stance and support risk assets
+6. Predicted % move — SPX: -3.3% to 1.5%
+   Predicted % move — NDX: -3.9% to 4.5%
+   Predicted % move — IWM: -7.0% to 1.7%
+7. Plain-English brief: Mixed signals across indices this week with SPX showing technical strength but facing macro headwinds from hawkish Fed policy. Nasdaq and Russell 2000 remain in neutral technical territory despite favorable seasonal tech patterns. The market faces binary risk around Fed policy with limited room for upside given current resistance levels.
+8. Disclaimer: This is not financial advice.

@@ -1,0 +1,17 @@
+# LLM Agent Output — Google Gemma 4 31B — Week of 2026-07-06
+
+1. Weekly Regime: Bullish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Technical Agent reports SPX trend bias as Bullish with last close (7483.24) above both EMA_8 and EMA_21.
+   - Almanac Agent identifies early July as the best seasonal window in the period with a Bullish seasonal bias and "Early-July strength" pattern.
+   - Macro Agent notes falling DXY (100.962) and falling WTI oil prices, which historically supports risk assets.
+4. Key Contradictions:
+   - NDX and IWM technical trend biases are Neutral, contrasting with the overall Bullish seasonal and SPX bias.
+   - Macro Agent reports a "Binary-risk" bias and a slightly hawkish shift in FOMC direction, which conflicts with the seasonal bullishness.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower would reverse the cautious macro stance.
+6. Predicted % move — SPX: -3.3% to 1.5%
+   Predicted % move — NDX: -5.6% to 4.5%
+   Predicted % move — IWM: -7.3% to 1.2%
+7. Plain-English brief: The market is leaning bullish due to strong seasonal patterns for early July and positive technicals for the S&P 500. While the Nasdaq and Russell 2000 are currently neutral and the Fed's hawkish tone creates some risk, the seasonal window and falling dollar provide a supportive backdrop for a potential rally.
+8. Disclaimer: This is not financial advice.
