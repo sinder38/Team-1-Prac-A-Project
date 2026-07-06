@@ -72,6 +72,7 @@ def main() -> None:
         print(f"[pipeline] {name} done.")
 
     rows_by_slug: dict[str, dict] = {}
+    llm_has_errors = False
     for model_key in models:
         if model_key not in LLM_REGISTRY:
             print(f"[pipeline] ERROR: unknown LLM model '{model_key}'", file=sys.stderr)
@@ -80,10 +81,16 @@ def main() -> None:
         try:
             slug, row = run_llm(ctx, config, model_key)
             rows_by_slug[slug] = row
+            print(f"[pipeline] llm:{model_key} done.")
         except Exception as e:
+            # One model failing (rate limit, timeout, bad response) must not sink
+            # the whole weekly run. Record it honestly and keep going so the
+            # comparison table and PR still get produced.
+            from agents.llm.multi_model_runner import _failed_row
+
             print(f"[pipeline] ERROR in llm:{model_key}: {e}", file=sys.stderr)
-            sys.exit(1)
-        print(f"[pipeline] llm:{model_key} done.")
+            rows_by_slug[model_key] = _failed_row(e)
+            llm_has_errors = True
 
     # Write comparison table if any LLMs ran
     if rows_by_slug and config.get("artifacts", {}).get("save_md", True):
@@ -100,6 +107,14 @@ def main() -> None:
     print(
         f"\n[pipeline] complete. date={prediction_date}, llm_outputs={len(ctx.llm_outputs)}"
     )
+
+    if llm_has_errors:
+        print(
+            "[pipeline] finished with LLM errors (see FAILED rows above). "
+            "Exiting non-zero so CI flags it for review.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":
