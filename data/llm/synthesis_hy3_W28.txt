@@ -1,0 +1,17 @@
+# LLM Agent Output — Tencent Hy3 — Week of 2026-07-10
+
+1. Weekly Regime: Neutral
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Technical agent reports SPX and NDX bullish trend bias with last close above EMA_8 and EMA_21 confirming upward momentum.
+   - Almanac agent identifies seasonal LONG window for Technology (XLK) from March-July supporting Nasdaq 100 outperformance.
+   - Evidence week report shows NDX rose 1.67% and VIX fell 5.39% indicating calmer risk appetite for large caps.
+4. Key Contradictions:
+   - Almanac agent labels Energy (XLE) bearish seasonal short beginning early June but Evidence shows Energy sector led gains up 2.87% as oil rose 4.18%.
+   - Almanac agent marks Financials (XLF) bearish seasonal short window May-July yet Evidence records Financials marginally up 0.12% and macro notes banking headwind not realized.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
+6. Predicted % move — SPX: -4.1% to 0.1%
+   Predicted % move — NDX: -4.3% to 2.8%
+   Predicted % move — IWM: -4.2% to 2.3%
+7. Plain-English brief: Large cap indexes SPX and NDX show bullish technicals and seasonal tech strength, but mixed macro and sector signals suggest a neutral overall week with limited upside near resistance; small cap IWM is neutral with low confidence. Actual prior week saw NDX lead gains while IWM slipped. Risks include hawkish Fed and rising yields; a surprise dovish shift would flip bias bullish.
+8. Disclaimer: This is not financial advice.
