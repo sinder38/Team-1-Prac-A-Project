@@ -133,6 +133,9 @@ class MacroAgent(BaseAgent):
         high = self.fetch_fred("DFEDTARU", api_key)
         if low is not None and high is not None:
             return f"{low:.2f}%-{high:.2f}%"
+
+        #TODO: Ideally should cause an error instead
+        print("No Fed rate availible! Continuing without it...")
         return "N/A"
 
     def get_yields(self, api_key: str) -> dict:
@@ -492,15 +495,15 @@ COMMODITIES & DOLLAR (Yfinance):
 - Gold: {self.format_price(output.gold.price)}, weekly change {self.format_percent(output.gold.weekly_change)}, direction: {output.gold.direction}
 - DXY (Dollar): {self.format_price(output.dxy.price)}, weekly change {self.format_percent(output.dxy.weekly_change)}, direction: {output.dxy.direction}
 
-WEEK-AHEAD CALENDAR (TradingEconomics): 
+WEEK-AHEAD CALENDAR (TradingEconomics):
 
 {self.render_calendar_events(output)}
 
-KEY EARNINGS THIS WEEK (Earnings Whispers): 
+KEY EARNINGS THIS WEEK (Earnings Whispers):
 
 {self.render_key_earnings(output)}
 
-CONFIRMED NEWS EVENTS (Reuters / AP): 
+CONFIRMED NEWS EVENTS (Reuters / AP):
 
 {self.render_confirmed_news(output)}
 
