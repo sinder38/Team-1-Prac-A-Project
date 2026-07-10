@@ -8,7 +8,8 @@ macro     = true
 evidence  = true
 
 [llm]
-models = ["nemotron", "gptoss", "gemma", "laguna"]
+# models = ["nemotron", "gptoss", "gemma", "laguna"]
+models = ["nemotron", "hy3", "gemma", "laguna"]
 
 [artifacts]
 save_json = false

@@ -20,8 +20,9 @@ LLM_REGISTRY: dict[str, Callable[[], BaseLLMAgent]] = {
     "example":  lambda: __import__("agents.llm.example_agent", fromlist=["ExampleAgent"]).ExampleAgent(),
     "nemotron": lambda: _make_openrouter("NVIDIA Nemotron 3 Super", "nvidia/nemotron-3-super-120b-a12b:free"),
     "gptoss":   lambda: _make_openrouter("OpenAI gpt-oss-120b",     "openai/gpt-oss-120b:free"),
-    "gemma":    lambda: _make_openrouter("Google Gemma 4 31B",       "google/gemma-4-31b-it:free"),
-    "laguna":   lambda: _make_openrouter("Poolside Laguna M.1",      "poolside/laguna-m.1:free"),
+    "hy3":   lambda: _make_openrouter("Tencent Hy3",                "tencent/hy3:free"),
+    "gemma":    lambda: _make_openrouter("Google Gemma 4 31B",      "google/gemma-4-31b-it:free"),
+    "laguna":   lambda: _make_openrouter("Poolside Laguna M.1",     "poolside/laguna-m.1:free"),
 }
 
 
