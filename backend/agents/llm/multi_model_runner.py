@@ -37,10 +37,13 @@ INPUTS_DIR = REPO_ROOT / "data" / "outputs"            # where the data agents w
 OUTPUTS_LLM_DIR = REPO_ROOT / "data" / "outputs" / "llm"
 HUMAN_LLM_DIR = REPO_ROOT / "data" / "llm"
 
+MAX_RETRIES = 5
+
 # 'slug' = safe file/path identifier; 'label' = human-readable table heading.
 MODELS = [
     {"slug": "nemotron", "label": "NVIDIA Nemotron 3 Super", "id": "nvidia/nemotron-3-super-120b-a12b:free"},
     {"slug": "gptoss",   "label": "OpenAI gpt-oss-120b",     "id": "openai/gpt-oss-120b:free"},
+    {"slug": "hy3",   "label": "Tencent Hy3",     "id": "tencent/hy3:free"},
     {"slug": "gemma",    "label": "Google Gemma 4 31B",      "id": "google/gemma-4-31b-it:free"},
     {"slug": "laguna",   "label": "Poolside Laguna M.1",     "id": "poolside/laguna-m.1:free"},
 ]
@@ -56,6 +59,10 @@ COMPARISON_DIMENSIONS = [
     ("Top contradiction",      "contradiction"),
     ("Invalidation condition", "invalidation"),
 ]
+
+def _get_retry_delay(attempt: int) -> int:
+    """Get delay time in seconds inbetween LLM API requests"""
+    return 10 + 2**attempt
 
 
 def iso_tag(d: date) -> str:
@@ -151,7 +158,6 @@ class OpenRouterAgent(BaseLLMAgent):
     def query(self, prompt: str) -> str:
         """Send prompt to OpenRouter. Retry on failure; raise if all retries are exhausted.
         Does NO parsing or sanitization — that is base_llm's responsibility."""
-        max_retries = 3
         system_instruction = (
             "You are a strict financial data formatter. "
             "You MUST output exactly the requested keys in PLAIN TEXT format, separated by colons. "
@@ -160,9 +166,9 @@ class OpenRouterAgent(BaseLLMAgent):
             "Do NOT wrap your response in markdown code blocks."
         )
 
-        for attempt in range(max_retries):
+        for attempt in range(MAX_RETRIES):
             try:
-                print(f"[{self.model_name}] OpenRouter request (attempt {attempt + 1}/{max_retries})...")
+                print(f"[{self.model_name}] OpenRouter request (attempt {attempt + 1}/{MAX_RETRIES})...")
                 response = self.client.chat.completions.create(
                     model=self.model_id,
                     messages=[
@@ -181,9 +187,9 @@ class OpenRouterAgent(BaseLLMAgent):
 
             except Exception as e:
                 print(f"[{self.model_name}] API call failed: {e}", file=sys.stderr)
-                if attempt == max_retries - 1:
-                    raise RuntimeError(f"[{self.model_name}] Exhausted all {max_retries} API retries.") from e
-                time.sleep(2 ** attempt)
+                if attempt == MAX_RETRIES - 1:
+                    raise RuntimeError(f"[{self.model_name}] Exhausted all {MAX_RETRIES} API retries.") from e
+                time.sleep(_get_retry_delay(attempt))
 
         return ""  # unreachable (loop always returns or raises); kept for type-checkers
 
