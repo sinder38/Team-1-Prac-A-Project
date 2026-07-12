@@ -13,12 +13,7 @@ from dataclasses import asdict
 from io import StringIO
 from pathlib import Path
 import requests
-
-try:
-    from dotenv import load_dotenv
-except ImportError:  # pragma: no cover - keeps parser tests usable without optional env tooling.
-    def load_dotenv(*_args, **_kwargs):
-        return False
+from dotenv import load_dotenv
 
 from agents.macro.macro_event_data import Event
 from agents.macro.macro_sources import (
