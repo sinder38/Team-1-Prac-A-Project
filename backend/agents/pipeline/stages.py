@@ -10,6 +10,7 @@ from agents.llm.multi_model_runner import OpenRouterAgent, _row
 from agents.macro.macro_agent import MacroAgent
 from agents.pipeline.config import LLMModelEntry, PipelineConfig
 from agents.pipeline.context import PipelineContext
+from agents.schemas import EvidenceOutput
 from agents.technical.technical_agent import TechnicalAgent
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -31,7 +32,11 @@ def _save_artifacts(
         md = agent.render_md(output, prediction_date)
 
         md_path = REPO_ROOT / "data" / agent.agent_type
-        FileSaver(md_path).save(md, f"{agent.agent_type}_agent_{week_stem_date}.md")
+        if agent.agent_type == "evidence":
+            filename = f"actuals_{week_stem_date}.md"
+        else:
+            filename = f"{agent.agent_type}_agent_{week_stem_date}.md"
+        FileSaver(md_path).save(md, filename)
 
 
 def run_almanac(ctx: PipelineContext, config: PipelineConfig) -> None:
@@ -61,9 +66,25 @@ def run_evidence(
     ctx: PipelineContext,
     config: PipelineConfig,
     data_root: Path | None = None,
+    market_data_provider=None,
+    yield_data_provider=None,
+    chart_provider=None,
 ) -> None:
-    agent = EvidenceAgent(data_root=data_root)
-    output = agent.run(ctx.prediction_date)
+    agent = EvidenceAgent(
+        data_root=data_root,
+        market_data_provider=market_data_provider,
+        yield_data_provider=yield_data_provider,
+        chart_provider=chart_provider,
+    )
+
+    snapshot = agent.fetch_snapshot(ctx.prediction_date)
+    output = EvidenceOutput(
+        prediction_date=ctx.prediction_date,
+        week=week_stem(ctx.prediction_date),
+        content=agent.render_report(snapshot),
+    )
+    agent.generate_evidence_charts(snapshot)
+
     ctx.evidence = output
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
