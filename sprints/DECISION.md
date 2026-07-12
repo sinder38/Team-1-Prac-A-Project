@@ -5,12 +5,10 @@ Team: Team 1
 Sprint: 6 (vW28)
 
 
-
 Sprint Goal
 
 Run a complete Scrum cycle—from Sprint Planning through Sprint Review and Sprint Retrospective—while building a pipeline that collects market data, runs all project agents, calls at least two AI models through 
 APIs, and automatically generates the final prediction file after the US market closes on Friday with minimal manual intervention.
-
 
 
 Decisions Made During Sprint Planning
@@ -33,16 +31,16 @@ Team Roles
 
 The team agreed to continue using the Sprint 6 role structure.
 
-R1 – Product Owner: 
-R2 – Scrum Master: 
-R3 – Almanac Agent: 
-R4 – Macro Agent: 
-R5 – Technical Agent: 
-R6 – Data Collector: 
-R7 – Human Score Lead: 
-R8 – LLM Operator: 
-R9 – GitHub Lead: 
-R10 – Calibration Lead: 
+R1 – Product Owner: Georgii(Main), Henery(Support)
+R2 – Scrum Master: Whitley(Main), Sharry(Support)
+R3 – Almanac Agent: Zaw Latt Naung
+R4 – Macro Agent: Nai Phone Pyae
+R5 – Technical Agent: Oakkor
+R6 – Data Collector: Sai Ko
+R7 – Human Score Lead:Aeron 
+R8 – LLM Operator: Minhao
+R9 – GitHub Lead: Georgii
+R10 – Calibration Lead: Jason
 
 
 
