@@ -1,14 +1,11 @@
 """Run the Week 5 Delta Engine.
 
-This script reads the vW24 locked prediction and W25 actuals, then writes the
-teacher-required delta file to data/qa/delta_W24.md.
+This script reads the vW24 locked prediction and W25 actuals, then
+writes the teacher-required delta file to data/qa/delta_W24.md.
 """
 
 import argparse
 from pathlib import Path
-import sys
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from agents.delta import DeltaAgent
 
@@ -43,13 +40,19 @@ def main() -> None:
         "--output-path",
         type=Path,
         default=None,
-        help="Output markdown file. Defaults to data/qa/delta_<prediction-week>.md",
+        help=(
+            "Output markdown file. Defaults to "
+            "data/qa/delta_<prediction-week>.md"
+        ),
     )
     parser.add_argument(
         "--json-output-path",
         type=Path,
         default=None,
-        help="Structured Delta Engine output. Defaults to data/outputs/delta/delta_<prediction-week>.json",
+        help=(
+            "Structured Delta Engine output. Defaults to "
+            "data/outputs/delta/delta_<prediction-week>.json"
+        ),
     )
     args = parser.parse_args()
 

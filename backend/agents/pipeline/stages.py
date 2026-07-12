@@ -49,20 +49,26 @@ LLM_REGISTRY: dict[str, Callable[[], BaseLLMAgent]] = {
 }
 
 
-def _save_artifacts(agent, output, prediction_date: date, config: dict) -> None:
+def _save_artifacts(
+    agent,
+    output,
+    prediction_date: date,
+    config: dict,
+) -> None:
     art = config.get("artifacts", {})
+    week = week_stem(prediction_date)
     if art.get("save_json", True):
         FileSaver.for_agent(agent.agent_type).save(
             agent.render_json(output, prediction_date),
-            f"{week_stem(prediction_date)}.json",
+            f"{week}.json",
         )
     if art.get("save_md", True):
         md = agent.render_md(output, prediction_date)
         md_path = REPO_ROOT / "data" / agent.agent_type
         if agent.agent_type == "evidence":
-            filename = f"actuals_{week_stem(prediction_date)}.md"
+            filename = f"actuals_{week}.md"
         else:
-            filename = f"{agent.agent_type}_agent_{week_stem(prediction_date)}.md"
+            filename = f"{agent.agent_type}_agent_{week}.md"
         FileSaver(md_path).save(md, filename)
 
 
@@ -123,19 +129,32 @@ def run_delta(
 
     artifacts = config.get("artifacts", {})
     if artifacts.get("save_md", True):
-        markdown_path = root / "data" / "qa" / f"delta_{prediction_week}.md"
+        markdown_path = (
+            root / "data" / "qa" / f"delta_{prediction_week}.md"
+        )
         agent.engine.write_markdown(output, markdown_path)
 
     if artifacts.get("save_json", True):
-        json_path = root / "data" / "outputs" / "delta" / f"delta_{prediction_week}.json"
+        json_path = (
+            root
+            / "data"
+            / "outputs"
+            / "delta"
+            / f"delta_{prediction_week}.json"
+        )
         agent.engine.write_json(output, json_path)
 
 
-def run_llm(ctx: PipelineContext, config: dict, model_key: str) -> tuple[str, dict]:
+def run_llm(
+    ctx: PipelineContext,
+    config: dict,
+    model_key: str,
+) -> tuple[str, dict]:
     """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
     if model_key not in LLM_REGISTRY:
         raise ValueError(
-            f"Unknown LLM model_key {model_key!r}. Known models: {list(LLM_REGISTRY)}"
+            f"Unknown LLM model_key {model_key!r}. "
+            f"Known models: {list(LLM_REGISTRY)}"
         )
     agent = LLM_REGISTRY[model_key]()
 

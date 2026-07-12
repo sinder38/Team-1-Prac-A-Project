@@ -1,6 +1,6 @@
-from pathlib import Path
 import json
 import shutil
+from pathlib import Path
 
 from agents.delta.delta_engine import (
     DeltaAgent,
@@ -102,7 +102,11 @@ def test_delta_engine_writes_markdown_and_json():
     content = Path(output_path).read_text(encoding="utf-8")
     assert "Direction accuracy: 3 / 3" in content
     assert "Range accuracy: 2 / 3" in content
-    assert "| NDX | FLAT-UP | -0.5% to +2.0% | Medium | +2.60% | UP | Y | N | 0.60% |" in content
+    expected_row = (
+        "| NDX | FLAT-UP | -0.5% to +2.0% | Medium | +2.60% | UP | Y | N | "
+        "0.60% |"
+    )
+    assert expected_row in content
     assert "Weight adjustment draft" in content
     assert "technical | 0.25 | 0.30" in content
 
@@ -135,4 +139,5 @@ def test_delta_agent_uses_week_paths_and_writes_outputs():
     assert report.actuals_week == "W25"
     assert markdown_path.name == "delta_W24.md"
     assert json_path.name == "delta_W24.json"
-    assert "Weight adjustment draft" in markdown_path.read_text(encoding="utf-8")
+    markdown = markdown_path.read_text(encoding="utf-8")
+    assert "Weight adjustment draft" in markdown

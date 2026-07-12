@@ -5,7 +5,12 @@ import pandas as pd
 
 from agents.llm.base_llm import BaseLLMAgent
 from agents.pipeline.context import PipelineContext
-from agents.pipeline.stages import LLM_REGISTRY, run_almanac, run_delta, run_evidence
+from agents.pipeline.stages import (
+    LLM_REGISTRY,
+    run_almanac,
+    run_delta,
+    run_evidence,
+)
 from agents.schemas import (
     AlmanacOutput, Bias, Confidence,
     EvidenceOutput,
@@ -14,6 +19,7 @@ from agents.schemas import (
 
 class _StubLLM(BaseLLMAgent):
     model_name = "stub"
+
     def query(self, prompt: str) -> str:
         return prompt  # echo back so we can inspect
 
@@ -96,7 +102,8 @@ class _FakeEvidenceMarketDataProvider:
             ]
         )
         current = 101.0
-        return pd.Series([100.0, 100.2, 100.4, 100.6, 100.8, current], index=dates)
+        values = [100.0, 100.2, 100.4, 100.6, 100.8, current]
+        return pd.Series(values, index=dates)
 
 
 class _FakeEvidenceYieldDataProvider:
@@ -141,7 +148,10 @@ def test_run_evidence_does_not_require_manual_actuals_file(tmp_path):
         yield_data_provider=_FakeEvidenceYieldDataProvider(),
     )
     assert ctx.evidence is not None
-    assert "10-year Treasury yield from FRED series DGS10" in ctx.evidence.content
+    assert (
+        "10-year Treasury yield from FRED series DGS10"
+        in ctx.evidence.content
+    )
 
 
 def test_run_almanac_populates_context():
@@ -165,7 +175,8 @@ def test_run_delta_populates_context_and_writes_outputs(tmp_path):
     assert ctx.delta is not None
     assert ctx.delta.direction_correct_count == 3
     assert (tmp_path / "data" / "qa" / "delta_W24.md").exists()
-    assert (tmp_path / "data" / "outputs" / "delta" / "delta_W24.json").exists()
+    delta_json = tmp_path / "data" / "outputs" / "delta" / "delta_W24.json"
+    assert delta_json.exists()
 
 
 def test_delta_context_can_feed_llm_prompt(tmp_path):
