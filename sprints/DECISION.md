@@ -38,7 +38,7 @@ R4 – Macro Agent: Nai Phone Pyae
 R5 – Technical Agent: Oakkor
 R6 – Data Collector: Sai Ko
 R7 – Human Score Lead:Aeron 
-R8 – LLM Operator: Minhao
+R8 – LLM Operator: Minghao
 R9 – GitHub Lead: Georgii
 R10 – Calibration Lead: Jason
 
