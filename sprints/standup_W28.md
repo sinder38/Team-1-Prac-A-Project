@@ -95,3 +95,6 @@ The Delta Engine needed to be refined to better match the project scope before i
 Merge conflicts occurred after updates to the main branch, but they have now been resolved.
 Final calibration still depends on the final prediction files and actual market data being available.
 
+
+***
+The remaining roles are not included because their contributors did not provide a progress update for this sprint.
