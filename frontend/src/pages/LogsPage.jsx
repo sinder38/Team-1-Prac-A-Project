@@ -58,14 +58,14 @@ export default function LogsPage({ pipeline, controls, week, predictionDate }) {
           ['Last Run', formatDateTime(pipeline.lastRun)],
           ['Accuracy', pipeline.accuracy ? `${pipeline.accuracy}%` : '—'],
         ].map(([label, value]) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-md p-4">
+          <div key={label} className="bg-white border border-gray-200 rounded-md shadow-md p-4">
             <p className="text-xs text-gray-500 uppercase">{label}</p>
             <p className="text-sm font-medium text-gray-900 mt-1 truncate">{value}</p>
           </div>
         ))}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-md shadow-md overflow-hidden">
         <div className="px-4 py-3">
           <p className="text-xs text-gray-500 uppercase mb-3">Stages</p>
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-2">

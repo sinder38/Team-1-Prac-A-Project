@@ -7,8 +7,8 @@
  *  - buildHumanScoreMarkdown: the copy-as-Markdown export, incl. +/- total sign.
  */
 import { describe, it, expect } from 'vitest'
-import { aiSaidFor, buildHumanScoreMarkdown, humanScoreTotal } from '../src/lib/humanScore'
-import { exampleAgentOutputs } from '../src/lib/exampleData'
+import { aiSaidFor, buildHumanScoreMarkdown, buildHumanScoreReport, humanScoreTotal } from '../src/lib/humanScore'
+import { exampleAgentOutputs, exampleHumanScoreFormForWeek } from '../src/lib/exampleData'
 import { defaultReviewForm } from '../src/lib/defaults'
 
 describe('aiSaidFor', () => {
@@ -39,6 +39,35 @@ describe('humanScoreTotal', () => {
     expect(humanScoreTotal(defaultReviewForm)).toBe(0)
     expect(humanScoreTotal({})).toBe(0)
     expect(humanScoreTotal(undefined)).toBe(0)
+  })
+})
+
+describe('buildHumanScoreReport', () => {
+  it('bundles form, week context, and derived fields', () => {
+    const outputs = exampleAgentOutputs('2026-W24')
+    const form = exampleHumanScoreFormForWeek('2026-W24')
+    const report = buildHumanScoreReport(form, {
+      week: '2026-W24',
+      outputs,
+      predictionDate: '2026-06-08',
+    })
+    expect(report.week).toBe('2026-W24')
+    expect(report.predictionDate).toBe('2026-06-08')
+    expect(report.total).toBe(2)
+    expect(report.consensus).toBe(outputs.llmComparison.finalConsensus)
+    expect(report.aiSaid.almanac).toBe('Bearish')
+  })
+
+  it('returns null without a form', () => {
+    expect(buildHumanScoreReport(null, { week: '2026-W24', outputs: {} })).toBeNull()
+  })
+})
+
+describe('exampleHumanScoreFormForWeek', () => {
+  it('relabels W24 copy for other example weeks', () => {
+    const form = exampleHumanScoreFormForWeek('2026-W22')
+    expect(form.overrideParagraph).toContain('Week 22')
+    expect(form.overrideParagraph).not.toContain('Week 24')
   })
 })
 

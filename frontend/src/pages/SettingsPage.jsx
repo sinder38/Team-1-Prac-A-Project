@@ -7,7 +7,7 @@ import { Info, Database, GitBranch } from 'lucide-react'
 
 function Card({ icon: Icon, title, children }) {
   return (
-    <section className="bg-white border border-gray-200 rounded-md p-5">
+    <section className="bg-white border border-gray-200 rounded-md shadow-md p-5">
       <div className="flex items-center gap-2 mb-2">
         <Icon className="w-4 h-4 text-gray-500" />
         <p className="text-sm font-medium">{title}</p>

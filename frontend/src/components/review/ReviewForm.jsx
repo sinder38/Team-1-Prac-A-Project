@@ -7,7 +7,7 @@
  */
 import { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
-import { CheckCircle2, AlertCircle, Send, Copy, Check } from 'lucide-react'
+import { AlertCircle, Send, Copy, Check } from 'lucide-react'
 import { submitHumanScore, HUMAN_SCORE_DECISION } from '../../api'
 import { defaultReviewForm } from '../../lib/defaults'
 import {
@@ -53,8 +53,7 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
   async function submit() {
     try {
       await submitHumanScore(form, HUMAN_SCORE_DECISION.SUBMITTED)
-      onComplete?.()
-      setStatus('ok')
+      onComplete?.(form)
     } catch {
       setStatus('fail')
     }
@@ -76,7 +75,7 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
 
   return (
     <div className="max-w-3xl">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-md">
         {/* Report header */}
         <div className="px-6 py-5 border-b border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900">Human Score Report — {week}</h3>
@@ -220,11 +219,6 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
         </div>
       </div>
 
-      {status === 'ok' && (
-        <p className="mt-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-          <CheckCircle2 className="w-4 h-4" /> Report submitted — final stage complete.
-        </p>
-      )}
       {status === 'fail' && (
         <p className="mt-4 flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
           <AlertCircle className="w-4 h-4" /> Submission failed.

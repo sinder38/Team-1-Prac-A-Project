@@ -45,7 +45,7 @@ export function AgentCardPlaceholder({ id }) {
   const meta = AGENTS[id]
 
   return (
-    <div className="h-full flex flex-col rounded-xl border border-dashed border-gray-200 bg-gray-50/50 overflow-hidden">
+    <div className="h-full flex flex-col rounded-xl border border-dashed border-gray-200 bg-gray-50/50 shadow-md overflow-hidden">
       <div className={`px-4 py-3 border-b border-gray-100 ${HEADER_BG[id]}`}>
         <div className="flex items-center gap-2.5">
           <div className={`p-1.5 rounded-lg ${ICON_BG[id]}`}>
@@ -74,7 +74,7 @@ export default function AgentCard({ id, data, open, onToggle }) {
   if (!card) return null
 
   return (
-    <div className="h-full flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:border-gray-300 transition-colors">
+    <div className="h-full flex flex-col rounded-xl border border-gray-200 bg-white shadow-md overflow-hidden hover:border-gray-300 transition-colors">
       <div className={`px-4 py-3 border-b border-gray-100 ${HEADER_BG[id]}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">

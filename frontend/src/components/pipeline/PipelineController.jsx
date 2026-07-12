@@ -42,7 +42,7 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
   const statusTone = isRunning ? 'running' : allDone ? 'done' : 'idle'
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg mx-4 mt-4 px-4 py-4 md:px-6">
+    <div className="bg-white border border-gray-200 rounded-lg shadow-md mx-4 mt-4 px-4 py-4 md:px-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>

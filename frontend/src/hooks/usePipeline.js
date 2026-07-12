@@ -5,7 +5,7 @@
  *
  * TODO (backend task): connect calls in src/api/* when FastAPI is ready.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   getAgentOutputs,
   getAvailableWeeks,
@@ -13,16 +13,47 @@ import {
   runStage as apiRunStage,
 } from '../api'
 import { todayIso, dateToWeekLabel } from '../lib/date'
+import { buildHumanScoreReport } from '../lib/humanScore'
 import { emptyAgentOutputs } from '../lib/defaults'
 import {
   DEMO_FINAL_ACCURACY,
+  exampleHumanScoreFormForWeek,
   exampleIdlePipeline,
   exampleSavedWeekPipeline,
   exampleStages,
+  isExampleWeek,
 } from '../lib/exampleData'
 
 const TOTAL_STAGES = 5
 const AI_STAGES = 4 // stages 1-4 run automatically per click; stage 5 is the human report
+const HSR_STORAGE_KEY = 'humanScoreReports'
+
+function readStoredReports() {
+  try {
+    const raw = sessionStorage.getItem(HSR_STORAGE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeStoredReports(reports) {
+  try {
+    sessionStorage.setItem(HSR_STORAGE_KEY, JSON.stringify(reports))
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+function mergeSavedWeeks(apiWeeks, storedReports) {
+  const merged = [...(apiWeeks || [])]
+  for (const [week, report] of Object.entries(storedReports)) {
+    if (!merged.some(w => w.week === week)) {
+      merged.push({ week, predictionDate: report.predictionDate ?? todayIso() })
+    }
+  }
+  return merged.sort((a, b) => a.week.localeCompare(b.week))
+}
 
 function errorMessage(err, fallback) {
   return err?.message ? `${fallback}: ${err.message}` : fallback
@@ -44,6 +75,7 @@ export function usePipeline() {
   const [predictionDate, setPredictionDate] = useState(todayIso())
   const [selectedWeek, setSelectedWeek] = useState(null)
   const [savedWeeks, setSavedWeeks] = useState([])
+  const [humanScoreReports, setHumanScoreReports] = useState(readStoredReports)
   const [error, setError] = useState(null)
 
   const currentWeek = selectedWeek || dateToWeekLabel(predictionDate)
@@ -52,13 +84,25 @@ export function usePipeline() {
   const allDone = doneCount >= TOTAL_STAGES
   const aiComplete = doneCount >= AI_STAGES
 
+  const humanScoreReport = useMemo(() => {
+    if (!allDone) return null
+    if (humanScoreReports[currentWeek]) return humanScoreReports[currentWeek]
+    if (isExampleWeek(currentWeek)) {
+      return buildHumanScoreReport(exampleHumanScoreFormForWeek(currentWeek), {
+        week: currentWeek,
+        outputs,
+        predictionDate,
+      })
+    }
+    return null
+  }, [allDone, humanScoreReports, currentWeek, outputs, predictionDate])
+
   const clearError = useCallback(() => setError(null), [])
 
   const fetchWeeks = useCallback(async () => {
     try {
       const data = await getAvailableWeeks()
-      setSavedWeeks(data.weeks || [])
-      if (data.currentDate) setPredictionDate(data.currentDate)
+      setSavedWeeks(mergeSavedWeeks(data.weeks, readStoredReports()))
     } catch (err) {
       setError(errorMessage(err, 'Could not load saved weeks'))
     }
@@ -132,7 +176,9 @@ export function usePipeline() {
   }
 
   // Completing the human report marks the final stage done.
-  function completeReview() {
+  function completeReview(form) {
+    if (!form) return
+
     const stageLog = getStageLogs(AI_STAGES)
     setLogs(prev => [...prev, ...stageLog.start, ...stageLog.done])
     setPipeline(prev => ({
@@ -142,7 +188,24 @@ export function usePipeline() {
       stages: exampleStages(TOTAL_STAGES, -1),
       accuracy: DEMO_FINAL_ACCURACY,
       lastRun: new Date().toISOString(),
+      week: currentWeek,
+      predictionDate,
     }))
+    setSelectedWeek(currentWeek)
+    setHumanScoreReports(prev => {
+      const next = {
+        ...prev,
+        [currentWeek]: buildHumanScoreReport(form, { week: currentWeek, outputs, predictionDate }),
+      }
+      writeStoredReports(next)
+      return next
+    })
+    // ponytail: demo has no backend yet — keep the finished week in the dropdown for this session
+    setSavedWeeks(prev =>
+      prev.some(w => w.week === currentWeek)
+        ? prev
+        : [...prev, { week: currentWeek, predictionDate }].sort((a, b) => a.week.localeCompare(b.week)),
+    )
   }
 
   function onDateChange(date) {
@@ -179,6 +242,7 @@ export function usePipeline() {
     predictionDate,
     selectedWeek: currentWeek,
     savedWeeks,
+    humanScoreReport,
     doneCount,
     isRunning,
     allDone,

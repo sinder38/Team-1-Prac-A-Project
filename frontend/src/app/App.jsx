@@ -46,6 +46,7 @@ export default function App() {
         onNavigate={setPage}
         onCompleteReview={pipeline.completeReview}
         weekPicker={weekPicker}
+        humanScoreReport={pipeline.humanScoreReport}
       />
     ),
     charts: <ChartsPage />,
@@ -63,9 +64,11 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900">
-      <LeftNavigation active={page} onChange={setPage} />
+      <aside className="shrink-0 self-stretch flex items-start px-3 pt-4">
+        <LeftNavigation active={page} onChange={setPage} />
+      </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 px-4 pt-4">
         <TopHeader page={page} />
         {pages[page] || pages.dashboard}
       </div>

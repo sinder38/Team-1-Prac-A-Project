@@ -167,6 +167,50 @@ export function exampleStages(doneCount, runningIndex = -1) {
 /** Demo accuracy shown once a run completes. */
 export const DEMO_FINAL_ACCURACY = 82
 
+/** Example submitted human score (from data/human/human_score_W24.md). */
+export const EXAMPLE_HUMAN_SCORE_FORM = {
+  scores: { macro: 1, technical: 0, almanac: -1, aiAgreement: 1, wildCard: 1 },
+  reasoning: {
+    macro: 'Macro conditions improved meaningfully this week. Treasury yields edged lower, oil fell 6.25%, and the dollar weakened slightly.',
+    technical: 'SPX reclaimed ground above its 21 EMA but remains below the 7,544 ATH with no clean breakout.',
+    almanac: 'June remains the historically weakest month of the midterm cycle. The bounce this week does not override the seasonal bias.',
+    aiAgreement: 'All four models independently returned an Uncertain or Neutral regime with Medium confidence.',
+    wildCard: 'The simultaneous drop in oil (-6.25%), yields, and DXY represents a triple-loosening that none of the agents fully captured.',
+  },
+  humanCall: 'Neutral-Bullish',
+  confidence: 'Medium',
+  overrideParagraph:
+    'All four AI models returned an Uncertain or Neutral regime for Week 24. Our team agrees but leans cautiously positive given the triple-loosening in oil, yields, and the dollar.',
+  wildCardInsight:
+    'The simultaneous easing of oil prices, Treasury yields, and the US dollar reverses last week\'s triple-tightening. Chip sector momentum was unusually strong.',
+  invalidation:
+    'A hawkish Fed surprise on June 18 that drives yields higher and pushes SPX below 7,017 would invalidate the Neutral-Bullish outlook.',
+  evidence: { almanac: true, macro: true, technical: true, llm: true },
+}
+
+export function isExampleWeek(week) {
+  return EXAMPLE_WEEKS.some(w => w.week === week)
+}
+
+/** Demo HSR with week labels adjusted (base content is W24). */
+export function exampleHumanScoreFormForWeek(week) {
+  const wNum = week.split('-W')[1]?.replace(/^0+/, '') || week
+  const tweak = text =>
+    String(text)
+      .replace(/\bWeek 24\b/g, `Week ${wNum}`)
+      .replace(/\bW24\b/g, week)
+
+  return {
+    ...EXAMPLE_HUMAN_SCORE_FORM,
+    reasoning: Object.fromEntries(
+      Object.entries(EXAMPLE_HUMAN_SCORE_FORM.reasoning).map(([k, v]) => [k, tweak(v)]),
+    ),
+    overrideParagraph: tweak(EXAMPLE_HUMAN_SCORE_FORM.overrideParagraph),
+    wildCardInsight: tweak(EXAMPLE_HUMAN_SCORE_FORM.wildCardInsight),
+    invalidation: tweak(EXAMPLE_HUMAN_SCORE_FORM.invalidation),
+  }
+}
+
 /** Fresh pipeline with nothing run yet — the human runs stages one at a time. */
 export function exampleIdlePipeline(week = EXAMPLE_CURRENT_WEEK, date = EXAMPLE_CURRENT_DATE) {
   return {

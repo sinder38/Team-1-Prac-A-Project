@@ -29,6 +29,11 @@ function signed(score) {
   return n > 0 ? `+${n}` : `${n}`
 }
 
+/** Format a team score with an explicit plus sign for positives. */
+export function formatSignedScore(score) {
+  return signed(score)
+}
+
 /** Render a submitted report as Markdown (used by the "Copy as Markdown" action). */
 export function buildHumanScoreMarkdown(form, ctx) {
   const { week = '—', consensus = '—', aiSaid = {}, total = 0 } = ctx || {}
@@ -60,4 +65,12 @@ export function buildHumanScoreMarkdown(form, ctx) {
 /** Sum of the five team dimension scores. */
 export function humanScoreTotal(form) {
   return HUMAN_DIMENSIONS.reduce((sum, d) => sum + (Number(form?.scores?.[d.key]) || 0), 0)
+}
+
+/** Bundle form + context for display and export. */
+export function buildHumanScoreReport(form, { week, outputs, predictionDate }) {
+  if (!form) return null
+  const aiSaid = aiSaidFor(outputs)
+  const consensus = outputs?.llmComparison?.finalConsensus || 'Pending — run the pipeline'
+  return { form, week, predictionDate, consensus, aiSaid, total: humanScoreTotal(form) }
 }

@@ -56,7 +56,7 @@ export default function CalibrationPage({ pipeline }) {
       <ErrorBanner message={error} onRetry={load} onDismiss={() => setError(null)} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 bg-white border border-gray-200 rounded-md p-5">
+        <div className="md:col-span-2 bg-white border border-gray-200 rounded-md shadow-md p-5">
           <div className="flex justify-between mb-4">
             <div>
               <p className="text-xs text-gray-500 uppercase">Overall Accuracy</p>
@@ -84,7 +84,7 @@ export default function CalibrationPage({ pipeline }) {
           </p>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-md p-5">
+        <div className="bg-white border border-gray-200 rounded-md shadow-md p-5">
           <p className="text-xs text-gray-500 uppercase mb-3">Latest Run</p>
           <p className="text-3xl font-semibold">
             {pipeline.accuracy ? `${pipeline.accuracy}%` : '—'}
@@ -98,7 +98,7 @@ export default function CalibrationPage({ pipeline }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-200 rounded-md p-5">
+        <div className="bg-white border border-gray-200 rounded-md shadow-md p-5">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-4 h-4 text-gray-500" />
             <p className="text-sm font-medium">Weekly Trend</p>
@@ -128,7 +128,7 @@ export default function CalibrationPage({ pipeline }) {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-md p-5">
+        <div className="bg-white border border-gray-200 rounded-md shadow-md p-5">
           <p className="text-sm font-medium mb-4">Per Agent</p>
           <div className="space-y-4">
             {Object.entries(agentAccuracies).map(([id, pct]) => (

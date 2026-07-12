@@ -5,6 +5,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Opera GX / forced-dark browsers still use light form controls */
+:root {
+  color-scheme: light;
+}
+
+@layer base {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    @apply bg-white text-gray-900;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

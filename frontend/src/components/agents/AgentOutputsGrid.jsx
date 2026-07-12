@@ -13,14 +13,14 @@ export default function AgentOutputsGrid({ outputs = {} }) {
   const hasAny = AGENT_IDS.some(id => outputs[id])
 
   return (
-    <div className="px-4 pb-6 space-y-4">
+    <div className="px-4 pb-6 pt-6 space-y-4">
       <div>
         <h3 className="text-sm font-medium text-gray-900">Agent Signals</h3>
         <p className="text-xs text-gray-500 mt-0.5">Latest outputs from each agent</p>
       </div>
 
       {!hasAny ? (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-10 text-center">
+        <div className="rounded-xl border border-dashed border-gray-200 bg-white shadow-md px-4 py-10 text-center">
           <p className="text-sm text-gray-500">No agent outputs for this week</p>
           <p className="text-xs text-gray-400 mt-1">Run the pipeline or select another week</p>
         </div>

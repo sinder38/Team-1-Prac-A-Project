@@ -22,7 +22,7 @@ function formatNumber(value, decimals) {
 
 function StatBox({ label, value }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-md px-3 py-2">
+    <div className="bg-white border border-gray-200 rounded-md shadow-md px-3 py-2">
       <p className="text-[11px] uppercase tracking-wide text-gray-400">{label}</p>
       <p className="text-sm font-semibold text-gray-900 mt-0.5">{value}</p>
     </div>
@@ -88,7 +88,7 @@ export default function ChartsPage() {
 
       <ErrorBanner message={error} onRetry={() => setReloadKey(k => k + 1)} onDismiss={() => setError(null)} />
 
-      <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-5">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-md p-4 md:p-5">
         {data?.stats && (
           <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
             <div>
