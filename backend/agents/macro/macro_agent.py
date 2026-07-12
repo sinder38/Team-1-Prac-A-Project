@@ -13,6 +13,8 @@ from dataclasses import asdict
 from io import StringIO
 from pathlib import Path
 import requests
+import pandas as pd
+import yfinance as yf
 from dotenv import load_dotenv
 
 from agents.macro.macro_event_data import Event
@@ -164,9 +166,6 @@ class MacroAgent(BaseAgent):
     def get_weekly_return(self, ticker: str) -> float:
         """Get weekly return for a single ticker (last close vs 5 trading days ago)."""
         try:
-            import pandas as pd
-            import yfinance as yf
-
             raw = yf.download(ticker, period="1mo", interval="1d", auto_adjust=True)
             if raw is None or raw.empty:
                 return 0.0
