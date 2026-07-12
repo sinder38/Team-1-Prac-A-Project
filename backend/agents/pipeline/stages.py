@@ -80,6 +80,8 @@ def run_evidence(
     chart_provider=None,
 ) -> None:
     from agents.evidence.evidence_agent import EvidenceAgent
+    from agents.io import week_stem
+    from agents.schemas import EvidenceOutput
 
     agent = EvidenceAgent(
         data_root=data_root,
@@ -87,7 +89,15 @@ def run_evidence(
         yield_data_provider=yield_data_provider,
         chart_provider=chart_provider,
     )
-    output = agent.run(ctx.prediction_date)
+
+    snapshot = agent.fetch_snapshot(ctx.prediction_date)
+    output = EvidenceOutput(
+        prediction_date=ctx.prediction_date,
+        week=week_stem(ctx.prediction_date),
+        content=agent.render_report(snapshot),
+    )
+    agent.generate_evidence_charts(snapshot)
+
     ctx.evidence = output
     _save_artifacts(agent, output, ctx.prediction_date, config)
 

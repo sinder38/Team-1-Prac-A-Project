@@ -112,6 +112,23 @@ def test_run_evidence_does_not_require_manual_actuals_file(tmp_path):
     assert ctx.evidence is not None
     assert "10-year Treasury yield from FRED series DGS10" in ctx.evidence.content
 
+def test_run_evidence_creates_chart_png_files(tmp_path):
+    ctx = PipelineContext(prediction_date=date(2026, 6, 16))
+    config = {"artifacts": {"save_json": False, "save_md": False}}
+    run_evidence(
+        ctx,
+        config,
+        data_root=tmp_path,
+        market_data_provider=_FakeEvidenceMarketDataProvider(),
+        yield_data_provider=_FakeEvidenceYieldDataProvider(),
+    )
+    evidence_dir = tmp_path / "evidence"
+    performance_path = evidence_dir / "finviz_1W_2026_W25.png"
+    sector_path = evidence_dir / "finviz_sectors_5D_2026_W25.png"
+    assert performance_path.exists()
+    assert sector_path.exists()
+    assert performance_path.read_bytes().startswith(b"\x89PNG")
+    assert sector_path.read_bytes().startswith(b"\x89PNG")
 
 def test_run_almanac_populates_context():
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
