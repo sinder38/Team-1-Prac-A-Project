@@ -117,6 +117,39 @@ class BaseLLMAgent(BaseAgent):
                 raise ValueError(f"Missing required field '{key}' in the LLM response.")
             return value
 
+        def parse_regime(field: str) -> Regime:
+            val = require(field)
+            try:
+                return Regime(val.title())
+            except ValueError:
+                # Models sometimes emit synonyms ("Sideways", "Choppy", ...) or
+                # extra words. Map the common ones, else default to Uncertain
+                # instead of crashing the whole pipeline on one stray token.
+                lowered = val.lower()
+                if "bull" in lowered:
+                    return Regime.BULLISH
+                if "bear" in lowered:
+                    return Regime.BEARISH
+                if "mixed" in lowered or "range" in lowered or "choppy" in lowered:
+                    return Regime.MIXED
+                if "neutral" in lowered or "flat" in lowered or "side" in lowered:
+                    return Regime.NEUTRAL
+                return Regime.UNCERTAIN
+
+        def parse_confidence(field: str) -> Confidence:
+            val = require(field)
+            try:
+                return Confidence(val.title())
+            except ValueError:
+                lowered = val.lower()
+                if "low" in lowered and "med" in lowered:
+                    return Confidence.LOW_MEDIUM
+                if "high" in lowered:
+                    return Confidence.HIGH
+                if "low" in lowered:
+                    return Confidence.LOW
+                return Confidence.MEDIUM
+
         def parse_range(field: str) -> PredictedRange:
             val = require(field)
             # Pull the first two signed decimals from whatever the model wrote, tolerating
@@ -132,8 +165,8 @@ class BaseLLMAgent(BaseAgent):
         return LLMOutput(
             model_name=self.model_name,
             prediction_date=prediction_date,
-            weekly_regime=Regime(require("WEEKLY_REGIME")),
-            confidence=Confidence(require("CONFIDENCE")),
+            weekly_regime=parse_regime("WEEKLY_REGIME"),
+            confidence=parse_confidence("CONFIDENCE"),
             spx_range=parse_range("SPX_RANGE"),
             ndx_range=parse_range("NDX_RANGE"),
             iwm_range=parse_range("IWM_RANGE"),

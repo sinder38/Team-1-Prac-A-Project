@@ -34,6 +34,10 @@ LLM_REGISTRY: dict[str, Callable[[], BaseLLMAgent]] = {
         "OpenAI gpt-oss-120b",
         "openai/gpt-oss-120b:free",
     ),
+    "hy3": lambda: _make_openrouter(
+        "Tencent Hy3",
+        "tencent/hy3:free",
+    ),
     "gemma": lambda: _make_openrouter(
         "Google Gemma 4 31B",
         "google/gemma-4-31b-it:free",

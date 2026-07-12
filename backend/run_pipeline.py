@@ -74,6 +74,7 @@ def main() -> None:
         print(f"[pipeline] {name} done.")
 
     rows_by_slug: dict[str, dict] = {}
+
     for model_key in models:
         if model_key not in LLM_REGISTRY:
             print(f"[pipeline] ERROR: unknown LLM model '{model_key}'", file=sys.stderr)
@@ -82,10 +83,10 @@ def main() -> None:
         try:
             slug, row = run_llm(ctx, config, model_key)
             rows_by_slug[slug] = row
+            print(f"[pipeline] llm:{model_key} done.")
         except Exception as e:
             print(f"[pipeline] ERROR in llm:{model_key}: {e}", file=sys.stderr)
             sys.exit(1)
-        print(f"[pipeline] llm:{model_key} done.")
 
     # Write comparison table if any LLMs ran
     if rows_by_slug and config.get("artifacts", {}).get("save_md", True):

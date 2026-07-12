@@ -30,6 +30,7 @@ class Regime(str, Enum):
     BEARISH = "Bearish"
     NEUTRAL = "Neutral"
     UNCERTAIN = "Uncertain"
+    MIXED = "Mixed"
 
 
 @dataclass
