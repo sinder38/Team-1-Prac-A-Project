@@ -33,16 +33,16 @@ Team Roles
 
 The team agreed to continue using the Sprint 6 role structure.
 
-R1 – Product Owner: Define the Sprint Goal, manage the Product Backlog, and prioritise sprint work.
-R2 – Scrum Master: Facilitate Scrum events, monitor progress, maintain the Scrum board, and remove blockers.
-R3 – Almanac Agent: Produce historical market analysis.
-R4 – Macro Agent: Produce macroeconomic analysis.
-R5 – Technical Agent: Produce technical market analysis.
-R6 – Data Collector: Collect and prepare project data.
-R7 – Human Score Lead: Review AI outputs and produce the final human judgement.
-R8 – LLM Operator: Run multiple AI models and prepare the AI synthesis.
-R9 – GitHub Lead: Manage Pull Requests, repository integration, and release readiness.
-R10 – Calibration Lead: Validate prediction accuracy and maintain calibration results.
+R1 – Product Owner: 
+R2 – Scrum Master: 
+R3 – Almanac Agent: 
+R4 – Macro Agent: 
+R5 – Technical Agent: 
+R6 – Data Collector: 
+R7 – Human Score Lead: 
+R8 – LLM Operator: 
+R9 – GitHub Lead: 
+R10 – Calibration Lead: 
 
 
 
@@ -71,7 +71,6 @@ For Sprint 6, the team agreed to:
 - Support teammates whenever needed.
 - Complete important tasks earlier in the sprint where possible.
 - Follow the Sprint Goal and Definition of Done throughout the sprint.
-
 
 
 Expected Sprint Outcome
