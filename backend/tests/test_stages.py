@@ -2,18 +2,33 @@ from datetime import date
 
 import pandas as pd
 
-from agents.pipeline.context import PipelineContext
 from agents.llm.base_llm import BaseLLMAgent
-from agents.schemas import (
-    AlmanacOutput, Bias, Confidence,
-    EvidenceOutput,
+from agents.pipeline.config import (
+    ArtifactsConfig,
+    LLMConfig,
+    LLMModelEntry,
+    PipelineConfig,
+    PipelineSection,
+    StagesConfig,
 )
+from agents.pipeline.context import PipelineContext
+from agents.schemas import AlmanacOutput, Bias, Confidence, EvidenceOutput
+
+
+def _no_artifacts_config() -> PipelineConfig:
+    return PipelineConfig(
+        pipeline=PipelineSection(prediction_date="2026-06-16"),
+        stages=StagesConfig(),
+        llm=LLMConfig(models=[LLMModelEntry(id="openai/gpt-oss-120b:free")], max_retries=3),
+        artifacts=ArtifactsConfig(save_json=False, save_md=False),
+    )
 
 
 class _StubLLM(BaseLLMAgent):
     model_name = "stub"
+
     def query(self, prompt: str) -> str:
-        return prompt  # echo back so we can inspect
+        return prompt
 
 
 def test_build_prompt_uses_context():
@@ -43,13 +58,12 @@ def test_build_prompt_uses_context():
 
 def test_build_prompt_skips_none_agents():
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
-    # No agents set — context is empty
     agent = _StubLLM()
     prompt = agent.build_prompt(date(2026, 6, 16), ctx)
     assert "No agent data available" in prompt
 
 
-from agents.pipeline.stages import run_evidence, run_almanac, LLM_REGISTRY
+from agents.pipeline.stages import run_evidence, run_almanac
 
 
 class _FakeEvidenceMarketDataProvider:
@@ -85,10 +99,9 @@ class _FakeEvidenceYieldDataProvider:
 
 def test_run_evidence_populates_context(tmp_path):
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
-    config = {"artifacts": {"save_json": False, "save_md": False}}
     run_evidence(
         ctx,
-        config,
+        _no_artifacts_config(),
         data_root=tmp_path,
         market_data_provider=_FakeEvidenceMarketDataProvider(),
         yield_data_provider=_FakeEvidenceYieldDataProvider(),
@@ -101,10 +114,9 @@ def test_run_evidence_populates_context(tmp_path):
 
 def test_run_evidence_does_not_require_manual_actuals_file(tmp_path):
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
-    config = {"artifacts": {"save_json": False, "save_md": False}}
     run_evidence(
         ctx,
-        config,
+        _no_artifacts_config(),
         data_root=tmp_path,
         market_data_provider=_FakeEvidenceMarketDataProvider(),
         yield_data_provider=_FakeEvidenceYieldDataProvider(),
@@ -112,14 +124,28 @@ def test_run_evidence_does_not_require_manual_actuals_file(tmp_path):
     assert ctx.evidence is not None
     assert "10-year Treasury yield from FRED series DGS10" in ctx.evidence.content
 
+def test_run_evidence_creates_chart_png_files(tmp_path):
+    ctx = PipelineContext(prediction_date=date(2026, 6, 16))
+    run_evidence(
+        ctx,
+        _no_artifacts_config(),
+        data_root=tmp_path,
+        market_data_provider=_FakeEvidenceMarketDataProvider(),
+        yield_data_provider=_FakeEvidenceYieldDataProvider(),
+    )
+    evidence_dir = tmp_path / "evidence"
+    performance_path = evidence_dir / "finviz_1W_2026_W25.png"
+    sector_path = evidence_dir / "finviz_sectors_5D_2026_W25.png"
+    assert performance_path.exists()
+    assert sector_path.exists()
+    assert performance_path.read_bytes().startswith(b"\x89PNG")
+    assert sector_path.read_bytes().startswith(b"\x89PNG")
+
 
 def test_run_almanac_populates_context():
+    from agents.pipeline.stages import run_almanac
+
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
-    config = {"artifacts": {"save_json": False, "save_md": False}}
-    run_almanac(ctx, config)
+    run_almanac(ctx, _no_artifacts_config())
     assert ctx.almanac is not None
     assert ctx.almanac.agent_type == "almanac"
-
-
-def test_llm_registry_contains_example():
-    assert "example" in LLM_REGISTRY
