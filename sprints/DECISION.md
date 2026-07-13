@@ -31,16 +31,11 @@ Team Roles
 
 The team agreed to continue using the Sprint 6 role structure.
 
-R1 – Product Owner: Georgii(Main), Henery(Support)
-R2 – Scrum Master: Whitley(Main), Sharry(Support)
-R3 – Almanac Agent: Zaw Latt Naung
-R4 – Macro Agent: Nai Phone Pyae
-R5 – Technical Agent: Oakkor
-R6 – Data Collector: Sai Ko
-R7 – Human Score Lead:Aeron 
-R8 – LLM Operator: Minghao
-R9 – GitHub Lead: Georgii
-R10 – Calibration Lead: Jason
+Product Owner: Georgii(Main), Henery(Support)
+Scrum Master: Whitley(Main), Shary(Support)
+Human score : Aeron
+GitHub & Code Lead 
+Members: Georgii, Oakkor, Sai Ko, Minghao , Jason, Naing Phone Pyae, Zaw Latt Naung
 
 
 
