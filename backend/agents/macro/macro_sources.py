@@ -283,7 +283,7 @@ class TradingEconomicsCalendar:
 
     @staticmethod
     def _impact(priority: int, source_impact: str) -> str:
-        if priority >= 78 or (source_impact.upper() == "HIGH" and priority >= 72):
+        if priority >= 78 or (source_impact.upper() == "HIGH"):
             return "HIGH"
         if priority >= 58 or source_impact.upper() in {"HIGH", "MEDIUM"}:
             return "MEDIUM"

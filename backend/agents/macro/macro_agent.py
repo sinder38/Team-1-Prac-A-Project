@@ -154,9 +154,6 @@ class MacroAgent(BaseAgent):
     def latest_price(self, ticker: str) -> float | None:
         """Get latest closing price for a ticker."""
         try:
-            import pandas as pd
-            import yfinance as yf
-
             price = yf.Ticker(ticker).history(period="5d")["Close"].iloc[-1]
             return float(price) if pd.notna(price) else None
         except Exception as e:
@@ -326,11 +323,6 @@ class MacroAgent(BaseAgent):
             elif impact == "MEDIUM":
                 score += 1
 
-            if event.priority >= 85:
-                score += 2
-            elif event.priority >= 78:
-                score += 1
-
         return score
 
     def is_exceptional_event_week(self, events: list[Event]) -> bool:
@@ -341,14 +333,6 @@ class MacroAgent(BaseAgent):
         high_impact_events = [event for event in events if event.impact.upper() == "HIGH"]
         if len(high_impact_events) < 4:
             return False
-
-        top_priority = max(event.priority for event in events)
-        average_priority = sum(event.priority for event in events) / len(events)
-        return (
-            top_priority >= 85
-            and average_priority >= 80
-            and self.calculate_event_risk(events) >= 16
-        )
 
     def fetch_macro_data(self, prediction_date: date) -> MacroOutput:
         """
