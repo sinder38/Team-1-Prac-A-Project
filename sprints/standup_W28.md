@@ -98,3 +98,9 @@ Final calibration still depends on the final prediction files and actual market 
 
 ***
 The remaining roles are not included because their contributors did not provide a progress update for this sprint.
+The following team members did not provide any progress updates or completed work during this sprint:
+
+- Aeron
+- Henry
+- Zaw Latt Naung
+- Saiko
