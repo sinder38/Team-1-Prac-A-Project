@@ -4,11 +4,23 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from io import StringIO
-from typing import Final, cast
+from typing import Final, Protocol, cast
 
 import pandas as pd
 import requests
 import yfinance as yf
+
+
+class EvidenceMarketDataProvider(Protocol):
+    def history(self, ticker: str, start: date, end: date) -> pd.Series:
+        """Return daily close prices from start through end, inclusive."""
+        ...
+
+
+class YieldDataProvider(Protocol):
+    def history(self, series_id: str, start: date, end: date) -> pd.Series:
+        """Return daily yield values from start through end, inclusive."""
+        ...
 
 
 class YahooFinanceEvidenceProvider:

@@ -10,6 +10,7 @@ dependencies = [
     "openai>=2.41.1",
     "python-dotenv>=1.2.2",
     "playwright>=1.60.0",
+    "matplotlib>=3.8",
 ]
 
 [tool.uv]

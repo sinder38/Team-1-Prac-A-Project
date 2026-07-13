@@ -63,6 +63,7 @@ class EvidenceSnapshot:
     vix: MarketMove
     bitcoin: MarketMove
     sectors: list[SectorMove]
+    performance_chart: list[tuple[str, float | None]]
     technical_chart_links: list[tuple[str, str]]
 
 
@@ -108,4 +109,21 @@ SECTOR_SPECS: Final[list[SectorSpec]] = [
         "XLC",
         "telecom, media, and internet platforms",
     ),
+]
+
+PERFORMANCE_CHART_SPECS: Final[list[tuple[str, str]]] = [
+    ("S&P 500", "^GSPC"),
+    ("Nasdaq 100", "^NDX"),
+    ("Dow Jones", "^DJI"),
+    ("Russell 2000", "IWM"),
+    ("Crude Oil", "CL=F"),
+    ("Natural Gas", "NG=F"),
+    ("Gold", "GC=F"),
+    ("Silver", "SI=F"),
+    ("Copper", "HG=F"),
+    ("US 10Y Bond", "ZN=F"),
+    ("Long Bonds (TLT)", "TLT"),
+    ("EUR/USD", "EURUSD=X"),
+    ("Bitcoin", "BTC-USD"),
+    ("VIX", "^VIX"),
 ]
