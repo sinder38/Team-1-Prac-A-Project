@@ -1,4 +1,24 @@
-R1 - Product Owner, R9 - Github lead
+Scrum Master
+
+Contributors: Whitley, Shary
+
+Completed
+Collected progress updates from team members throughout the sprint.
+Updated the Daily Standup notes and Sprint Progress records.
+Worked on the Sprint Review, Retrospective, and other Scrum documents.
+Updated the FigJam Scrum board, including Sprint Planning, Sprint Goal, team roles, and Definition of Done.
+Followed up with team members to gather missing updates and keep track of the team's progress.
+Working on Next
+Complete the remaining Scrum documentation.
+Continue updating the Scrum board as the sprint progresses.
+Prepare the Sprint Review and make sure all Scrum artifacts are ready before submission.
+Blockers
+Some updates were shared later than expected, so it took longer to complete the Scrum documents.
+Not all discussions happened in the group chat, making it harder to keep track of everyone's progress.
+Some Scrum documents depended on information from other team members before they could be finalised.
+
+
+GitHub & Code Lead
 
 Contributors: Georgii
 
@@ -22,28 +42,6 @@ Everyone should take ownership of their assigned responsibilities and share regu
 Earlier communication and more balanced participation would help the team work more efficiently.
 
 
-R2 – Scrum Master
-
-Contributors: Whitley, Shary
-
-Completed
-Collected progress updates from team members throughout the sprint.
-Updated the Daily Standup notes and Sprint Progress records.
-Worked on the Sprint Review, Retrospective, and other Scrum documents.
-Updated the FigJam Scrum board, including Sprint Planning, Sprint Goal, team roles, and Definition of Done.
-Followed up with team members to gather missing updates and keep track of the team's progress.
-Working on Next
-Complete the remaining Scrum documentation.
-Continue updating the Scrum board as the sprint progresses.
-Prepare the Sprint Review and make sure all Scrum artifacts are ready before submission.
-Blockers
-Some updates were shared later than expected, so it took longer to complete the Scrum documents.
-Not all discussions happened in the group chat, making it harder to keep track of everyone's progress.
-Some Scrum documents depended on information from other team members before they could be finalised.
-
-
-R4 – Macro Agent
-
 Contributor: Naing Phone Pyae
 
 Completed
@@ -58,7 +56,6 @@ Some of the original websites required payment, so alternative free sources had 
 Some information had to be collected by scraping HTML and converting it into the required format.
 
 
-R5 – Technical Agent
 
 Contributor: Oakkar
 
@@ -77,7 +74,6 @@ Is there anything we can improve as a team?
 Talk more and contribute more.
 
 
-R10 – Calibration Lead
 
 Contributor: JasonEran
 
@@ -104,3 +100,4 @@ The following team members did not provide any progress updates or completed wor
 - Henry
 - Zaw Latt Naung
 - Saiko
+- Minghao
