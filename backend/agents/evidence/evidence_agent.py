@@ -98,6 +98,7 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
             evidence_dir / sector_filename,
         )
 
+
     def fetch_snapshot(self, prediction_date: date) -> EvidenceSnapshot:
         week_start, week_end = self._week_bounds(prediction_date)
         fetch_start = week_start - timedelta(days=10)

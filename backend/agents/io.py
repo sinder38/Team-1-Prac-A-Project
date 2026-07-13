@@ -14,6 +14,7 @@ class FileSaver:
         self.out_dir = out_dir
 
     def save(self, content: str, filename: str) -> Path:
+        # TODO: Stop using raw save() method all the time and move to using obstructions
         self.out_dir.mkdir(parents=True, exist_ok=True)
         path = self.out_dir / filename
         path.write_text(content, encoding="utf-8")

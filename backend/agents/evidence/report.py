@@ -22,7 +22,7 @@ class EvidenceReportRenderer:
 
         return f"""# Week {project_week:02d} Market Report ({snapshot.week_end.year})
 
-**Week ended:** {self._format_full_date(snapshot.week_end)}  
+**Week ended:** {self._format_full_date(snapshot.week_end)}
 **Days the market was open:** {snapshot.open_days}
 
 This file lists how the main markets moved last week. **Closing value** = price at the end of Friday. **Weekly change** = up or down for the whole week.
