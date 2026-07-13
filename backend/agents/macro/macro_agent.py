@@ -334,6 +334,14 @@ class MacroAgent(BaseAgent):
         if len(high_impact_events) < 4:
             return False
 
+        top_priority = max(event.priority for event in events)
+        average_priority = sum(event.priority for event in events) / len(events)
+        return (
+            top_priority >= 85
+            and average_priority >= 80
+            and self.calculate_event_risk(events) >= 16
+        )
+
     def fetch_macro_data(self, prediction_date: date) -> MacroOutput:
         """
         Fetch Fed rate, Treasury yields, DXY, WTI, and Gold with weekly changes.
