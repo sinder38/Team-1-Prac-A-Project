@@ -1,0 +1,17 @@
+# LLM Agent Output — Poolside Laguna M.1 — Week of 2026-07-10
+
+1. Weekly Regime: Mixed
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - SPX and NDX closed near resistance levels with bullish technical bias, supported by technology sector strength and easing fear (VIX down 5.39%)
+   - IWM underperformed with neutral technical bias, reflecting small-cap sensitivity to rates amid rising 10-year yield (4.56%)
+   - Energy sector led (+2.87%) while materials lagged (-1.93%), aligning with oil price surge (+4.18%) and seasonal commodity headwinds
+4. Key Contradictions:
+   - Technical shows bullish bias for SPX/NDX but both indices are already at/near resistance with minimal upside room
+   - Almanac indicates bearish seasonal bias for energy (XLE) yet energy was the strongest performing sector this week
+5. Invalidation Conditions: A materially dovish Fed surprise with rate cut expectations would reverse the cautious stance and broadly support risk assets
+6. Predicted % move — SPX: -4.14% to 0.08%
+   Predicted % move — NDX: -4.26% to 2.76%
+   Predicted % move — IWM: -4.21% to 2.27%
+7. Plain-English brief: Major indices face technical resistance with mixed signals - bullish momentum but limited upside room. Small caps lag due to rate sensitivity. Energy outperforms despite seasonal headwinds. Fed policy remains key catalyst.
+8. Disclaimer: This is not financial advice.

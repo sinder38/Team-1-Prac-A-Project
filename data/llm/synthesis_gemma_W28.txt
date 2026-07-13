@@ -1,0 +1,17 @@
+# LLM Agent Output — Google Gemma 4 31B — Week of 2026-07-10
+
+1. Weekly Regime: Bullish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - SPX and NDX are both in bullish trends with prices above their 8 and 21 EMAs, and NDX is supported by a seasonal LONG window for technology.
+   - Market sentiment is improving as the VIX fell 5.39% and Bitcoin rose 1.94%, indicating a decrease in trader fear.
+   - Strong sector performance in Technology (+2.83%) and Communication (+1.83%) provides momentum for the large-cap indexes.
+4. Key Contradictions:
+   - Macro bias is "Binary-risk" due to the Fed's hawkish shift and rising 10-year yields (4.56%), which typically pressures valuations.
+   - IWM is in a neutral trend and showed weakness last week (-0.57%), contrasting with the bullishness of the larger indexes.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower would reverse the current cautious macro stance.
+6. Predicted % move — SPX: -0.5% to 1.2%
+   Predicted % move — NDX: -0.2% to 2.0%
+   Predicted % move — IWM: -1.5% to 0.5%
+7. Plain-English brief: The market is generally trending upward, led by big tech and a drop in fear. While the S&P 500 and Nasdaq look strong, small caps are struggling. The main risk is the Fed's interest rate stance, but seasonal strength in tech should keep the major indexes positive.
+8. Disclaimer: This is not financial advice.
