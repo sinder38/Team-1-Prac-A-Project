@@ -20,11 +20,16 @@
 
 ## Contributors with No Reported Progress
 
+The following team members did not contribute any completed work during this sprint:
+
 - Aeron
 - Henry
-- Zaw Latt Naung
 - Saiko
-- Minghao
+
+### Minor Contributions
+
+- Minghao helped investigate the OpenRouter API issue and suggested alternative models.
+- Zaw Latt attempted to update the testing work, but the requested changes were not completed during this sprint.
 
 ## What we learned
 
