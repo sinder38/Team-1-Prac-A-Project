@@ -98,6 +98,8 @@ The following team members did not provide any progress updates or completed wor
 
 - Aeron
 - Henry
-- Zaw Latt Naung
 - Saiko
-- Minghao
+
+Notes:
+- Minghao provided minor support by helping investigate the OpenRouter API issue.
+- Zaw Latt Naung attempted to update the testing work, but it did not meet the requested requirements.
