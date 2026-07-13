@@ -124,7 +124,6 @@ def test_run_evidence_does_not_require_manual_actuals_file(tmp_path):
     assert ctx.evidence is not None
     assert "10-year Treasury yield from FRED series DGS10" in ctx.evidence.content
 
-
 def test_run_evidence_creates_chart_png_files(tmp_path):
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
     run_evidence(

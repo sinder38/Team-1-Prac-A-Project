@@ -41,6 +41,7 @@ evidence = true
 models = [
     {id = "nvidia/nemotron-3-super-120b-a12b:free"},
 ]
+max_retries = 3
 
 [artifacts]
 save_json = false
@@ -109,6 +110,7 @@ macro = false
 evidence = false
 [llm]
 models = [{id = "openai/gpt-oss-120b:free"}]
+max_retries = 3
 """)
     config = load_config(toml)
     assert config.artifacts.save_json is True

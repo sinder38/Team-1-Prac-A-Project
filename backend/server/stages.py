@@ -83,8 +83,10 @@ def post_almanac():
         run_almanac(ctx, _NO_ARTIFACTS_CONFIG)
     except Exception as e:
         return err(str(e), 500)
+    assert ctx.almanac is not None
 
     stem = week_stem(prediction_date)
+
     output_dict = asdict(ctx.almanac)
     output_dict["horizon_days"] = horizon_days
     path = artifact_path("almanac", stem, run_id, horizon_days=horizon_days)
@@ -113,6 +115,7 @@ def post_technical():
         run_technical(ctx, _NO_ARTIFACTS_CONFIG)
     except Exception as e:
         return err(str(e), 500)
+    assert ctx.technical is not None
 
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.technical)
@@ -143,6 +146,7 @@ def post_macro():
         run_macro(ctx, _NO_ARTIFACTS_CONFIG)
     except Exception as e:
         return err(str(e), 500)
+    assert ctx.macro is not None
 
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.macro)
@@ -170,6 +174,7 @@ def post_evidence():
         run_evidence(ctx, _NO_ARTIFACTS_CONFIG)
     except Exception as e:
         return err(str(e), 500)
+    assert ctx.evidence is not None
 
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.evidence)

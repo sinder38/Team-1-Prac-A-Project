@@ -54,6 +54,12 @@ def _format_week_range(week_start: date, week_end: date) -> str:
     return f"{week_start:%b %d} – {week_end:%b %d, %Y}"
 
 
+def has_chartable_sector_data(
+        sectors: list[tuple[str, float | None, str]],
+) -> bool:
+    return any(change is not None for _, change, _ in sectors)
+
+
 class MatplotlibEvidenceChartRenderer:
     """Render Finviz-inspired charts with matplotlib."""
 
@@ -128,14 +134,14 @@ class MatplotlibEvidenceChartRenderer:
             sectors: list[tuple[str, float | None, str]],
             week_start: date,
             week_end: date,
-    ) -> None:
+    ) -> bool:
         available = [
             (name, change, ticker)
             for name, change, ticker in sectors
             if change is not None
         ]
         if not available:
-            raise ValueError("No sector data available to chart")
+            return False
 
         available.sort(key=lambda item: item[1], reverse=True)
 
@@ -225,6 +231,7 @@ class MatplotlibEvidenceChartRenderer:
         path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(path, dpi=150, facecolor=fig.get_facecolor(), bbox_inches="tight")
         plt.close(fig)
+        return True
 
 
 def render_evidence_charts(
@@ -236,9 +243,11 @@ def render_evidence_charts(
         performance_path: Path,
         sector_path: Path,
         chart_renderer: EvidenceChartRenderer | None = None,
-) -> tuple[Path, Path]:
+) -> tuple[Path, Path | None]:
     """Render chart PNGs from pre-fetched weekly performance rows."""
     renderer = chart_renderer or MatplotlibEvidenceChartRenderer()
     renderer.render_performance_chart(performance_path, performance_rows, week_start, week_end)
-    renderer.render_sector_heatmap(sector_path, sector_rows, week_start, week_end)
-    return performance_path, sector_path
+    sector_written = renderer.render_sector_heatmap(
+        sector_path, sector_rows, week_start, week_end
+    )
+    return performance_path, sector_path if sector_written else None
