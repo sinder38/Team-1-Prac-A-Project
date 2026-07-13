@@ -20,7 +20,7 @@ from typing import List
 
 from .base import BulletRange, FieldValue, Rule, SectionPresent
 
-REGIME_VALUES = {"BULLISH", "BEARISH", "NEUTRAL", "UNCERTAIN"}
+REGIME_VALUES = {"BULLISH", "BEARISH", "NEUTRAL", "UNCERTAIN", "MIXED"}
 CONFIDENCE_VALUES = {"LOW", "MEDIUM", "HIGH"}
 
 # Matches signed or zero percentage: +1.2%, -0.5%, 0.0%
@@ -39,7 +39,7 @@ RULES: List[Rule] = [
     FieldValue(
         name="1. Weekly Regime",
         pattern=re.compile(
-            r"^1\.\s+Weekly Regime:\s+(?P<val>Bullish|Bearish|Neutral|Uncertain)",
+            r"^1\.\s+Weekly Regime:\s+(?P<val>Bullish|Bearish|Neutral|Uncertain|Mixed)",
             re.IGNORECASE,
         ),
         required=True,
