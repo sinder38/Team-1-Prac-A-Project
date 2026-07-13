@@ -69,20 +69,26 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
         )
 
     def run(self, prediction_date: date, **kwargs) -> EvidenceOutput:
-        return self.generate_report(prediction_date)
+        week = week_stem(prediction_date)
+        snapshot = self.fetch_snapshot(prediction_date)
+        self.generate_evidence_charts(snapshot)
+        return EvidenceOutput(
+            prediction_date=prediction_date,
+            week=week,
+            content=self.render_report(snapshot),
+        )
 
     def generate_report(self, prediction_date: date) -> EvidenceOutput:
         """Generate the Markdown-backed evidence output without creating chart PNGs."""
         week = week_stem(prediction_date)
         snapshot = self.fetch_snapshot(prediction_date)
-        content = self.render_report(snapshot)
         return EvidenceOutput(
             prediction_date=prediction_date,
             week=week,
-            content=content,
+            content=self.render_report(snapshot),
         )
 
-    def generate_evidence_charts(self, snapshot: EvidenceSnapshot) -> tuple[Path, Path]:
+    def generate_evidence_charts(self, snapshot: EvidenceSnapshot) -> tuple[Path, Path | None]:
         """Render chart PNGs from an already-fetched snapshot."""
         performance_filename, sector_filename = screenshot_filenames(snapshot.prediction_date)
         evidence_dir = self._data_root / "evidence"

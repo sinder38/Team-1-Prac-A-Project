@@ -55,7 +55,7 @@ class EvidenceChartCapturer:
         snapshot: EvidenceSnapshot,
         performance_path: Path,
         sector_path: Path,
-    ) -> tuple[Path, Path]:
+    ) -> tuple[Path, Path | None]:
         try:
             if self._chart_provider is not None:
                 return self._chart_provider.generate_evidence_charts(
