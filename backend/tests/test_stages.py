@@ -19,7 +19,7 @@ def _no_artifacts_config() -> PipelineConfig:
     return PipelineConfig(
         pipeline=PipelineSection(prediction_date="2026-06-16"),
         stages=StagesConfig(),
-        llm=LLMConfig(models=[LLMModelEntry(id="openai/gpt-oss-120b:free")]),
+        llm=LLMConfig(models=[LLMModelEntry(id="openai/gpt-oss-120b:free")], max_retries=3),
         artifacts=ArtifactsConfig(save_json=False, save_md=False),
     )
 

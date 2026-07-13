@@ -9,11 +9,13 @@ evidence  = true
 
 [llm]
 models = [
-    {id = "nvidia/nemotron-3-super-120b-a12b:free", slug = "nemotron", name = "NVIDIA Nemotron 3 Super"},
-    {id = "openai/gpt-oss-120b:free",               slug = "gptoss",   name = "OpenAI gpt-oss-120b"},
-    {id = "google/gemma-4-31b-it:free",             slug = "gemma",    name = "Google Gemma 4 31B"},
-    {id = "poolside/laguna-m.1:free",               slug = "laguna",   name = "Poolside Laguna M.1"},
+    {id = "nvidia/nemotron-3-super-120b-a12b:free", },
+    {id = "tencent/hy3:free",                       },
+    # {id = "openai/gpt-oss-120b:free",             },
+    {id = "google/gemma-4-31b-it:free",             },
+    {id = "poolside/laguna-m.1:free",               },
 ]
+max_retries = 5
 
 [artifacts]
 save_json = false

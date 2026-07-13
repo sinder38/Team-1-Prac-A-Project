@@ -94,7 +94,8 @@ def run_llm(
 ) -> tuple[str, dict]:
     """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
 
-    agent = OpenRouterAgent(model_name=entry.label, model_id=entry.id)
+    # TODO: max_retries could be model specific with a default instead
+    agent = OpenRouterAgent(model_name=entry.label, model_id=entry.id, max_retries=config.llm.max_retries)
 
     prompt = agent.build_prompt(ctx.prediction_date, ctx)
     raw = agent.query(prompt)

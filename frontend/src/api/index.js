@@ -1,7 +1,8 @@
 /**
- * Backend API layer — stubs until FastAPI integration (see each file for TODOs).
+ * Backend API layer. Stages/artifacts hit the real Flask backend; calibration,
+ * human-score submission, and market history are still stubbed (no backend yet).
  */
-export { getStageLogs, runStage } from './pipeline'
+export { getStageLogs, runStage, DEFAULT_HORIZON_DAYS } from './pipeline'
 
 export { getAvailableWeeks, getAgentOutputs } from './agents'
 export { getCalibrationScores } from './calibration'

@@ -35,6 +35,7 @@ class StagesConfig(BaseModel):
 
 class LLMConfig(BaseModel):
     models: list[LLMModelEntry]
+    max_retries: int
 
 
 class ArtifactsConfig(BaseModel):

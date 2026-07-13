@@ -7,13 +7,16 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
-    // TODO (backend task): uncomment proxy when FastAPI runs on port 8000
-    // proxy: {
-    //   '/api': {
-    //     target: 'http://localhost:8000',
-    //     changeOrigin: true,
-    //   },
-    // },
+    proxy: {
+      '/stages': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/artifacts': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
   },
   test: {
     environment: 'jsdom',

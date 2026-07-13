@@ -52,6 +52,10 @@ COMPARISON_DIMENSIONS = [
     ("Invalidation condition", "invalidation"),
 ]
 
+def _get_retry_delay(attempt: int) -> int:
+    """Get delay time in seconds inbetween LLM API requests"""
+    return 10 + 2**attempt
+
 
 def iso_tag(d: date) -> str:
     """Machine/pipeline week tag, e.g. '2026-W25' (isocalendar). MUST match what the
@@ -100,13 +104,6 @@ def _row(output) -> dict:
     }
 
 
-def _failed_row(exc: Exception) -> dict:
-    """A row that is HONEST about a model failing — not fabricated data.
-    Every data cell reads FAILED so a reviewer can't mistake it for 'no data'."""
-    marker = f"❌ FAIL ({type(exc).__name__})"
-    row = {key: marker for _, key in COMPARISON_DIMENSIONS}
-    row["plain_english"] = f"❌ FAILED — {type(exc).__name__}: {exc}"
-    return row
 
 
 def build_comparison_md(rows_by_slug: dict, models: list[LLMModelEntry], tag: str, run_date: date) -> str:
@@ -140,9 +137,10 @@ def build_comparison_md(rows_by_slug: dict, models: list[LLMModelEntry], tag: st
 
 
 class OpenRouterAgent(BaseLLMAgent):
-    def __init__(self, model_name: str, model_id: str):
+    def __init__(self, model_name: str, model_id: str, max_retries = 3):
         self.model_name = model_name
         self.model_id = model_id
+        self.max_retries = max_retries
 
         api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:  # defensive; the real gate is the pre-flight check in __main__
@@ -153,7 +151,6 @@ class OpenRouterAgent(BaseLLMAgent):
     def query(self, prompt: str) -> str:
         """Send prompt to OpenRouter. Retry on failure; raise if all retries are exhausted.
         Does NO parsing or sanitization — that is base_llm's responsibility."""
-        max_retries = 3
         system_instruction = (
             "You are a strict financial data formatter. "
             "You MUST output exactly the requested keys in PLAIN TEXT format, separated by colons. "
@@ -162,9 +159,9 @@ class OpenRouterAgent(BaseLLMAgent):
             "Do NOT wrap your response in markdown code blocks."
         )
 
-        for attempt in range(max_retries):
+        for attempt in range(self.max_retries):
             try:
-                print(f"[{self.model_name}] OpenRouter request (attempt {attempt + 1}/{max_retries})...")
+                print(f"[{self.model_name}] OpenRouter request (attempt {attempt + 1}/{self.max_retries})...")
                 response = self.client.chat.completions.create(
                     model=self.model_id,
                     messages=[
@@ -183,9 +180,9 @@ class OpenRouterAgent(BaseLLMAgent):
 
             except Exception as e:
                 print(f"[{self.model_name}] API call failed: {e}", file=sys.stderr)
-                if attempt == max_retries - 1:
-                    raise RuntimeError(f"[{self.model_name}] Exhausted all {max_retries} API retries.") from e
-                time.sleep(2 ** attempt)
+                if attempt == self.max_retries - 1:
+                    raise RuntimeError(f"[{self.model_name}] Exhausted all {self.max_retries} API retries.") from e
+                time.sleep(_get_retry_delay(attempt))
 
         return ""  # unreachable (loop always returns or raises); kept for type-checkers
 
@@ -227,7 +224,6 @@ if __name__ == "__main__":
     print(f"✅ Pre-flight passed: key present, all upstream {iso_t} inputs found.\n")
 
     rows_by_slug = {}
-    pipeline_has_errors = False
 
     for entry in config.llm.models:
         print("====================================")
@@ -244,11 +240,8 @@ if __name__ == "__main__":
             print(f"✅ {entry.label}: outputs saved.")
 
         except Exception as e:
-            # Resilient: one model failing must not block the others. The failure is
-            # recorded honestly (FAILED, not fake numbers) and the run exits non-zero.
             print(f"❌ {entry.label} failed: {type(e).__name__} - {e}", file=sys.stderr)
-            pipeline_has_errors = True
-            rows_by_slug[entry.slug] = _failed_row(e)
+            sys.exit(1)
 
     # Always write the comparison table; failed columns are explicitly marked FAILED.
     FileSaver(HUMAN_LLM_DIR).save(
@@ -256,9 +249,5 @@ if __name__ == "__main__":
         f"llm_comparison_{human_t}.md",
     )
     print(f"\n📊 Wrote data/llm/llm_comparison_{human_t}.md")
-
-    if pipeline_has_errors:
-        print("\n💥 Pipeline finished with partial errors. Exiting non-zero to flag CI for review.", file=sys.stderr)
-        sys.exit(1)
 
     print("🏁 Done.")

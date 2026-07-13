@@ -44,7 +44,7 @@ stages_bp = Blueprint("stages", __name__, url_prefix="/stages")
 _NO_ARTIFACTS_CONFIG = PipelineConfig(
     pipeline=PipelineSection(prediction_date="auto"),
     stages=StagesConfig(),
-    llm=LLMConfig(models=[]),
+    llm=LLMConfig(models=[], max_retries=5),
     artifacts=ArtifactsConfig(save_json=False, save_md=False),
 )
 

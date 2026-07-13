@@ -1,15 +1,20 @@
 /**
- * TODO (backend task): HTTP helpers for the FastAPI backend.
- * Use fetch against API_BASE. In dev, proxy /api → localhost:8000 in vite.config.js.
+ * HTTP helpers for the Flask backend (see backend/server). Dev requests hit
+ * /stages/* and /artifacts/* directly, proxied to localhost:5000 by Vite.
  */
-export const API_BASE = '/api'
-
-// TODO: implement when backend is connected
 export async function getJson(url, options) {
   const res = await fetch(url, options)
   if (!res.ok) {
-    const body = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(body.detail || res.statusText)
+    const body = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error(body.error || res.statusText)
   }
   return res.json()
+}
+
+export async function postJson(url, body) {
+  return getJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
 }

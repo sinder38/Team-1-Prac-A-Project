@@ -82,6 +82,7 @@ def main() -> None:
         try:
             slug, row = run_llm(ctx, config, entry)
             rows_by_slug[slug] = row
+            print(f"[pipeline] llm:{entry.slug} done.")
         except Exception as e:
             print(f"[pipeline] ERROR in llm:{entry.slug}: {e}", file=sys.stderr)
             sys.exit(1)
