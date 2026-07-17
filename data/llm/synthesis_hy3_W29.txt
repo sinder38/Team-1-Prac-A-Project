@@ -1,0 +1,17 @@
+# LLM Agent Output — Hy3 — Week of 2026-07-17
+
+1. Weekly Regime: Bearish
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - NDX technical trend_bias is Bearish with High confidence and last close below both ema_8 and ema_21
+   - Week ended 2026-07-17 evidence shows all three indexes down with NDX weakest at -4.35% and Technology sector worst at -6.04%
+   - Macro agent notes hawkish Fed shift with 97.4% hold probability and rising oil +12.34% pressuring risk assets
+4. Key Contradictions:
+   - Almanac agent shows Technology (XLK) seasonal LONG window Bullish through July while NDX technical and weekly evidence are Bearish
+   - Almanac Financials (XLF) bias is Bearish May-July but weekly evidence shows Financials up 1.55% and Materials up 0.11% vs almanac Bearish
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets
+6. Predicted % move — SPX: -1.5% to 0.5%
+   Predicted % move — NDX: -3.0% to 0.0%
+   Predicted % move — IWM: -1.0% to 1.0%
+7. Plain-English brief: For the week of July 17 2026 the broad market looks weak. The Nasdaq 100 is the most vulnerable after falling over 4% with a bearish technical signal, while the S&P 500 and small caps were also down but less severely. Rising oil and a slightly hawkish Fed backdrop are headwinds, though a surprise dovish Fed could flip sentiment. Seasonal tech strength contradicts the recent tech slump.
+8. Disclaimer: This is not financial advice.
