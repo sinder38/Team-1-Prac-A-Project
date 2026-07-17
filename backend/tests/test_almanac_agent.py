@@ -1,10 +1,100 @@
 import json
 import pytest
 from datetime import date
+from pathlib import Path
+
+from agents.almanac.almanac_agent import AlmanacAgent
+from agents.schemas import AlmanacOutput, Bias, Confidence
+
+
+def test_week_of_month():
+    assert AlmanacAgent._week_of_month(date(2026, 6, 1)) == 1
+    assert AlmanacAgent._week_of_month(date(2026, 6, 7)) == 1
+    assert AlmanacAgent._week_of_month(date(2026, 6, 8)) == 2
+    assert AlmanacAgent._week_of_month(date(2026, 6, 14)) == 2
+    assert AlmanacAgent._week_of_month(date(2026, 6, 15)) == 3
+    assert AlmanacAgent._week_of_month(date(2026, 6, 21)) == 3
+    assert AlmanacAgent._week_of_month(date(2026, 6, 22)) == 4
+    assert AlmanacAgent._week_of_month(date(2026, 6, 28)) == 4
+    assert AlmanacAgent._week_of_month(date(2026, 6, 29)) == 5
+    assert AlmanacAgent._week_of_month(date(2026, 6, 30)) == 5
+
+
+def test_week_bounds():
+    start, end = AlmanacAgent._week_bounds(date(2026, 6, 16))
+    assert start == date(2026, 6, 15)  
+    assert end == date(2026, 6, 19)   
+
+
+def test_format_period():
+    
+    period1 = AlmanacAgent._format_period(date(2026, 6, 15), date(2026, 6, 19))
+    assert "15" in period1
+    assert "19" in period1
+    assert "June" in period1
+    assert "2026" in period1
+
+    
+    period2 = AlmanacAgent._format_period(date(2026, 6, 29), date(2026, 7, 3))
+    assert "29" in period2
+    assert "June" in period2
+    assert "3" in period2
+    assert "July" in period2
+    assert "2026" in period2
+
+
+def test_lookup_seasonal_data_success():
+    agent = AlmanacAgent()
+    output = agent.lookup_seasonal_data(date(2026, 6, 16))
+
+    assert isinstance(output, AlmanacOutput)
+    assert output.prediction_date == date(2026, 6, 16)
+    assert output.monthly_bias == Bias.BEARISH 
+    assert output.seasonal_bias == Bias.BEARISH  
+    assert output.confidence == Confidence.MEDIUM
+    assert output.weekly_pattern == "Mid-June weakness / CPI follow-through week"
+    assert len(output.sector_signals) > 0
+    assert "Almanac setup stays cautious" in output.thesis
+
+
+def test_lookup_seasonal_data_fallback():
+    agent = AlmanacAgent()
+    output = agent.lookup_seasonal_data(date(2026, 12, 15))
+
+    assert isinstance(output, AlmanacOutput)
+    assert output.prediction_date == date(2026, 12, 15)
+    assert output.monthly_bias == Bias.BULLISH 
+    assert output.seasonal_bias == Bias.BULLISH 
+    assert output.confidence == Confidence.LOW  
+    assert output.weekly_pattern == "General monthly seasonal pattern"
+    assert "background input" in output.thesis
+
+
+def test_run_returns_almanac_output():
+    agent = AlmanacAgent()
+    output = agent.run(date(2026, 6, 16))
+    assert isinstance(output, AlmanacOutput)
+
+
+def test_render_md():
+    agent = AlmanacAgent()
+    output = agent.run(date(2026, 6, 16))
+    md_content = agent.render_md(output, date(2026, 6, 16))
+
+    assert "Almanac Agent Output" in md_content
+    assert "MONTH: June 2026" in md_content
+    assert "CYCLE CONTEXT:" in md_content
+    assert "MONTHLY STATS:" in md_content
+    assert "SPECIFIC WEEK PATTERN" in md_content
+    assert "SECTOR SIGNALS:" in md_content
+    assert "ALMANAC THESIS:" in md_content
+    assert "Source:" in md_content
 
 from agents.pipeline.context import PipelineContext
 from agents.pipeline.stages import run_almanac
-from agents.schemas import Bias, Confidence
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+REFERENCE_ALMANAC_DIR = REPO_ROOT / "data" / "almanac"
 
 
 @pytest.fixture
@@ -15,9 +105,38 @@ def setup_integration(tmp_path, monkeypatch):
     return tmp_path
 
 
-def _verify_artifacts(tmp_path, week_str, expected_json, expected_md_contains):
+def _load_reference_almanac(week_str: str) -> str | None:
+    """Load the hand-authored team almanac file for this ISO week, if one exists."""
+    path = REFERENCE_ALMANAC_DIR / f"almanac_agent_{week_str}.md"
+    return path.read_text(encoding="utf-8") if path.exists() else None
+
+
+def _assert_phrases_from_almanac_source(
+    generated_md: str,
+    week_str: str,
+    phrases: list[str],
+    *,
+    citation: str,
+) -> None:
+    """Cross-check agent output against the team's almanac reference notes.
+
+    Each phrase must appear in the generated Markdown. When a reference file exists
+    under data/almanac/, the same phrase must also appear there so reviewers can
+    trace assertions back to the original almanac research without re-parsing code.
+    """
+    reference = _load_reference_almanac(week_str)
+    for phrase in phrases:
+        assert phrase in generated_md, (
+            f"Agent output missing almanac phrase ({citation}): {phrase!r}"
+        )
+        if reference is not None:
+            assert phrase in reference, (
+                f"Phrase not in reference almanac_agent_{week_str}.md ({citation}): {phrase!r}"
+            )
+
+
+def _verify_artifacts(tmp_path, week_str, expected_json, expected_md_contains, *, almanac_source=None):
     """Helper to verify both JSON and Markdown artifacts on disk to keep tests DRY."""
-    # 1. Verify JSON file saving and fields
     json_path = tmp_path / "outputs" / "almanac" / f"{week_str}.json"
     assert json_path.exists(), f"JSON output file was not created at {json_path}"
     with open(json_path, "r", encoding="utf-8") as f:
@@ -25,12 +144,19 @@ def _verify_artifacts(tmp_path, week_str, expected_json, expected_md_contains):
     for key, value in expected_json.items():
         assert saved_data[key] == value, f"Key '{key}' mismatch in JSON: expected {value}, got {saved_data[key]}"
 
-    # 2. Verify Markdown file saving and substrings
     md_path = tmp_path / "data" / "almanac" / f"almanac_agent_{week_str}.md"
     assert md_path.exists(), f"Markdown output file was not created at {md_path}"
     md_content = md_path.read_text(encoding="utf-8")
     for substring in expected_md_contains:
         assert substring in md_content, f"Expected substring '{substring}' not found in Markdown content"
+
+    if almanac_source:
+        _assert_phrases_from_almanac_source(
+            md_content,
+            week_str,
+            almanac_source["phrases"],
+            citation=almanac_source["citation"],
+        )
 
 
 def test_almanac_integration_fallback(setup_integration):
@@ -71,7 +197,12 @@ def test_almanac_integration_fallback(setup_integration):
 
 
 def test_almanac_integration_week_1_memorial_day(setup_integration):
-    """Week 1 of 5: Memorial Day Week (May Week 4 - 2026-05-27)."""
+    """Week 1 of 5: Memorial Day Week (May Week 4 — 2026-05-27, ISO W22).
+
+    Almanac source: data/almanac/almanac_agent_W22.md
+    Stock Trader's Almanac 2026, pp. 65-66 (May Vital Statistics), p. 94 (Sector Seasonality),
+    pp. 10-11 (2026 Outlook).
+    """
     tmp_path = setup_integration
     prediction_date = date(2026, 5, 27)
     ctx = PipelineContext(prediction_date=prediction_date)
@@ -79,14 +210,12 @@ def test_almanac_integration_week_1_memorial_day(setup_integration):
 
     run_almanac(ctx, config)
 
-    # Context checks
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.MIXED
     assert ctx.almanac.seasonal_bias == Bias.MIXED
     assert ctx.almanac.confidence == Confidence.LOW_MEDIUM
 
-    # Sector checks
     tech_signal = next(s for s in ctx.almanac.sector_signals if "Technology" in s.sector)
     assert tech_signal.bias == Bias.BULLISH
     assert "seasonal LONG window (March-July)" in tech_signal.window
@@ -95,7 +224,6 @@ def test_almanac_integration_week_1_memorial_day(setup_integration):
     assert banking_signal.bias == Bias.BEARISH
     assert "seasonal SHORT window (May-July)" in banking_signal.window
 
-    # Disk checks
     _verify_artifacts(
         tmp_path,
         week_str="W22",
@@ -110,12 +238,31 @@ def test_almanac_integration_week_1_memorial_day(setup_integration):
             "Memorial Day week: Dow down 17 of last 29",
             "Day after Memorial Day: Dow down 8 of last 10",
             "Week after options expiration: S&P up 30 of 45",
-        ]
+        ],
+        almanac_source={
+            "citation": "data/almanac/almanac_agent_W22.md; STA 2026 pp. 65-66, p. 94, pp. 10-11",
+            "phrases": [
+                "Memorial Day week: Dow down 17 of last 29",
+                "Dow down 8 of last 10",
+                "S&P up 30 of 45",
+                "ranks #8 of 12 months",
+                "61% of the time",
+                "Avg +0.3% normally",
+                "Midterm year May",  
+                "seasonal LONG",
+                "seasonal SHORT",
+            ],
+        },
     )
 
 
 def test_almanac_integration_week_2_early_june(setup_integration):
-    """Week 2 of 5: Early June Week (June Week 1 - 2026-06-03)."""
+    """Week 2 of 5: Early June Week (June Week 1 — 2026-06-03, ISO W23).
+
+    Almanac source: data/almanac/almanac_agent_W23.md
+    Encoded from W22 next-week context (June ranks #12 midterm, S&P -2.1%) and
+    Stock Trader's Almanac June seasonal summaries.
+    """
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 3)
     ctx = PipelineContext(prediction_date=prediction_date)
@@ -123,19 +270,16 @@ def test_almanac_integration_week_2_early_june(setup_integration):
 
     run_almanac(ctx, config)
 
-    # Context checks
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.BEARISH
     assert ctx.almanac.seasonal_bias == Bias.BEARISH
     assert ctx.almanac.confidence == Confidence.MEDIUM
 
-    # Sector check
     oil_signal = next(s for s in ctx.almanac.sector_signals if "Oil" in s.sector)
     assert oil_signal.bias == Bias.BEARISH
     assert "seasonal SHORT begins in early June" in oil_signal.window
 
-    # Disk checks
     _verify_artifacts(
         tmp_path,
         week_str="W23",
@@ -151,12 +295,28 @@ def test_almanac_integration_week_2_early_june(setup_integration):
             "Early June is transitional as summer doldrums begin.",
             "Volume tends to decline in early June as institutional activity slows.",
             "NFP on Friday 5 June is the dominant market event this week.",
-        ]
+        ],
+        almanac_source={
+            "citation": "data/almanac/almanac_agent_W23.md; W22 next-week context lines 28-32",
+            "phrases": [
+                "Dead last in the midterm-year pattern for S&P 500",
+                "Avg -2.1% for S&P 500",
+                "No specific holiday pattern is active this week.",
+                "Early June is transitional as summer doldrums begin.",
+                "NFP on Friday 5 June is the dominant market event this week.",
+                "June 2026 is the worst month of the year in a midterm cycle",
+                "seasonal SHORT begins in early June",
+            ],
+        },
     )
 
 
 def test_almanac_integration_week_3_mid_june(setup_integration):
-    """Week 3 of 5: Mid-June Week (June Week 3 - 2026-06-16)."""
+    """Week 3 of 5: Mid-June Week (June Week 3 — 2026-06-16, ISO W25).
+
+    Almanac source: data/almanac/almanac_agent_W25.md
+    Public Stock Trader's Almanac June/July seasonal summaries (first software increment).
+    """
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 16)
     ctx = PipelineContext(prediction_date=prediction_date)
@@ -164,7 +324,6 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
 
     run_almanac(ctx, config)
 
-    # Context checks
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.BEARISH
@@ -172,7 +331,6 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
     assert ctx.almanac.confidence == Confidence.MEDIUM
     assert ctx.almanac.weekly_pattern == "Mid-June weakness / CPI follow-through week"
 
-    # Disk checks
     _verify_artifacts(
         tmp_path,
         week_str="W25",
@@ -193,12 +351,26 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
             "ALMANAC SEASONAL BIAS: Bearish.",
             "PATTERN CONFIDENCE: MEDIUM.",
             'ALMANAC THESIS: "Seasonality is still a headwind in mid-June',
-        ]
+        ],
+        almanac_source={
+            "citation": "data/almanac/almanac_agent_W25.md; STA June/July seasonal summaries",
+            "phrases": [
+                "June midterm-year weakness remains the main seasonal background.",
+                "The market is still inside the Q2-Q3 Weak Spot",
+                "A holiday-shortened week around Juneteenth can reduce liquidity",
+                "Seasonality is still a headwind in mid-June because June is the weakest month",
+                "the broader Almanac setup stays cautious",
+            ],
+        },
     )
 
 
 def test_almanac_integration_week_4_late_june(setup_integration):
-    """Week 4 of 5: Late June Week (June Week 4 - 2026-06-24)."""
+    """Week 4 of 5: Late June Week (June Week 4 — 2026-06-24, ISO W26).
+
+    Almanac source: agents/almanac/almanac_data.py WEEKLY_PATTERNS[(6, 4)].
+    No hand-authored data/almanac/almanac_agent_W26.md yet — encoded for W25-W29 increment.
+    """
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 24)
     ctx = PipelineContext(prediction_date=prediction_date)
@@ -206,14 +378,12 @@ def test_almanac_integration_week_4_late_june(setup_integration):
 
     run_almanac(ctx, config)
 
-    # Context checks
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.BEARISH
     assert ctx.almanac.seasonal_bias == Bias.MIXED
     assert ctx.almanac.confidence == Confidence.LOW_MEDIUM
 
-    # Disk checks
     _verify_artifacts(
         tmp_path,
         week_str="W26",
@@ -228,12 +398,25 @@ def test_almanac_integration_week_4_late_june(setup_integration):
             "Late June can see quarter-end positioning and rebalancing flows.",
             "Midterm-year June remains weak even if short-term bounces appear.",
             "Summer trading volume may start to thin, which can exaggerate moves.",
-        ]
+        ],
+        almanac_source={
+            "citation": "almanac_data.py WEEKLY_PATTERNS[(6,4)] bullets — no W26 reference MD yet",
+            "phrases": [
+                "Late June can see quarter-end positioning and rebalancing flows.",
+                "Midterm-year June remains weak even if short-term bounces appear.",
+                "Summer trading volume may start to thin, which can exaggerate moves.",
+            ],
+        },
     )
 
 
 def test_almanac_integration_week_5_early_july(setup_integration):
-    """Week 5 of 5: Early July Week (July Week 1 - 2026-07-07)."""
+    """Week 5 of 5: Early July Week (July Week 1 — 2026-07-07, ISO W28).
+
+    Almanac source: agents/almanac/almanac_data.py WEEKLY_PATTERNS[(7, 1)].
+    Public Stock Trader's Almanac early-July seasonal strength pattern.
+    No hand-authored data/almanac/almanac_agent_W28.md yet.
+    """
     tmp_path = setup_integration
     prediction_date = date(2026, 7, 7)
     ctx = PipelineContext(prediction_date=prediction_date)
@@ -241,14 +424,12 @@ def test_almanac_integration_week_5_early_july(setup_integration):
 
     run_almanac(ctx, config)
 
-    # Context checks
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.MIXED
     assert ctx.almanac.seasonal_bias == Bias.BULLISH
     assert ctx.almanac.confidence == Confidence.MEDIUM
 
-    # Disk checks
     _verify_artifacts(
         tmp_path,
         week_str="W28",
@@ -263,5 +444,13 @@ def test_almanac_integration_week_5_early_july(setup_integration):
             "Early July is often one of the more constructive parts of the summer calendar.",
             "New-month and second-half inflows can support index performance.",
             "The midterm-year Weak Spot still argues against overconfidence.",
-        ]
+        ],
+        almanac_source={
+            "citation": "almanac_data.py WEEKLY_PATTERNS[(7,1)] — STA early-July seasonal summaries",
+            "phrases": [
+                "Early July is often one of the more constructive parts of the summer calendar.",
+                "New-month and second-half inflows can support index performance.",
+                "The midterm-year Weak Spot still argues against overconfidence.",
+            ],
+        },
     )
