@@ -17,3 +17,9 @@ check:
 
 test:
 	uv run pytest tests/
+
+load-model:
+	ollama pull llama3.2:1b
+
+run-model:
+	ollama serve

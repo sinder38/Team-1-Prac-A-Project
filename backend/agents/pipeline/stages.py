@@ -6,7 +6,7 @@ from pathlib import Path
 from agents.almanac.almanac_agent import AlmanacAgent
 from agents.evidence.evidence_agent import EvidenceAgent
 from agents.io import FileSaver, week_stem
-from agents.llm.multi_model_runner import OpenRouterAgent, _row
+from agents.llm.multi_model_runner import build_agent, _row
 from agents.macro.macro_agent import MacroAgent
 from agents.pipeline.config import LLMModelEntry, PipelineConfig
 from agents.pipeline.context import PipelineContext
@@ -95,7 +95,7 @@ def run_llm(
     """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
 
     # TODO: max_retries could be model specific with a default instead
-    agent = OpenRouterAgent(model_name=entry.label, model_id=entry.id, max_retries=config.llm.max_retries)
+    agent = build_agent(entry, max_retries=config.llm.max_retries)
 
     prompt = agent.build_prompt(ctx.prediction_date, ctx)
     raw = agent.query(prompt)
