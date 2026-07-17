@@ -6,8 +6,11 @@ install:
 dev:
 	uv sync --dev
 
-run:
+run-pipeline:
 	uv run python run_pipeline.py $(DATE)
+
+run-server:
+	uv run python run_server.py
 
 check:
 	uv run pyright agents/
