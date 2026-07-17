@@ -3,6 +3,7 @@ import re
 from flask import Blueprint, jsonify, request
 
 from agents.io import week_stem
+from server.archive import list_all_weeks, load_archive_week, load_human_score
 from server.utils import OUTPUTS_ROOT, artifact_path, err, load_artifact, parse_date
 
 artifacts_bp = Blueprint("artifacts", __name__, url_prefix="/artifacts")
@@ -152,12 +153,10 @@ def get_runs():
         if not subdir.is_dir():
             continue
         for f in subdir.glob(f"*_{stem}_*.json"):
-            # Try standard pattern first
             m = standard_pattern.match(f.name)
             if m:
                 run_ids.add(m.group(1))
             else:
-                # Try LLM pattern
                 m = llm_pattern.match(f.name)
                 if m:
                     run_ids.add(m.group(1))
@@ -167,3 +166,50 @@ def get_runs():
         "week": stem,
         "run_ids": sorted(run_ids),
     }), 200
+
+
+# --- Past weeks (JSON runs + markdown archives under data/) ---
+
+def _normalize_week_stem(raw: str | None) -> tuple[str | None, tuple | None]:
+    """Parse stem query param. Accepts W25 or 2026-W25. Returns (stem, error)."""
+    if not raw:
+        return None, err("Missing required query param: stem (e.g. W25)", 400)
+    stem = raw.strip().upper()
+    if re.fullmatch(r"\d{4}-W\d{2}", stem):
+        stem = stem.split("-")[1]
+    if not re.fullmatch(r"W\d{2}", stem):
+        return None, err(f"Invalid stem: {raw!r} (expected W25 or 2026-W25)", 400)
+    return stem, None
+
+
+@artifacts_bp.route("/weeks", methods=["GET"])
+def list_weeks():
+    return jsonify({"weeks": list_all_weeks()}), 200
+
+
+@artifacts_bp.route("/archive", methods=["GET"])
+def get_archive():
+    stem, error = _normalize_week_stem(request.args.get("stem") or request.args.get("week"))
+    if error:
+        return error
+    try:
+        payload = load_archive_week(stem)
+    except ValueError as e:
+        return err(str(e), 400)
+    if payload is None:
+        return err(f"No archive data for {stem}", 404)
+    return jsonify(payload), 200
+
+
+@artifacts_bp.route("/human-score", methods=["GET"])
+def get_human_score():
+    stem, error = _normalize_week_stem(request.args.get("stem") or request.args.get("week"))
+    if error:
+        return error
+    try:
+        payload = load_human_score(stem)
+    except ValueError as e:
+        return err(str(e), 400)
+    if payload is None:
+        return err(f"No human score archive for {stem}", 404)
+    return jsonify(payload), 200

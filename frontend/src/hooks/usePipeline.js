@@ -66,7 +66,7 @@ function errorMessage(err, fallback) {
 
 /** Keep only the agent keys that actually have data (drops the `week` field). */
 function pickAgentOutputs(data) {
-  const { week: _week, ...agents } = data || {}
+  const { week: _week, humanScoreReport: _hs, ...agents } = data || {}
   return {
     ...emptyAgentOutputs,
     ...Object.fromEntries(Object.entries(agents).filter(([, v]) => v != null)),
@@ -74,15 +74,24 @@ function pickAgentOutputs(data) {
 }
 
 export function usePipeline() {
-  const [pipeline, setPipeline] = useState(exampleIdlePipeline())
+  const [runId, setRunId] = useState(() => makeRunId())
+  const [pipeline, setPipeline] = useState(() => exampleIdlePipeline())
   const [logs, setLogs] = useState([])
   const [outputs, setOutputs] = useState(emptyAgentOutputs)
   const [predictionDate, setPredictionDate] = useState(todayIso())
   const [selectedWeek, setSelectedWeek] = useState(null)
   const [savedWeeks, setSavedWeeks] = useState([])
-  const [runId, setRunId] = useState(makeRunId)
   const [humanScoreReports, setHumanScoreReports] = useState(readStoredReports)
   const [error, setError] = useState(null)
+
+  // Keep Logs "Run ID" in sync for live runs (pipeline.id === API runId).
+  // Archive weeks set pipeline.id to archive-WXX separately without changing API runId.
+  useEffect(() => {
+    setPipeline(prev => {
+      if (prev.id?.startsWith('archive-')) return prev
+      return prev.id === runId ? prev : { ...prev, id: runId }
+    })
+  }, [runId])
 
   const currentWeek = selectedWeek || dateToWeekLabel(predictionDate)
   const doneCount = pipeline.stages.filter(s => s.status === 'success').length
@@ -91,8 +100,8 @@ export function usePipeline() {
   const aiComplete = doneCount >= AI_STAGES
 
   const humanScoreReport = useMemo(() => {
-    if (!allDone) return null
     if (humanScoreReports[currentWeek]) return humanScoreReports[currentWeek]
+    if (!allDone) return null
     if (isExampleWeek(currentWeek)) {
       return buildHumanScoreReport(exampleHumanScoreFormForWeek(currentWeek), {
         week: currentWeek,
@@ -105,22 +114,34 @@ export function usePipeline() {
 
   const clearError = useCallback(() => setError(null), [])
 
-  const fetchWeeks = useCallback(async date => {
+  function clearHumanScoreForWeek(week) {
+    setHumanScoreReports(prev => {
+      if (!prev[week]) return prev
+      const next = { ...prev }
+      delete next[week]
+      writeStoredReports(next)
+      return next
+    })
+  }
+
+  const fetchWeeks = useCallback(async () => {
     try {
-      const data = await getAvailableWeeks(date)
+      const data = await getAvailableWeeks()
       setSavedWeeks(mergeSavedWeeks(data.weeks, readStoredReports()))
     } catch (err) {
       setError(errorMessage(err, 'Could not load saved weeks'))
     }
   }, [])
 
-  useEffect(() => { fetchWeeks(predictionDate) }, [fetchWeeks, predictionDate])
+  useEffect(() => { fetchWeeks() }, [fetchWeeks])
 
   function resetRun() {
     setError(null)
-    setRunId(makeRunId())
+    const nextId = makeRunId()
+    setRunId(nextId)
     setPipeline(prev => ({
       ...prev,
+      id: nextId,
       isRunning: false,
       currentStage: 0,
       stages: exampleStages(0, -1),
@@ -129,6 +150,7 @@ export function usePipeline() {
     }))
     setLogs([])
     setOutputs(emptyAgentOutputs)
+    clearHumanScoreForWeek(currentWeek)
   }
 
   // Run one AI stage (index 0-3). Only the next pending stage can be run.
@@ -141,44 +163,65 @@ export function usePipeline() {
       ...prev,
       isRunning: true,
       currentStage: index,
-      stages: exampleStages(index, index),
+      stages: exampleStages(index, index, prev.stages),
       week: currentWeek,
       predictionDate,
     }))
     setLogs(prev => [...prev, ...stageLog.start])
 
     try {
-      await apiRunStage(index, { predictionDate, runId, horizonDays: DEFAULT_HORIZON_DAYS })
+      const stageResult = await apiRunStage(index, { predictionDate, runId, horizonDays: DEFAULT_HORIZON_DAYS })
 
       // Reveal outputs progressively: agents after stage 2, LLM after stage 3.
       if (index === 1 || index === 2) {
+        const stem = dateToWeekLabel(predictionDate).split('-').pop()
         const data = await getAgentOutputs({
           predictionDate,
           runId,
           horizonDays: DEFAULT_HORIZON_DAYS,
           includeLlm: index === 2,
+          stem,
+          source: 'run',
         })
         setOutputs(prev =>
           index === 1
             ? { ...prev, almanac: data.almanac, macro: data.macro, technical: data.technical }
-            : { ...prev, llmComparison: data.llmComparison },
+            : {
+                ...prev,
+                llmComparison: data.llmComparison,
+              },
         )
+        if (index === 2 && data.humanScoreReport) {
+          setHumanScoreReports(prev => {
+            const next = { ...prev, [currentWeek]: data.humanScoreReport }
+            writeStoredReports(next)
+            return next
+          })
+        }
       }
 
+      const partialFailures = stageResult?.failures ?? []
+      if (partialFailures.length) {
+        setError(`Some models failed (${partialFailures.length}):\n${partialFailures.join('\n')}`)
+      }
+
+      const finishedAt = new Date().toISOString()
       setLogs(prev => [...prev, ...stageLog.done])
       setPipeline(prev => ({
         ...prev,
         isRunning: false,
         currentStage: index,
-        stages: exampleStages(index + 1, -1),
+        lastRun: finishedAt,
+        stages: exampleStages(index + 1, -1, prev.stages),
       }))
+      if (index === 1 || index === 2) fetchWeeks()
     } catch (err) {
       setError(errorMessage(err, `Stage ${index + 1} failed`))
       // Roll the stage back to pending so the user can retry.
       setPipeline(prev => ({
         ...prev,
         isRunning: false,
-        stages: exampleStages(index, -1),
+        stages: exampleStages(index, -1, prev.stages),
       }))
     }
   }
@@ -192,14 +235,15 @@ export function usePipeline() {
     if (!form) return
 
     const stageLog = getStageLogs(AI_STAGES)
+    const finishedAt = new Date().toISOString()
     setLogs(prev => [...prev, ...stageLog.start, ...stageLog.done])
     setPipeline(prev => ({
       ...prev,
       isRunning: false,
       currentStage: AI_STAGES,
-      stages: exampleStages(TOTAL_STAGES, -1),
+      stages: exampleStages(TOTAL_STAGES, -1, prev.stages),
       accuracy: DEMO_FINAL_ACCURACY,
-      lastRun: new Date().toISOString(),
+      lastRun: finishedAt,
       week: currentWeek,
       predictionDate,
     }))
@@ -226,8 +270,9 @@ export function usePipeline() {
     setSelectedWeek(week)
     setLogs([])
     setOutputs(emptyAgentOutputs)
-    setRunId(makeRunId())
-    setPipeline(exampleIdlePipeline(week, date))
+    const nextId = makeRunId()
+    setRunId(nextId)
+    setPipeline(exampleIdlePipeline(week, date, nextId))
   }
 
   // Selecting a saved week shows its stored (already-complete) outputs.
@@ -236,21 +281,41 @@ export function usePipeline() {
     setSelectedWeek(entry.week)
     setPredictionDate(entry.predictionDate)
     setLogs([])
-    if (!entry.runId) {
-      // No backend run_id (e.g. a locally-stored demo report) — nothing to fetch.
+    const stem = entry.stem || entry.week?.split('-').pop()
+    const isArchive = entry.source === 'archive' || !entry.runId
+    // Display id for Logs; API runId stays a real run-* (or existing entry.runId).
+    const displayId = entry.runId || (stem ? `archive-${stem}` : null)
+    const apiRunId = entry.runId || makeRunId()
+
+    if (!entry.runId && !stem) {
       setOutputs(emptyAgentOutputs)
-      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate))
+      setRunId(apiRunId)
+      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId))
+      clearHumanScoreForWeek(entry.week)
       return
     }
-    setRunId(entry.runId)
+
+    setRunId(apiRunId)
     try {
       const data = await getAgentOutputs({
         predictionDate: entry.predictionDate,
         runId: entry.runId,
         horizonDays: DEFAULT_HORIZON_DAYS,
+        stem,
+        source: isArchive ? 'archive' : 'run',
       })
       setOutputs(pickAgentOutputs(data))
-      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate))
+      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId))
+      setHumanScoreReports(prev => {
+        const next = { ...prev }
+        if (data.humanScoreReport) {
+          next[entry.week] = data.humanScoreReport
+        } else {
+          delete next[entry.week]
+        }
+        writeStoredReports(next)
+        return next
+      })
     } catch (err) {
       setError(errorMessage(err, `Could not load ${entry.week}`))
     }

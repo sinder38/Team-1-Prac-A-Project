@@ -9,7 +9,7 @@ import LlmComparisonPanel from './LlmComparisonPanel'
 const AGENT_IDS = ['almanac', 'macro', 'technical']
 
 export default function AgentOutputsGrid({ outputs = {} }) {
-  const [open, setOpen] = useState({})
+  const [open, setOpen] = useState({ llm: true })
   const hasAny = AGENT_IDS.some(id => outputs[id])
 
   return (

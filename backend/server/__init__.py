@@ -6,8 +6,10 @@ def create_app() -> Flask:
 
     from server.stages import stages_bp
     from server.artifacts import artifacts_bp
+    from server.market import market_bp
 
     app.register_blueprint(stages_bp)
     app.register_blueprint(artifacts_bp)
+    app.register_blueprint(market_bp)
 
     return app

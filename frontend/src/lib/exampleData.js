@@ -87,10 +87,58 @@ const EXAMPLE_OUTPUTS = {
     finalConsensus: 'Neutral-Bearish',
     disagreementRatio: 25,
     models: [
-      { name: 'NVIDIA Nemotron', consensus: 'Bearish', confidence: 72 },
-      { name: 'OpenAI gpt-oss', consensus: 'Neutral-Bearish', confidence: 65 },
-      { name: 'Google Gemma', consensus: 'Bearish', confidence: 70 },
-      { name: 'Poolside Laguna', consensus: 'Neutral', confidence: 58 },
+      {
+        name: 'NVIDIA Nemotron',
+        consensus: 'Bearish',
+        confidence: 72,
+        confidenceLabel: 'High',
+        spx: '-1.5% to 0.5%',
+        ndx: '-2.0% to 1.0%',
+        iwm: '-1.8% to 0.8%',
+        evidence: 'Technical agents show mixed signals; almanac cites weak June seasonal pattern.; Macro notes high hold probability after Fed decision.',
+        contradiction: 'Technical bias is bullish while almanac bias is bearish for the same week.',
+        invalidation: 'A materially more dovish Fed outcome that drives yields lower would invalidate the cautious stance.',
+        plainEnglish: 'Expect a cautious, range-bound week with downside skew unless the Fed surprises dovish.',
+      },
+      {
+        name: 'Tencent HY3',
+        consensus: 'Neutral-Bearish',
+        confidence: 65,
+        confidenceLabel: 'Medium',
+        spx: '-1.2% to 0.8%',
+        ndx: '-1.5% to 1.2%',
+        iwm: '-1.0% to 1.0%',
+        evidence: 'SPX, NDX, and IWM closed mixed last week.; Technology led gains while Energy lagged.; VIX declined indicating reduced fear.',
+        contradiction: 'Bullish technical momentum conflicts with bearish seasonal patterns.',
+        invalidation: 'A surprisingly dovish Fed press conference driving Treasury yields lower would reverse the cautious stance.',
+        plainEnglish: 'Near-term outlook stays cautious with limited upside until Fed clarity improves.',
+      },
+      {
+        name: 'Google Gemma',
+        consensus: 'Bearish',
+        confidence: 70,
+        confidenceLabel: 'Medium',
+        spx: '-2.0% to 0.3%',
+        ndx: '-2.5% to 0.8%',
+        iwm: '-1.5% to 0.5%',
+        evidence: 'Technicals are mixed across indexes.; Almanac signals bearish monthly bias.; Macro frames a binary-risk environment.',
+        contradiction: 'Broad indices rose last week, but June is typically the weakest midterm-year month.',
+        invalidation: 'A materially more dovish-than-expected Fed press conference that drives yields lower would reverse the cautious stance.',
+        plainEnglish: 'Bias leans cautiously bearish with Fed event risk as the main swing factor.',
+      },
+      {
+        name: 'Poolside Laguna',
+        consensus: 'Neutral',
+        confidence: 58,
+        confidenceLabel: 'Low-Medium',
+        spx: '-1.0% to 1.0%',
+        ndx: '-1.2% to 1.5%',
+        iwm: '-0.8% to 1.2%',
+        evidence: 'Indexes closed near EMAs with mixed sector leadership.; Bonds firm on stable yields.; Oil and dollar send mixed macro signals.',
+        contradiction: 'Rising dollar and falling oil create mixed macro signals amid a hawkish Fed stance.',
+        invalidation: 'A dovish Fed surprise that sparks a risk-on rally would invalidate the neutral stance.',
+        plainEnglish: 'A balanced week with no strong directional edge unless Fed communication shifts.',
+      },
     ],
   },
 }
@@ -148,18 +196,32 @@ export function stageLogs(index) {
 }
 
 /**
- * Build a pipeline state with the first `doneCount` stages successful.
- * `runningIndex` (optional) marks one stage as in-progress.
+ * Build pipeline stage list.
+ * Preserves timestamps from `prevStages` for already-finished stages;
+ * stamps newly started/completed stages with the real current time.
+ * Pass `{ stamp: false }` for saved/archive weeks (no fake demo clock).
  */
-export function exampleStages(doneCount, runningIndex = -1) {
+export function exampleStages(doneCount, runningIndex = -1, prevStages = null, { stamp = true } = {}) {
+  const now = new Date().toISOString()
   return STAGE_DEFS.map((s, i) => {
     let status = 'idle'
     if (i < doneCount) status = 'success'
     else if (i === runningIndex) status = 'in-progress'
+
+    const prev = prevStages?.[i]
+    let timestamp = null
+    if (status === 'idle') {
+      timestamp = null
+    } else if (prev?.status === 'success' && prev.timestamp && status === 'success') {
+      timestamp = prev.timestamp
+    } else if (stamp && (status === 'success' || status === 'in-progress')) {
+      timestamp = now
+    }
+
     return {
       ...s,
       status,
-      timestamp: status === 'idle' ? null : '2026-06-08T14:30:00Z',
+      timestamp,
     }
   })
 }
@@ -212,9 +274,9 @@ export function exampleHumanScoreFormForWeek(week) {
 }
 
 /** Fresh pipeline with nothing run yet — the human runs stages one at a time. */
-export function exampleIdlePipeline(week = EXAMPLE_CURRENT_WEEK, date = EXAMPLE_CURRENT_DATE) {
+export function exampleIdlePipeline(week = EXAMPLE_CURRENT_WEEK, date = EXAMPLE_CURRENT_DATE, id = null) {
   return {
-    id: 'pipeline-demo',
+    id: id || null,
     isRunning: false,
     currentStage: 0,
     stages: exampleStages(0, -1),
@@ -226,14 +288,14 @@ export function exampleIdlePipeline(week = EXAMPLE_CURRENT_WEEK, date = EXAMPLE_
 }
 
 /** A fully-complete pipeline, used when viewing a saved week. */
-export function exampleSavedWeekPipeline(week, date) {
+export function exampleSavedWeekPipeline(week, date, id = null) {
   return {
-    id: 'pipeline-demo',
+    id: id || null,
     isRunning: false,
     currentStage: STAGE_DEFS.length - 1,
-    stages: exampleStages(STAGE_DEFS.length),
+    stages: exampleStages(STAGE_DEFS.length, -1, null, { stamp: false }),
     accuracy: DEMO_FINAL_ACCURACY,
-    lastRun: '2026-06-08T14:30:00Z',
+    lastRun: null,
     week,
     predictionDate: date,
   }

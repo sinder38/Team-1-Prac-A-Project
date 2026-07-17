@@ -68,6 +68,16 @@ function macroCard(m) {
   }
 }
 
+function formatRange(range) {
+  if (!range || range.low == null || range.high == null) return '—'
+  return `${range.low}% to ${range.high}%`
+}
+
+function joinList(items) {
+  if (!Array.isArray(items) || !items.length) return '—'
+  return items.join('; ')
+}
+
 function buildLlmComparison(models) {
   const counts = {}
   for (const { data } of models) {
@@ -86,23 +96,46 @@ function buildLlmComparison(models) {
       name,
       consensus: data.weekly_regime,
       confidence: CONFIDENCE_SCORE[data.confidence] ?? 50,
+      confidenceLabel: data.confidence || '—',
+      spx: formatRange(data.spx_range),
+      ndx: formatRange(data.ndx_range),
+      iwm: formatRange(data.iwm_range),
+      evidence: joinList(data.supporting_evidence),
+      contradiction: joinList(data.contradictions),
+      invalidation: data.invalidation || '—',
+      plainEnglish: data.plain_english || '—',
     })),
   }
 }
 
 /**
- * List saved runs for the week containing `predictionDate` (there is no cross-week
- * index). The week picker keys entries by week label alone, so only the most
- * recent run_id per week is kept.
+ * List all weeks that have saved pipeline runs or archive markdown on disk.
  */
-export async function getAvailableWeeks(predictionDate) {
-  if (!predictionDate) return { weeks: [] }
-  const data = await getJson(`/artifacts/runs?prediction_date=${predictionDate}`)
-  const runIds = data.run_ids || []
-  if (!runIds.length) return { weeks: [] }
+export async function getAvailableWeeks() {
+  const data = await getJson('/artifacts/weeks')
+  const weeks = (data.weeks || []).map(w => ({
+    week: w.week,
+    predictionDate: w.prediction_date,
+    runId: w.run_id || null,
+    stem: w.stem,
+    source: w.source || (w.run_id ? 'run' : 'archive'),
+  }))
+  return { weeks }
+}
+
+export async function getArchiveOutputs(stem) {
+  const data = await getJson(`/artifacts/archive?stem=${encodeURIComponent(stem)}`)
   return {
-    weeks: [{ week: data.week, predictionDate, runId: runIds[runIds.length - 1] }],
+    almanac: data.almanac || null,
+    technical: data.technical || null,
+    macro: data.macro || null,
+    llmComparison: data.llmComparison || null,
+    humanScoreReport: data.humanScoreReport || null,
   }
+}
+
+export async function getHumanScore(stem) {
+  return getJson(`/artifacts/human-score?stem=${encodeURIComponent(stem)}`)
 }
 
 export async function getAgentOutputs({
@@ -110,7 +143,13 @@ export async function getAgentOutputs({
   runId,
   horizonDays = DEFAULT_HORIZON_DAYS,
   includeLlm = true,
+  stem,
+  source,
 }) {
+  if (source === 'archive' || (source !== 'run' && !runId && stem)) {
+    return getArchiveOutputs(stem)
+  }
+
   const qs = `prediction_date=${predictionDate}&run_id=${runId}&horizon_days=${horizonDays}`
 
   const [almanac, technical, macro] = await Promise.all([
@@ -121,15 +160,26 @@ export async function getAgentOutputs({
 
   let llmComparison = null
   if (includeLlm) {
+    const models = []
+    await Promise.all(
+      LLM_MODELS.map(async ({ key, name }) => {
+        try {
+          const data = await getJson(`/artifacts/llm?${qs}&model=${key}`)
+          models.push({ name, data })
+        } catch {
+          // Skip models that failed or were not run.
+        }
+      }),
+    )
+    if (models.length) llmComparison = buildLlmComparison(models)
+  }
+
+  let humanScoreReport = null
+  if (stem) {
     try {
-      const models = await Promise.all(
-        LLM_MODELS.map(({ key, name }) =>
-          getJson(`/artifacts/llm?${qs}&model=${key}`).then(data => ({ name, data })),
-        ),
-      )
-      llmComparison = buildLlmComparison(models)
+      humanScoreReport = await getHumanScore(stem)
     } catch {
-      llmComparison = null
+      // No archived human score for this week.
     }
   }
 
@@ -138,5 +188,6 @@ export async function getAgentOutputs({
     technical: technicalCard(technical),
     macro: macroCard(macro),
     llmComparison,
+    humanScoreReport,
   }
 }

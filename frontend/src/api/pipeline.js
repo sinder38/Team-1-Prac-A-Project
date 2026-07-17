@@ -16,7 +16,7 @@ export const DEFAULT_HORIZON_DAYS = 7
 
 export const LLM_MODELS = [
   { key: 'nemotron', name: 'NVIDIA Nemotron' },
-  { key: 'gptoss', name: 'OpenAI gpt-oss' },
+  { key: 'hy3', name: 'Tencent HY3' },
   { key: 'gemma', name: 'Google Gemma' },
   { key: 'laguna', name: 'Poolside Laguna' },
 ]
@@ -38,20 +38,27 @@ export async function runStage(index, run) {
         postJson('/stages/technical', stageBody(run)),
         postJson('/stages/macro', stageBody(run)),
       ])
-      return
-    case 2:
+      return { failures: [] }
+    case 2: {
       await postJson('/stages/evidence', {
         prediction_date: run.predictionDate,
         run_id: run.runId,
       })
-      await Promise.all(
-        LLM_MODELS.map(({ key }) =>
-          postJson('/stages/llm', { ...stageBody(run), model: key }),
-        ),
-      )
-      return
+      const failures = []
+      for (const { key, name } of LLM_MODELS) {
+        try {
+          await postJson('/stages/llm', { ...stageBody(run), model: key })
+        } catch (err) {
+          failures.push(`${name}: ${err?.message || 'request failed'}`)
+        }
+      }
+      if (failures.length === LLM_MODELS.length) {
+        throw new Error(`All LLM models failed.\n${failures.join('\n')}`)
+      }
+      return { failures }
+    }
     default:
       // Stage 0 (data fetching) and stage 3 (delta calibration) have no backend yet.
-      return
+      return { failures: [] }
   }
 }

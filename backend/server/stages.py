@@ -52,7 +52,8 @@ _NO_ARTIFACTS_CONFIG = PipelineConfig(
 _MODEL_REGISTRY: dict[str, LLMModelEntry] = {
     "example": LLMModelEntry(id="example/example:free"),
     "nemotron": LLMModelEntry(id="nvidia/nemotron-3-super-120b-a12b:free"),
-    "gptoss": LLMModelEntry(id="openai/gpt-oss-120b:free"),
+    # openai/gpt-oss-120b:free was removed from OpenRouter free tier (Jul 2026).
+    "hy3": LLMModelEntry(id="tencent/hy3:free"),
     "gemma": LLMModelEntry(id="google/gemma-4-31b-it:free"),
     "laguna": LLMModelEntry(id="poolside/laguna-m.1:free"),
 }
@@ -309,7 +310,11 @@ def post_llm():
     try:
         _slug, _row = run_llm(ctx, _NO_ARTIFACTS_CONFIG, _MODEL_REGISTRY[model_key])
     except Exception as e:
-        return err(str(e), 500)
+        return jsonify({
+            "status": "failed",
+            "model": model_key,
+            "error": str(e),
+        }), 503
 
     llm_output = ctx.llm_outputs[-1]
     output_dict = asdict(llm_output)

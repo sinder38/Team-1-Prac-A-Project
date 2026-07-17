@@ -35,6 +35,7 @@ export default function App() {
     runStage: pipeline.runStage,
     runNext: pipeline.runNext,
     resetRun: pipeline.resetRun,
+    runId: pipeline.runId,
   }
 
   const pages = {
