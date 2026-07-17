@@ -239,7 +239,7 @@ def _parse_llm_comparison(stem: str) -> dict | None:
     for m in models:
         regime = m["consensus"]
         counts[regime] = counts.get(regime, 0) + 1
-    final = max(counts, key=counts.get) if counts else "Uncertain"
+    final = max(counts, key=lambda key: counts.get(key, 0)) if counts else "Uncertain"
     agreeing = counts.get(final, 0)
     disagreement = (
         round(((len(models) - agreeing) / len(models)) * 100) if models else 0
@@ -441,13 +441,11 @@ def list_all_weeks() -> list[dict]:
             # Newest mtime wins; equal mtime → lexicographic run_id (stable tie-break).
             run_id = max(run_mtimes.items(), key=lambda item: (item[1], item[0]))[0]
             pred = None
-            for agent, kwargs in (
-                ("almanac", {"horizon_days": 7}),
-                ("technical", {"horizon_days": 7}),
-                ("macro", {"horizon_days": 7}),
-                ("evidence", {}),
-            ):
-                path = artifact_path(agent, stem, run_id, **kwargs)
+            for agent in ("almanac", "technical", "macro", "evidence"):
+                if agent == "evidence":
+                    path = artifact_path(agent, stem, run_id)
+                else:
+                    path = artifact_path(agent, stem, run_id, horizon_days=7)
                 if not path.exists():
                     continue
                 try:

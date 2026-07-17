@@ -192,6 +192,8 @@ def get_archive():
     stem, error = _normalize_week_stem(request.args.get("stem") or request.args.get("week"))
     if error:
         return error
+    if stem is None:
+        return err("Missing required query param: stem (e.g. W25)", 400)
     try:
         payload = load_archive_week(stem)
     except ValueError as e:
@@ -206,6 +208,8 @@ def get_human_score():
     stem, error = _normalize_week_stem(request.args.get("stem") or request.args.get("week"))
     if error:
         return error
+    if stem is None:
+        return err("Missing required query param: stem (e.g. W25)", 400)
     try:
         payload = load_human_score(stem)
     except ValueError as e:

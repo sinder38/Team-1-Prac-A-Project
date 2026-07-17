@@ -108,7 +108,7 @@ def build_market_history(
     has_volume = "Volume" in df.columns
 
     for idx, (ts, row) in enumerate(df.iterrows()):
-        day = ts.date().isoformat()
+        day = pd.Timestamp(ts).date().isoformat()
         open_ = float(row["Open"])
         high = float(row["High"])
         low = float(row["Low"])
