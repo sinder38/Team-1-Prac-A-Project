@@ -1,9 +1,7 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from datetime import date
-from typing import TYPE_CHECKING
 
+from agents.delta.models import DeltaReport
 from agents.schemas import (
     AlmanacOutput,
     EvidenceOutput,
@@ -11,9 +9,6 @@ from agents.schemas import (
     MacroOutput,
     TechnicalOutput,
 )
-
-if TYPE_CHECKING:
-    from agents.delta.delta_engine import DeltaReport
 
 
 @dataclass

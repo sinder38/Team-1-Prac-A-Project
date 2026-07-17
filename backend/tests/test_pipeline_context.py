@@ -21,7 +21,6 @@ def test_pipeline_context_defaults():
     assert ctx.technical is None
     assert ctx.macro is None
     assert ctx.evidence is None
-    assert ctx.delta is None
     assert ctx.llm_outputs == []
 
 

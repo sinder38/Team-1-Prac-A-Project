@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from dataclasses import asdict
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -31,6 +30,9 @@ class BaseLLMAgent(BaseAgent):
         Falls back to reading data/outputs/ JSON files if no context is provided
         (preserves compatibility with multi_model_runner.__main__ standalone mode).
         """
+        from dataclasses import asdict
+        from agents.pipeline.context import PipelineContext as _PC
+
         context_blocks = []
 
         if ctx is not None:
