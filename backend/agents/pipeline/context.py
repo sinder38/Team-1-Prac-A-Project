@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import date
+from typing import TYPE_CHECKING
 
 from agents.schemas import (
     AlmanacOutput,
@@ -9,6 +12,9 @@ from agents.schemas import (
     TechnicalOutput,
 )
 
+if TYPE_CHECKING:
+    from agents.delta.delta_engine import DeltaReport
+
 
 @dataclass
 class PipelineContext:
@@ -17,4 +23,5 @@ class PipelineContext:
     technical: TechnicalOutput | None = None
     macro: MacroOutput | None = None
     evidence: EvidenceOutput | None = None
+    delta: DeltaReport | None = None
     llm_outputs: list[LLMOutput] = field(default_factory=list)

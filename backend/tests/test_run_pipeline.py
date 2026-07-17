@@ -17,6 +17,8 @@ def test_pipeline_toml_loads_as_valid_config():
     assert isinstance(config, PipelineConfig)
     assert len(config.llm.models) > 0
     assert all(m.id for m in config.llm.models)
+    assert config.delta.prediction_week == "previous"
+    assert config.delta.actuals_week == "auto"
 
 
 def test_resolve_prediction_date_auto():

@@ -1,12 +1,13 @@
 import json
 import json as _json
 from dataclasses import asdict
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import BadRequest
 
+from agents.delta.models import DeltaReport
 from agents.io import week_stem
 from agents.pipeline.config import (
     ArtifactsConfig,
@@ -19,6 +20,7 @@ from agents.pipeline.config import (
 from agents.pipeline.context import PipelineContext
 from agents.pipeline.stages import (
     run_almanac,
+    run_delta,
     run_evidence,
     run_llm,
     run_macro,
@@ -37,6 +39,7 @@ from agents.schemas import (
     SectorSignal,
     TechnicalOutput,
 )
+from server.calibration import DELTA_OUTPUT_DIR, load_latest_delta
 from server.utils import artifact_path, err, parse_date, require_fields
 
 stages_bp = Blueprint("stages", __name__, url_prefix="/stages")
@@ -46,6 +49,9 @@ _NO_ARTIFACTS_CONFIG = PipelineConfig(
     stages=StagesConfig(),
     llm=LLMConfig(models=[], max_retries=5),
     artifacts=ArtifactsConfig(save_json=False, save_md=False),
+)
+_DELTA_ARTIFACTS_CONFIG = _NO_ARTIFACTS_CONFIG.model_copy(
+    update={"artifacts": ArtifactsConfig(save_json=True, save_md=True)}
 )
 
 # Registry maps short model keys (as accepted by the /stages/llm endpoint) → LLMModelEntry.
@@ -178,10 +184,68 @@ def post_evidence():
 
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.evidence)
+    output_dict["generated_at"] = datetime.now(timezone.utc).isoformat()
     path = artifact_path("evidence", stem, run_id)
     _write_artifact(path, output_dict)
     output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
+
+
+@stages_bp.route("/delta", methods=["POST"])
+def post_delta():
+    """Score the previous locked week against completed current-week data."""
+    body = request.get_json(force=True) or {}
+    try:
+        require_fields(body, "prediction_date", "run_id")
+        prediction_date = parse_date(body["prediction_date"])
+        run_id = str(body["run_id"])
+    except (BadRequest, KeyError) as exc:
+        return err(str(exc), 400)
+    except (ValueError, TypeError) as exc:
+        return err(str(exc), 400)
+
+    try:
+        evidence_path = artifact_path(
+            "evidence",
+            week_stem(prediction_date),
+            run_id,
+        )
+    except ValueError as exc:
+        return err(str(exc), 400)
+    if not evidence_path.exists():
+        return err(f"Evidence artifact not found: {evidence_path}", 404)
+    try:
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+        actuals_markdown = str(evidence["content"])
+        generated_at = _artifact_generated_at(evidence, evidence_path)
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        return err(f"Invalid Evidence artifact: {exc}", 500)
+
+    ctx = PipelineContext(prediction_date=prediction_date)
+    try:
+        run_delta(
+            ctx,
+            _DELTA_ARTIFACTS_CONFIG,
+            actuals_markdown=actuals_markdown,
+            now=generated_at,
+        )
+    except FileNotFoundError as exc:
+        return err(str(exc), 404)
+    except ValueError as exc:
+        return err(str(exc), 400)
+    except Exception as exc:
+        return err(str(exc), 500)
+
+    assert ctx.delta is not None
+    output = _json.loads(_json.dumps(asdict(ctx.delta), default=str))
+    return jsonify(output), 200
+
+
+def _artifact_generated_at(data: dict, path: Path) -> datetime:
+    value = data.get("generated_at")
+    if isinstance(value, str):
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
 
 
 @stages_bp.route("/llm", methods=["POST"])
@@ -302,6 +366,13 @@ def post_llm():
             week=evidence_data["week"],
             content=evidence_data["content"],
         )
+
+        try:
+            _, delta_data = load_latest_delta(DELTA_OUTPUT_DIR)
+        except FileNotFoundError:
+            pass
+        else:
+            ctx.delta = DeltaReport.from_dict(delta_data)
 
     except Exception as e:
         return err(f"Failed to load agent artifacts: {e}", 500)

@@ -99,19 +99,11 @@ export function exampleAgentOutputs(week) {
   return { week: week || EXAMPLE_CURRENT_WEEK, ...EXAMPLE_OUTPUTS }
 }
 
-export const EXAMPLE_CALIBRATION = {
-  currentAccuracy: 78,
-  targetAccuracy: 85,
-  weeklyTrend: [64, 71, 69, 78],
-  agentAccuracies: { almanac: 74, macro: 71, technical: 82 },
-  lastCalculated: '2026-06-08T14:30:00Z',
-}
-
 const STAGE_DEFS = [
   { id: 'stage-1', name: 'Data Fetching', description: 'Collect market data (yfinance / FRED) for the week' },
   { id: 'stage-2', name: 'Multi-Agent Processing', description: 'Run the Almanac, Macro, and Technical agents' },
   { id: 'stage-3', name: 'LLM API Calls', description: 'Query the 4 LLMs and build the comparison' },
-  { id: 'stage-4', name: 'Delta Calibration Engine', description: 'Compare predictions and calculate deltas' },
+  { id: 'stage-4', name: 'Previous Week Delta', description: 'Review the previous locked prediction and create a prescription' },
   { id: 'stage-5', name: 'Human Score', description: 'Fill in and submit the human score report' },
 ]
 
@@ -134,8 +126,8 @@ export const STAGE_LOGS = [
     done: ['[stage 3] wrote data/llm/llm_comparison_W24.md', '[stage 3] llm calls done.'],
   },
   {
-    start: ['[stage 4] calibrating deltas vs LLM consensus...'],
-    done: ['[stage 4] calibration done.'],
+    start: ['[stage 4] comparing the previous locked prediction with completed actuals...'],
+    done: ['[stage 4] delta report and next-sprint prescription ready.'],
   },
   {
     start: ['[stage 5] awaiting human score...'],

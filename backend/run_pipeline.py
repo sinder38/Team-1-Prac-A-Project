@@ -18,6 +18,7 @@ from agents.pipeline.config import load_config
 from agents.pipeline.context import PipelineContext
 from agents.pipeline.stages import (
     run_almanac,
+    run_delta,
     run_evidence,
     run_llm,
     run_macro,
@@ -62,6 +63,7 @@ def main() -> None:
         "technical": (config.stages.technical, run_technical),
         "macro": (config.stages.macro, run_macro),
         "evidence": (config.stages.evidence, run_evidence),
+        "delta": (config.stages.delta, run_delta),
     }
 
     for name, (enabled, fn) in stage_map.items():

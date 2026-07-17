@@ -1,7 +1,7 @@
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class LLMModelEntry(BaseModel):
@@ -31,6 +31,12 @@ class StagesConfig(BaseModel):
     technical: bool = False
     macro: bool = False
     evidence: bool = False
+    delta: bool = False
+
+
+class DeltaConfig(BaseModel):
+    prediction_week: str = "previous"
+    actuals_week: str = "auto"
 
 
 class LLMConfig(BaseModel):
@@ -46,8 +52,9 @@ class ArtifactsConfig(BaseModel):
 class PipelineConfig(BaseModel):
     pipeline: PipelineSection
     stages: StagesConfig
+    delta: DeltaConfig = Field(default_factory=DeltaConfig)
     llm: LLMConfig
-    artifacts: ArtifactsConfig = ArtifactsConfig()
+    artifacts: ArtifactsConfig = Field(default_factory=ArtifactsConfig)
 
 
 def load_config(path: Path) -> PipelineConfig:

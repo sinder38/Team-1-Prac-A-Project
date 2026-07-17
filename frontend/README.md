@@ -159,29 +159,33 @@ frontend/
 
 ---
 
-## Backend integration (TODO)
+## Backend integration
 
-The backend (FastAPI) is a separate teammate's task. To connect it:
+The Flask backend lives in `backend/server/`. Pipeline stages and calibration
+already use it; the remaining placeholder APIs can be connected in the same
+way:
 
-1. Implement the endpoints below in `backend/api/`.
-2. Replace the example-data return values in each `src/api/*.js` file (each has a
+1. Implement the remaining endpoints in `backend/server/`.
+2. Replace the placeholder return values in each `src/api/*.js` file (each has a
    `TODO` comment with the exact endpoint).
-3. Uncomment the `/api` proxy in `vite.config.js` (targets `http://localhost:8000`).
-4. Use `http.js` (`getJson` / `API_BASE`) for the actual requests.
+3. Add any new route prefix to the proxy in `vite.config.js`.
+4. Use `http.js` (`getJson` / `postJson`) for requests.
 
 | Endpoint | Stub file |
 |----------|-----------|
 | `GET /api/pipeline/status` | `api/pipeline.js` |
 | `GET /api/pipeline/logs` | `api/pipeline.js` |
 | `POST /api/pipeline/stage/{index}/run` | `api/pipeline.js` |
+| `POST /stages/delta` | `api/pipeline.js` (implemented) |
 | `GET /api/weeks` | `api/agents.js` |
 | `GET /api/agents/outputs?week=` | `api/agents.js` |
-| `GET /api/calibration/accuracy-tracker` | `api/calibration.js` |
+| `GET /calibration/accuracy-tracker` | `api/calibration.js` (implemented) |
 | `POST /api/validation/human-score` | `api/validation.js` |
 | `GET /api/market/history?symbol=` | `api/market.js` |
 
 The shapes the UI expects are documented by the example data in `src/lib/`
-(`exampleData.js` for pipeline/agents/calibration, `marketData.js` for charts).
+(`exampleData.js` for pipeline/agents and `marketData.js` for charts). The
+calibration page reads the latest Delta Engine JSON through the Flask backend.
 
 ---
 
