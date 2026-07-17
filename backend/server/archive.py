@@ -11,9 +11,14 @@ from server.utils import OUTPUTS_ROOT, REPO_ROOT, artifact_path, parse_date
 
 DATA_ROOT = REPO_ROOT / "data"
 
-_STEM_RE = re.compile(r"(W\d{2})")
+# Stem must sit right before the file extension (rejects mid-name junk like notes_W99_draft.md).
+_STEM_RE = re.compile(r"_(W\d{2})\.")
 _RUN_DATE_RE = re.compile(r"run\s+(\d{4}-\d{2}-\d{2})", re.I)
 _CONFIDENCE_SCORE = {"Low": 40, "Low-Medium": 55, "Medium": 65, "High": 85}
+
+# data/outputs run-artifact filenames, e.g. almanac_W25_run-abc_7d.json / llm_gemma_W25_run-abc_7d.json
+_STANDARD_RUN = re.compile(r"^[a-z]+_(W\d{2})_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$")
+_LLM_RUN = re.compile(r"^llm_[a-z0-9]+_(W\d{2})_(.+?)_\d+d\.json$")
 
 _AGENT_FILES = {
     "almanac": ["almanac/almanac_agent_{stem}.md"],
@@ -48,6 +53,34 @@ _HUMAN_DIM_KEYS = {
 }
 
 _SCORE_RE = re.compile(r"([+-]?\d+)")
+
+# Per-agent (label, regex) pairs pulled from the agent markdown headers.
+_AGENT_METRICS = {
+    "almanac": [
+        ("Thesis", r'ALMANAC THESIS:\s*"?(.+?)"?\s*$'),
+        ("Seasonal Bias", r"ALMANAC SEASONAL BIAS:\s*(.+?)\.?$"),
+        ("Monthly Bias", r"PATTERN CONFIDENCE:\s*(\w+)"),
+    ],
+    "macro": [
+        ("Primary Driver", r"PRIMARY DRIVER THIS WEEK:\s*(.+)$"),
+        ("Fed Rate", r"Current Fed rate:\s*(.+)$"),
+        ("10Y Yield", r"10-year yield:\s*([\d.]+%?)"),
+        ("Macro Bias", r"MACRO BIAS:\s*(.+)$"),
+    ],
+    "technical": [
+        ("Last Close", r"LAST CLOSE:\s*(.+)$"),
+        ("Technical Bias", r"TECHNICAL BIAS:\s*(.+?)\.?$"),
+        ("EMA Condition", r"EMA condition:\s*(.+)$"),
+        ("Key Levels", r"Resistance 1:\s*(.+)$"),
+    ],
+}
+
+
+def _require_stem(stem: str) -> str:
+    stem = stem.upper()
+    if not re.fullmatch(r"W\d{2}", stem):
+        raise ValueError(f"Invalid week stem: {stem!r}")
+    return stem
 
 
 def _label_for_stem(stem: str, pred: date) -> str:
@@ -87,9 +120,9 @@ def _prediction_date_for_stem(stem: str) -> date:
                 return parse_date(m.group(1))
             except ValueError:
                 pass
+    # No run date in the markdown → assume the archive belongs to the current year.
     week_num = int(stem[1:])
-    year = 2026  # project year for these archives
-    return date.fromisocalendar(year, week_num, 1)
+    return date.fromisocalendar(date.today().year, week_num, 1)
 
 
 def discover_archive_stems() -> dict[str, date]:
@@ -121,27 +154,10 @@ def discover_archive_stems() -> dict[str, date]:
 
 def _extract_metrics(agent: str, text: str) -> list[dict]:
     metrics: list[dict] = []
-
-    def add(label: str, pattern: str) -> None:
+    for label, pattern in _AGENT_METRICS.get(agent, []):
         m = re.search(pattern, text, re.I | re.M)
         if m:
             metrics.append({"label": label, "value": m.group(1).strip().strip('"')})
-
-    if agent == "almanac":
-        add("Thesis", r'ALMANAC THESIS:\s*"?(.+?)"?\s*$')
-        add("Seasonal Bias", r"ALMANAC SEASONAL BIAS:\s*(.+?)\.?$")
-        add("Monthly Bias", r"PATTERN CONFIDENCE:\s*(\w+)")
-    elif agent == "macro":
-        add("Primary Driver", r"PRIMARY DRIVER THIS WEEK:\s*(.+)$")
-        add("Fed Rate", r"Current Fed rate:\s*(.+)$")
-        add("10Y Yield", r"10-year yield:\s*([\d.]+%?)")
-        add("Macro Bias", r"MACRO BIAS:\s*(.+)$")
-    elif agent == "technical":
-        add("Last Close", r"LAST CLOSE:\s*(.+)$")
-        add("Technical Bias", r"TECHNICAL BIAS:\s*(.+?)\.?$")
-        add("EMA Condition", r"EMA condition:\s*(.+)$")
-        add("Key Levels", r"Resistance 1:\s*(.+)$")
-
     return metrics[:4]
 
 
@@ -160,8 +176,7 @@ def _agent_card(agent_key: str, label: str, stem: str) -> dict | None:
 
 
 def _split_table_row(line: str) -> list[str]:
-    parts = [p.strip() for p in line.strip().strip("|").split("|")]
-    return parts
+    return [p.strip() for p in line.strip().strip("|").split("|")]
 
 
 def _parse_llm_comparison(stem: str) -> dict | None:
@@ -276,18 +291,32 @@ def _parse_score_cell(cell: str) -> int:
     return int(m.group(1)) if m else 0
 
 
+def _clean_consensus_label(body: str) -> str:
+    """Reduce an 'AI Consensus' section to its short regime label.
+
+    'Neutral-Bullish (3 of 5 models) — cautious...' -> 'Neutral-Bullish'
+    """
+    label = re.sub(r"^\*\*|\*\*$", "", body.split("\n")[0].strip()).strip()
+    label = label.split("—")[0].strip()  # drop trailing description
+    head = label.split("(")[0].strip()  # drop "(3 of 5 models)"
+    return head or label
+
+
 def load_human_score(stem: str) -> dict | None:
     """Parse data/human/human_score_{stem}.md into the frontend report shape."""
-    stem = stem.upper()
-    if not re.fullmatch(r"W\d{2}", stem):
-        raise ValueError(f"Invalid week stem: {stem!r}")
+    return _human_score(_require_stem(stem))
 
+
+def _human_score(stem: str, pred: date | None = None) -> dict | None:
+    """Same as load_human_score. Callers that already know the prediction date
+    (load_archive_week) pass it in to avoid re-scanning the data tree."""
     path = DATA_ROOT / "human" / f"human_score_{stem}.md"
     text = _read_text(path)
     if not text:
         return None
 
-    pred = discover_archive_stems().get(stem) or _prediction_date_for_stem(stem)
+    if pred is None:
+        pred = discover_archive_stems().get(stem) or _prediction_date_for_stem(stem)
     week = _label_for_stem(stem, pred)
 
     scores = {k: 0 for k in _HUMAN_DIM_KEYS.values()}
@@ -312,17 +341,7 @@ def load_human_score(stem: str) -> dict | None:
         scores[key] = _parse_score_cell(cells[2])
         reasoning[key] = re.sub(r"[*_]", "", cells[3]).strip()
 
-    consensus_body = _section_body(text, "AI Consensus")
-    consensus = consensus_body.split("\n")[0].strip()
-    consensus = re.sub(r"^\*\*|\*\*$", "", consensus).strip()
-    # Keep the short regime label if present: "Neutral-Bullish (3 of 5 models) — ..."
-    if "—" in consensus:
-        consensus = consensus.split("—")[0].strip()
-    if "(" in consensus:
-        # Prefer "Neutral-Bullish" from "Neutral-Bullish (3 of 5 models)"
-        head = consensus.split("(")[0].strip()
-        if head:
-            consensus = head
+    consensus = _clean_consensus_label(_section_body(text, "AI Consensus"))
 
     human_call = _section_body(text, "Human Call") or "Neutral"
     confidence = _section_body(text, "Confidence") or "Medium"
@@ -336,6 +355,9 @@ def load_human_score(stem: str) -> dict | None:
     )
     total = int(total_m.group(1)) if total_m else sum(scores.values())
 
+    # ponytail: coarse "was this source mentioned at all" flags for the UI checkboxes,
+    # not a real "was this source weighted" signal. Section headers make these almost
+    # always true; treat as decorative. Upgrade path is parsing the evidence table.
     evidence = {
         "almanac": "Almanac" in text,
         "macro": "Macro" in text,
@@ -368,10 +390,7 @@ def load_human_score(stem: str) -> dict | None:
 
 def load_archive_week(stem: str) -> dict | None:
     """Return frontend-shaped agent + LLM payloads for an archive week stem."""
-    stem = stem.upper()
-    if not re.fullmatch(r"W\d{2}", stem):
-        raise ValueError(f"Invalid week stem: {stem!r}")
-
+    stem = _require_stem(stem)
     archives = discover_archive_stems()
     if stem not in archives:
         return None
@@ -387,30 +406,22 @@ def load_archive_week(stem: str) -> dict | None:
         "technical": _agent_card("technical", "Technical Agent", stem),
         "evidence": _agent_card("evidence", "Evidence Agent", stem),
         "llmComparison": _parse_llm_comparison(stem),
-        "humanScoreReport": load_human_score(stem),
+        "humanScoreReport": _human_score(stem, pred),
     }
 
 
 def list_archive_weeks() -> list[dict]:
-    weeks = []
-    for stem, pred in discover_archive_stems().items():
-        weeks.append(
-            {
-                "week": _label_for_stem(stem, pred),
-                "stem": stem,
-                "prediction_date": pred.isoformat(),
-                "run_id": None,
-                "source": "archive",
-            }
-        )
-    weeks.sort(key=lambda w: w["week"])
-    return weeks
-
-
-_STANDARD_RUN = re.compile(
-    r"^[a-z]+_(W\d{2})_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$"
-)
-_LLM_RUN = re.compile(r"^llm_[a-z0-9]+_(W\d{2})_(.+?)_\d+d\.json$")
+    weeks = [
+        {
+            "week": _label_for_stem(stem, pred),
+            "stem": stem,
+            "prediction_date": pred.isoformat(),
+            "run_id": None,
+            "source": "archive",
+        }
+        for stem, pred in discover_archive_stems().items()
+    ]
+    return sorted(weeks, key=lambda w: w["week"])
 
 
 def list_all_weeks() -> list[dict]:
@@ -418,8 +429,9 @@ def list_all_weeks() -> list[dict]:
     by_week: dict[str, dict] = {}
 
     if OUTPUTS_ROOT.exists():
-        # stem -> run_id -> newest mtime seen for that run
-        by_stem: dict[str, dict[str, float]] = {}
+        # stem -> (mtime, run_id) of the winning run. Newest mtime wins; equal mtime →
+        # lexicographic run_id (stable tie-break). Comparing the tuple gives both.
+        best: dict[str, tuple[float, str]] = {}
         for subdir in OUTPUTS_ROOT.iterdir():
             if not subdir.is_dir():
                 continue
@@ -432,14 +444,11 @@ def list_all_weeks() -> list[dict]:
                     mtime = f.stat().st_mtime
                 except OSError:
                     mtime = 0.0
-                runs = by_stem.setdefault(stem, {})
-                runs[run_id] = max(runs.get(run_id, 0.0), mtime)
+                candidate = (mtime, run_id)
+                if stem not in best or candidate > best[stem]:
+                    best[stem] = candidate
 
-        for stem, run_mtimes in by_stem.items():
-            if not run_mtimes:
-                continue
-            # Newest mtime wins; equal mtime → lexicographic run_id (stable tie-break).
-            run_id = max(run_mtimes.items(), key=lambda item: (item[1], item[0]))[0]
+        for stem, (_mtime, run_id) in best.items():
             pred = None
             for agent in ("almanac", "technical", "macro", "evidence"):
                 if agent == "evidence":
