@@ -107,12 +107,19 @@ def build_market_history(
     volume: list[dict] = []
     has_volume = "Volume" in df.columns
 
-    for idx, (ts, row) in enumerate(df.iterrows()):
-        day = pd.Timestamp(ts).date().isoformat()
-        open_ = float(row["Open"])
-        high = float(row["High"])
-        low = float(row["Low"])
-        close = float(row["Close"])
+    days = [ts.date().isoformat() for ts in pd.DatetimeIndex(df.index)]
+    opens = [float(v) for v in df["Open"].to_numpy()]
+    highs = [float(v) for v in df["High"].to_numpy()]
+    lows = [float(v) for v in df["Low"].to_numpy()]
+    closes_list = [float(v) for v in df["Close"].to_numpy()]
+    vols = [float(v) for v in df["Volume"].to_numpy()] if has_volume else []
+
+    for idx in range(len(df)):
+        day = days[idx]
+        open_ = opens[idx]
+        high = highs[idx]
+        low = lows[idx]
+        close = closes_list[idx]
         up = close >= open_
 
         candles.append(
@@ -128,7 +135,7 @@ def build_market_history(
         ema21.append({"time": day, "value": _round_to(float(ema21_series.iloc[idx]), inst.decimals)})
 
         if has_volume:
-            vol = float(row["Volume"])
+            vol = vols[idx]
             if vol > 0:
                 volume.append(
                     {
