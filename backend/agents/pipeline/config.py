@@ -36,8 +36,8 @@ class StagesConfig(BaseModel):
 
 
 class LLMConfig(BaseModel):
-    models: list[LLMModelEntry]
-    max_retries: int
+    models: list[LLMModelEntry] = []
+    max_retries: int = 3
 
 
 class ArtifactsConfig(BaseModel):
@@ -45,11 +45,16 @@ class ArtifactsConfig(BaseModel):
     save_md: bool = True
 
 
-class PipelineConfig(BaseModel):
+class StageConfig(BaseModel):
+    """Everything a single agent stage needs to run"""
+
+    llm: LLMConfig = LLMConfig()
+    artifacts: ArtifactsConfig = ArtifactsConfig()
+
+
+class PipelineConfig(StageConfig):
     pipeline: PipelineSection
     stages: StagesConfig
-    llm: LLMConfig
-    artifacts: ArtifactsConfig = ArtifactsConfig()
 
 
 def load_config(path: Path) -> PipelineConfig:

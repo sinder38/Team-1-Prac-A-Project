@@ -1,18 +1,10 @@
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel
-
-from agents.pipeline.config import ArtifactsConfig, LLMModelEntry
+from agents.pipeline.config import ArtifactsConfig, StageConfig
 
 
-class ServerLLMConfig(BaseModel):
-    models: list[LLMModelEntry] = []
-    max_retries: int = 3
-
-
-class ServerConfig(BaseModel):
-    llm: ServerLLMConfig = ServerLLMConfig()
+class ServerConfig(StageConfig):
     artifacts: ArtifactsConfig = ArtifactsConfig(save_json=False, save_md=False)
 
 
