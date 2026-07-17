@@ -69,17 +69,18 @@ models = [{id = "openai/gpt-oss-120b:free"}]
         load_config(toml)
 
 
-def test_load_config_missing_llm_section(tmp_path):
+def test_load_config_missing_llm_section_uses_defaults(tmp_path):
     from agents.pipeline.config import load_config
-    toml = tmp_path / "bad.toml"
+    toml = tmp_path / "ok.toml"
     toml.write_text("""
 [pipeline]
 prediction_date = "2026-06-08"
 [stages]
 almanac = true
 """)
-    with pytest.raises(ValidationError):
-        load_config(toml)
+    config = load_config(toml)
+    assert config.llm.models == []
+    assert config.llm.max_retries == 3
 
 
 def test_load_config_bad_models_old_shape(tmp_path):

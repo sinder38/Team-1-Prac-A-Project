@@ -116,7 +116,10 @@ def test_post_evidence_no_horizon(client, tmp_path):
 
 
 def test_post_llm_missing_agent_artifacts(client, tmp_path):
-    with patch("server.stages.artifact_path", side_effect=lambda t, *a, **kw: tmp_path / f"{t}.json"):
+    from agents.pipeline.config import LLMModelEntry
+
+    with patch("server.stages.artifact_path", side_effect=lambda t, *a, **kw: tmp_path / f"{t}.json"), \
+         patch.dict("server.stages._MODEL_REGISTRY", {"example": LLMModelEntry(id="example/example:free")}):
         resp = client.post("/stages/llm", json={
             "prediction_date": "2026-06-18",
             "run_id": "run1",
