@@ -33,10 +33,16 @@ INSTRUMENTS: Final[dict[str, Instrument]] = {
 
 
 def list_instruments() -> list[dict[str, str]]:
-    return [
-        {"symbol": inst.symbol, "name": inst.name, "yahoo": inst.yahoo}
-        for inst in INSTRUMENTS.values()
-    ]
+    instruments: list[dict[str, str]] = []
+    for instrument in INSTRUMENTS.values():
+        instruments.append(
+            {
+                "symbol": instrument.symbol,
+                "name": instrument.name,
+                "yahoo": instrument.yahoo,
+            }
+        )
+    return instruments
 
 
 def _round_to(value: float, decimals: int) -> float:
@@ -45,6 +51,7 @@ def _round_to(value: float, decimals: int) -> float:
 
 
 def _fetch_ohlcv(ticker: str, end_date: date, calendar_days: int) -> pd.DataFrame:
+    """Download and clean daily OHLCV rows from Yahoo Finance."""
     start_date = end_date - timedelta(days=calendar_days)
     raw = yf.download(
         ticker,
@@ -61,14 +68,26 @@ def _fetch_ohlcv(ticker: str, end_date: date, calendar_days: int) -> pd.DataFram
         df.columns = df.columns.get_level_values(0)
 
     required = ["Open", "High", "Low", "Close"]
-    missing = [col for col in required if col not in df.columns]
+    missing: list[str] = []
+    for column in required:
+        if column not in df.columns:
+            missing.append(column)
     if missing:
-        raise ValueError(f"Market data for {ticker} missing columns: {', '.join(missing)}")
+        raise ValueError(
+            f"Market data for {ticker} missing columns: {', '.join(missing)}"
+        )
 
     index = pd.DatetimeIndex(pd.to_datetime(df.index)).tz_localize(None)
-    df = pd.DataFrame(
-        {col: pd.Series(df[col].to_numpy(), index=index) for col in required + (["Volume"] if "Volume" in df.columns else [])},
-    )
+    selected_columns = required.copy()
+    if "Volume" in df.columns:
+        selected_columns.append("Volume")
+
+    cleaned_columns: dict[str, pd.Series] = {}
+    for column in selected_columns:
+        values = df[column].to_numpy()
+        cleaned_columns[column] = pd.Series(values, index=index)
+    df = pd.DataFrame(cleaned_columns)
+
     df = df.dropna(subset=["Open", "High", "Low", "Close"]).sort_index()
     df = df.loc[df.index <= pd.Timestamp(end_date)]
     df = df[df.index.weekday <= 4]
@@ -78,12 +97,134 @@ def _fetch_ohlcv(ticker: str, end_date: date, calendar_days: int) -> pd.DataFram
     return df.tail(DEFAULT_HISTORY_DAYS)
 
 
+def _float_values(df: pd.DataFrame, column: str) -> list[float]:
+    """Convert one pandas column to ordinary Python floats."""
+    values: list[float] = []
+    for value in df[column].to_numpy():
+        values.append(float(value))
+    return values
+
+
+def _build_chart_series(
+    df: pd.DataFrame,
+    instrument: Instrument,
+    ema8_series: pd.Series,
+    ema21_series: pd.Series,
+) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
+    """Convert pandas rows into the arrays expected by the chart library."""
+    candles: list[dict] = []
+    ema8: list[dict] = []
+    ema21: list[dict] = []
+    volume: list[dict] = []
+
+    days: list[str] = []
+    for timestamp in pd.DatetimeIndex(df.index):
+        days.append(timestamp.date().isoformat())
+
+    opens = _float_values(df, "Open")
+    highs = _float_values(df, "High")
+    lows = _float_values(df, "Low")
+    closes = _float_values(df, "Close")
+
+    has_volume = "Volume" in df.columns
+    volumes: list[float] = []
+    if has_volume:
+        volumes = _float_values(df, "Volume")
+
+    for index, day in enumerate(days):
+        open_price = opens[index]
+        close_price = closes[index]
+        candles.append(
+            {
+                "time": day,
+                "open": _round_to(open_price, instrument.decimals),
+                "high": _round_to(highs[index], instrument.decimals),
+                "low": _round_to(lows[index], instrument.decimals),
+                "close": _round_to(close_price, instrument.decimals),
+            }
+        )
+        ema8.append(
+            {
+                "time": day,
+                "value": _round_to(
+                    float(ema8_series.iloc[index]),
+                    instrument.decimals,
+                ),
+            }
+        )
+        ema21.append(
+            {
+                "time": day,
+                "value": _round_to(
+                    float(ema21_series.iloc[index]),
+                    instrument.decimals,
+                ),
+            }
+        )
+
+        if has_volume and volumes[index] > 0:
+            is_up_day = close_price >= open_price
+            color = "rgba(22,163,74,0.35)"
+            if not is_up_day:
+                color = "rgba(220,38,38,0.35)"
+            volume.append(
+                {
+                    "time": day,
+                    "value": int(volumes[index]),
+                    "color": color,
+                }
+            )
+
+    return candles, ema8, ema21, volume
+
+
+def _market_stats(
+    candles: list[dict],
+    ema8: list[dict],
+    ema21: list[dict],
+    decimals: int,
+) -> dict:
+    """Calculate the summary values displayed above and below the chart."""
+    last_close = candles[-1]["close"]
+    previous_close = last_close
+    if len(candles) > 1:
+        previous_close = candles[-2]["close"]
+
+    change = _round_to(last_close - previous_close, decimals)
+    change_percent = 0.0
+    if previous_close:
+        change_percent = _round_to(
+            (last_close - previous_close) / previous_close * 100,
+            2,
+        )
+
+    highs: list[float] = []
+    lows: list[float] = []
+    for candle in candles:
+        highs.append(candle["high"])
+        lows.append(candle["low"])
+
+    last_ema8 = ema8[-1]["value"]
+    last_ema21 = ema21[-1]["value"]
+    return {
+        "last": last_close,
+        "change": change,
+        "changePct": change_percent,
+        "periodHigh": _round_to(max(highs), decimals),
+        "periodLow": _round_to(min(lows), decimals),
+        "ema8": last_ema8,
+        "ema21": last_ema21,
+        "aboveEmas": last_close > last_ema8 and last_close > last_ema21,
+    }
+
+
 def build_market_history(
     symbol: str,
     *,
     end_date: date | None = None,
     history_days: int = DEFAULT_HISTORY_DAYS,
 ) -> dict:
+    """Build one complete market-history response for the frontend."""
     key = symbol.upper()
     if key not in INSTRUMENTS:
         known = ", ".join(sorted(INSTRUMENTS))
@@ -91,68 +232,28 @@ def build_market_history(
 
     inst = INSTRUMENTS[key]
     as_of = end_date or date.today()
-    # Extra calendar days so ~130 trading sessions are available after weekends/holidays.
+    # Request extra calendar days to allow for weekends and market holidays.
     calendar_days = max(history_days * 2, 260)
     df = _fetch_ohlcv(inst.yahoo, as_of, calendar_days)
     if len(df) > history_days:
         df = df.tail(history_days)
 
     closes = cast(pd.Series, df["Close"])
-    ema8_series = closes.ewm(span=EMA_FAST_SPAN, adjust=False).mean()
-    ema21_series = closes.ewm(span=EMA_SLOW_SPAN, adjust=False).mean()
+    ema8_series = cast(
+        pd.Series,
+        closes.ewm(span=EMA_FAST_SPAN, adjust=False).mean(),
+    )
+    ema21_series = cast(
+        pd.Series,
+        closes.ewm(span=EMA_SLOW_SPAN, adjust=False).mean(),
+    )
 
-    candles: list[dict] = []
-    ema8: list[dict] = []
-    ema21: list[dict] = []
-    volume: list[dict] = []
-    has_volume = "Volume" in df.columns
-
-    days = [ts.date().isoformat() for ts in pd.DatetimeIndex(df.index)]
-    opens = [float(v) for v in df["Open"].to_numpy()]
-    highs = [float(v) for v in df["High"].to_numpy()]
-    lows = [float(v) for v in df["Low"].to_numpy()]
-    closes_list = [float(v) for v in df["Close"].to_numpy()]
-    vols = [float(v) for v in df["Volume"].to_numpy()] if has_volume else []
-
-    for idx in range(len(df)):
-        day = days[idx]
-        open_ = opens[idx]
-        high = highs[idx]
-        low = lows[idx]
-        close = closes_list[idx]
-        up = close >= open_
-
-        candles.append(
-            {
-                "time": day,
-                "open": _round_to(open_, inst.decimals),
-                "high": _round_to(high, inst.decimals),
-                "low": _round_to(low, inst.decimals),
-                "close": _round_to(close, inst.decimals),
-            }
-        )
-        ema8.append({"time": day, "value": _round_to(float(ema8_series.iloc[idx]), inst.decimals)})
-        ema21.append({"time": day, "value": _round_to(float(ema21_series.iloc[idx]), inst.decimals)})
-
-        if has_volume:
-            vol = vols[idx]
-            if vol > 0:
-                volume.append(
-                    {
-                        "time": day,
-                        "value": int(vol),
-                        "color": "rgba(22,163,74,0.35)" if up else "rgba(220,38,38,0.35)",
-                    }
-                )
-
-    last = candles[-1]["close"]
-    prev = candles[-2]["close"] if len(candles) > 1 else last
-    change = _round_to(last - prev, inst.decimals)
-    change_pct = _round_to(((last - prev) / prev) * 100, 2) if prev else 0.0
-    period_high = max(c["high"] for c in candles)
-    period_low = min(c["low"] for c in candles)
-    last_ema8 = ema8[-1]["value"]
-    last_ema21 = ema21[-1]["value"]
+    candles, ema8, ema21, volume = _build_chart_series(
+        df,
+        inst,
+        ema8_series,
+        ema21_series,
+    )
 
     return {
         "symbol": inst.symbol,
@@ -163,14 +264,5 @@ def build_market_history(
         "ema8": ema8,
         "ema21": ema21,
         "volume": volume,
-        "stats": {
-            "last": last,
-            "change": change,
-            "changePct": change_pct,
-            "periodHigh": _round_to(period_high, inst.decimals),
-            "periodLow": _round_to(period_low, inst.decimals),
-            "ema8": last_ema8,
-            "ema21": last_ema21,
-            "aboveEmas": last > last_ema8 and last > last_ema21,
-        },
+        "stats": _market_stats(candles, ema8, ema21, inst.decimals),
     }

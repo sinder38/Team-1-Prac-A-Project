@@ -1,10 +1,9 @@
 import json
 from datetime import date
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
-from unittest.mock import patch
-
 from server import create_app
 from server.market_service import build_market_history
 
