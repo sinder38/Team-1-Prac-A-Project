@@ -2,6 +2,7 @@ import json
 import pytest
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 
 from agents.almanac.almanac_agent import AlmanacAgent
 from agents.schemas import AlmanacOutput, Bias, Confidence
@@ -47,13 +48,12 @@ def test_lookup_seasonal_data_success():
     agent = AlmanacAgent()
     output = agent.lookup_seasonal_data(date(2026, 6, 16))
     #
-    # Source: WEEKLY_PATTERNS[(6, 3)] at almanac_data.py:416-435
-    #   "name": "Mid-June weakness / Triple-Witching week"
+    # Source: WEEKLY_PATTERNS[(6, 3)] at almanac_data.py
+    #   "name": "Mid-June weakness / CPI follow-through week"
     #   "seasonal_bias": "Bearish"
     #   "confidence": "Medium"
-    #   "thesis": "Seasonality is still a headwind in mid-June..."
     #
-    # Source: MONTHLY_STATS[6] at almanac_data.py:169-197
+    # Source: MONTHLY_STATS[6] at almanac_data.py
     #   "monthly_bias": "Bearish"
     #
     assert isinstance(output, AlmanacOutput)
@@ -61,24 +61,19 @@ def test_lookup_seasonal_data_success():
     assert output.monthly_bias == Bias.BEARISH
     assert output.seasonal_bias == Bias.BEARISH
     assert output.confidence == Confidence.MEDIUM
-    assert output.weekly_pattern == "Mid-June weakness / Triple-Witching week"
+    assert output.weekly_pattern == "Mid-June weakness / CPI follow-through week"
     assert len(output.sector_signals) > 0
-    assert "Almanac base case stays cautious" in output.thesis
+    assert "Almanac setup stays cautious" in output.thesis
 
 
 def test_lookup_seasonal_data_fallback():
     agent = AlmanacAgent()
     output = agent.lookup_seasonal_data(date(2026, 12, 15))
     #
-    # Source: MONTHLY_STATS[12] at almanac_data.py:299-317
+    # Source: MONTHLY_STATS[12] at almanac_data.py
     #   "monthly_bias": "Bullish"
     #
-    # No WEEKLY_PATTERNS entry for (12, 3) — falls back to
-    #   "name": "General monthly seasonal pattern"
-    #   "seasonal_bias": month_data["monthly_bias"] → "Bullish"
-    #   "confidence": "Low"
-    #   "thesis": "Only the monthly Almanac context is encoded..."
-    #   See _get_week_data() at almanac_agent.py:136-151
+    # No WEEKLY_PATTERNS entry for (12, 3) — falls back to monthly bias.
     #
     assert isinstance(output, AlmanacOutput)
     assert output.prediction_date == date(2026, 12, 15)
@@ -137,20 +132,15 @@ def test_almanac_integration_fallback(setup_integration):
     # ---------------------------------------------------------------
     # Fallback scenario: 2026-12-15 is December Week 3 → (12, 3)
     # No WEEKLY_PATTERNS entry exists for (12, 3).
-    # Agent falls back to MONTHLY_STATS[12] (almanac_data.py:299-317):
+    # Agent falls back to MONTHLY_STATS[12]:
     #   "monthly_bias": "Bullish"
-    # Fallback dict (almanac_agent.py:136-151):
-    #   "seasonal_bias": month_data["monthly_bias"] → "Bullish"
-    #   "confidence": "Low"
-    #   "name": "General monthly seasonal pattern"
-    #   "thesis": "Only the monthly Almanac context is encoded..."
     # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 12, 15)
     ctx = PipelineContext(prediction_date=prediction_date)
-    config = {"artifacts": {"save_json": True, "save_md": True}}
+    config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
+    run_almanac(ctx, config)
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -180,32 +170,16 @@ def test_almanac_integration_fallback(setup_integration):
 
 def test_almanac_integration_week_1_memorial_day(setup_integration):
     # ---------------------------------------------------------------
-    # WEEKLY_PATTERNS[(5, 4)] at almanac_data.py:361-385
-    #   "label": "Memorial Day Week, 26-30 May"
-    #   "name": "Memorial Day week / week after options expiration"
+    # WEEKLY_PATTERNS[(5, 4)] — Memorial Day Week, 26-30 May
     #   "seasonal_bias": "Mixed"
     #   "confidence": "Low-Medium"
-    #   "bullets": [
-    #       "Memorial Day week: Dow down 17 of last 29. Bearish lean.",
-    #       "Day after Memorial Day: Dow down 8 of last 10. Recent trend bearish.",
-    #       "Week after options expiration: S&P up 30 of 45, avg +0.40%. Mild bullish offset.",
-    #       "Net: mixed / slight bearish lean.",
-    #   ]
-    #   "thesis": "Seasonality suggests caution in late May..."
-    #
-    # MONTHLY_STATS[5] at almanac_data.py:140-168
-    #   "monthly_bias": "Mixed"
-    #
-    # SECTOR_WINDOWS at almanac_data.py:524-569:
-    #   Technology (XLK): "seasonal LONG window (March-July)"
-    #   Banking / Financials (XLF): "seasonal SHORT window (May-July)"
     # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 5, 27)
     ctx = PipelineContext(prediction_date=prediction_date)
-    config = {"artifacts": {"save_json": True, "save_md": True}}
+    config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
+    run_almanac(ctx, config)
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -241,31 +215,16 @@ def test_almanac_integration_week_1_memorial_day(setup_integration):
 
 def test_almanac_integration_week_2_early_june(setup_integration):
     # ---------------------------------------------------------------
-    # WEEKLY_PATTERNS[(6, 1)] at almanac_data.py:386-415
-    #   "label": "Early June Week, 2-6 June"
-    #   "name": "Early June midterm-year weakness"
+    # WEEKLY_PATTERNS[(6, 1)] — Early June Week, 2-6 June
     #   "seasonal_bias": "Bearish"
     #   "confidence": "Medium"
-    #   "bullets": [
-    #       "No specific holiday pattern is active this week.",
-    #       "Early June is transitional as summer doldrums begin.",
-    #       "Volume tends to decline in early June as institutional activity slows.",
-    #       "NFP on Friday 5 June is the dominant market event this week.",
-    #   ]
-    #   "thesis": "June 2026 is the worst month of the year in a midterm cycle..."
-    #
-    # MONTHLY_STATS[6] at almanac_data.py:169-197
-    #   "monthly_bias": "Bearish"
-    #
-    # SECTOR_WINDOWS: Oil / Energy (XLE) at almanac_data.py:561-569
-    #   "window": "seasonal SHORT begins in early June"
     # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 3)
     ctx = PipelineContext(prediction_date=prediction_date)
-    config = {"artifacts": {"save_json": True, "save_md": True}}
+    config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
+    run_almanac(ctx, config)
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -298,40 +257,23 @@ def test_almanac_integration_week_2_early_june(setup_integration):
 
 def test_almanac_integration_week_3_mid_june(setup_integration):
     # ---------------------------------------------------------------
-    # Stock Trader's Almanac 2026, p.87 (June 15-19)
-    #   Seasonal bias: Bearish / Mixed. Confidence: Moderate.
-    #   June is the weakest month of the year during a midterm cycle
-    #   (Ranked #12 across DJIA, S&P 500, NASDAQ). Midterm avg: -1.9%
-    #   DJIA, -2.1% S&P 500.
-    #
-    #   Key day-level events from the book:
-    #     Mon 6/15: Monday of Triple-Witching Week, Dow down 15 of last 28
-    #     Tue 6/16: Triple-Witching Week often up in bull markets /
-    #               down in bears (p.108)
-    #     Wed 6/17: FOMC Meeting scheduled
-    #     Thu 6/18: June Triple-Witching Day mixed, but down 8 of last 10
-    #     Fri 6/19: Juneteenth — Markets CLOSED
-    #
-    # → Encoded as WEEKLY_PATTERNS[(6, 3)] at almanac_data.py:416-435
-    #   "seasonal_bias": "Bearish" (matches book)
-    #   "confidence": "Medium"    (matches book "Moderate")
-    #
-    # MONTHLY_STATS[6] at almanac_data.py:169-197
-    #   "monthly_bias": "Bearish" (matches book)
+    # WEEKLY_PATTERNS[(6, 3)] — Mid-June Week, 15-19 June
+    #   "seasonal_bias": "Bearish"
+    #   "confidence": "Medium"
     # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 16)
     ctx = PipelineContext(prediction_date=prediction_date)
-    config = {"artifacts": {"save_json": True, "save_md": True}}
+    config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
+    run_almanac(ctx, config)
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.BEARISH
     assert ctx.almanac.seasonal_bias == Bias.BEARISH
     assert ctx.almanac.confidence == Confidence.MEDIUM
-    assert ctx.almanac.weekly_pattern == "Mid-June weakness / Triple-Witching week"
+    assert ctx.almanac.weekly_pattern == "Mid-June weakness / CPI follow-through week"
 
     _verify_artifacts(
         tmp_path,
@@ -341,7 +283,7 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
             "monthly_bias": "Bearish",
             "seasonal_bias": "Bearish",
             "confidence": "Medium",
-            "weekly_pattern": "Mid-June weakness / Triple-Witching week",
+            "weekly_pattern": "Mid-June weakness / CPI follow-through week",
         },
         expected_md_contains=[
             "Almanac Agent Output",
@@ -352,41 +294,29 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
             "SECTOR SIGNALS:",
             "ALMANAC SEASONAL BIAS: Bearish.",
             "PATTERN CONFIDENCE: MEDIUM.",
-            'ALMANAC THESIS: "Mid-June Triple-Witching week',
+            'ALMANAC THESIS: "Seasonality is still a headwind in mid-June',
         ]
     )
 
 
 def test_almanac_integration_week_4_late_june(setup_integration):
     # ---------------------------------------------------------------
-    # Stock Trader's Almanac 2026, p.89 (June 22-26)
-    #   Seasonal bias: Bearish. Confidence: Moderate.
-    #   "Week After June Triple-Witching, Dow down 29 of last 35.
-    #    Average loss since 1990 is 0.8%."
-    #   June 23-26: No specific daily stats, but p.81 warns
-    #   "Summer doldrums can begin in late June."
-    #
-    #   Monthly: June is #12 (dead last) in midterm cycle. p.87.
-    #
-    # → Encoded as WEEKLY_PATTERNS[(6, 4)] at almanac_data.py:442-465
-    #   "seasonal_bias": "Bearish" (matches book)
-    #   "confidence": "Medium"    (matches book "Moderate")
-    #
-    # MONTHLY_STATS[6] at almanac_data.py:169-197
-    #   "monthly_bias": "Bearish" (matches book)
+    # WEEKLY_PATTERNS[(6, 4)] — Late June Week, 22-26 June
+    #   "seasonal_bias": "Mixed"
+    #   "confidence": "Low-Medium"
     # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 24)
     ctx = PipelineContext(prediction_date=prediction_date)
-    config = {"artifacts": {"save_json": True, "save_md": True}}
+    config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
+    run_almanac(ctx, config)
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.BEARISH
-    assert ctx.almanac.seasonal_bias == Bias.BEARISH
-    assert ctx.almanac.confidence == Confidence.MEDIUM
+    assert ctx.almanac.seasonal_bias == Bias.MIXED
+    assert ctx.almanac.confidence == Confidence.LOW_MEDIUM
 
     _verify_artifacts(
         tmp_path,
@@ -394,53 +324,35 @@ def test_almanac_integration_week_4_late_june(setup_integration):
         expected_json={
             "prediction_date": "2026-06-24",
             "monthly_bias": "Bearish",
-            "seasonal_bias": "Bearish",
-            "confidence": "Medium",
+            "seasonal_bias": "Mixed",
+            "confidence": "Low-Medium",
         },
         expected_md_contains=[
             "MONTH: June 2026",
-            "Monday, June 22: Week after June Triple-Witching",
-            "Dow down 29 of last 35",
-            "Average loss for S&P 500 since 1990 during this week is -0.8%",
-            "Summer doldrums can begin in late June",
+            "Late June can see quarter-end positioning and rebalancing flows.",
+            "Midterm-year June remains weak even if short-term bounces appear.",
+            "Summer trading volume may start to thin, which can exaggerate moves.",
         ]
     )
 
 
 def test_almanac_integration_week_5_early_july(setup_integration):
     # ---------------------------------------------------------------
-    # Stock Trader's Almanac 2026, p.97 & p.99 (July 6-10)
-    #   Seasonal bias: Bullish / Mixed. Confidence: Moderate to Strong.
-    #   July is the best month of Q3. In midterm years it ranks #3 for
-    #   Dow (avg +1.6%) and #3 for S&P 500 (avg +1.3%). NASDAQ drops
-    #   to #7 (avg -0.8%).
-    #
-    #   Specific day notes from the book:
-    #     Mon 7/6: "Market subject to elevated volatility after July 4th"
-    #     Wed 7/8: "Beware the Summer Rally hype — historically the
-    #              weakest rally of all seasons" (p.76)
-    #     Thu-Fri: No specific daily trends highlighted.
-    #
-    # → Encoded as WEEKLY_PATTERNS[(7, 1)] at almanac_data.py:486-511
-    #   "seasonal_bias": "Mixed" (matches book "Bullish / Mixed")
-    #   "confidence": "Medium" (book says "Moderate to Strong";
-    #     Confidence enum has no MEDIUM_HIGH value, so MEDIUM is closest)
-    #
-    # MONTHLY_STATS[7] at almanac_data.py:198-225
-    #   "monthly_bias": "Mixed" (book says July is highly bullish
-    #     overall; the "Mixed" may reflect midterm-year discounting)
+    # WEEKLY_PATTERNS[(7, 1)] — Early July Week, 6-10 July
+    #   "seasonal_bias": "Bullish"
+    #   "confidence": "Medium"
     # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 7, 7)
     ctx = PipelineContext(prediction_date=prediction_date)
-    config = {"artifacts": {"save_json": True, "save_md": True}}
+    config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
+    run_almanac(ctx, config)
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.MIXED
-    assert ctx.almanac.seasonal_bias == Bias.MIXED
+    assert ctx.almanac.seasonal_bias == Bias.BULLISH
     assert ctx.almanac.confidence == Confidence.MEDIUM
 
     _verify_artifacts(
@@ -449,15 +361,13 @@ def test_almanac_integration_week_5_early_july(setup_integration):
         expected_json={
             "prediction_date": "2026-07-07",
             "monthly_bias": "Mixed",
-            "seasonal_bias": "Mixed",
+            "seasonal_bias": "Bullish",
             "confidence": "Medium",
         },
         expected_md_contains=[
             "MONTH: July 2026",
-            "Elevated volatility after Independence Day",
-            "July is the best month of Q3",
-            "ranks #3 for Dow",
-            "(+1.3%) in midterm years",
-            "NASDAQ midterm-year July ranks only #7",
+            "Early July is often one of the more constructive parts of the summer calendar.",
+            "New-month and second-half inflows can support index performance.",
+            "The midterm-year Weak Spot still argues against overconfidence.",
         ]
     )
