@@ -1,5 +1,6 @@
 import tomllib
 from pathlib import Path
+import argparse
 
 from pydantic import BaseModel, model_validator
 
@@ -8,11 +9,12 @@ class LLMModelEntry(BaseModel):
     id: str
     slug: str = ""   # short file/path identifier; derived from id if not set in TOML
     name: str = ""   # human-readable label; derived from slug if not set in TOML
+    provider: str = "openrouter"  # "openrouter" | "ollama"
 
     @model_validator(mode="after")
     def _fill_derived(self) -> "LLMModelEntry":
         if not self.slug:
-            self.slug = self.id.split("/", 1)[1].split(":")[0]
+            self.slug = self.id.split("/", 1)[1].split(":")[0] if "/" in self.id else self.id
         if not self.name:
             self.name = self.slug.replace("-", " ").title()
         return self
@@ -34,8 +36,8 @@ class StagesConfig(BaseModel):
 
 
 class LLMConfig(BaseModel):
-    models: list[LLMModelEntry]
-    max_retries: int
+    models: list[LLMModelEntry] = []
+    max_retries: int = 3
 
 
 class ArtifactsConfig(BaseModel):
@@ -43,11 +45,16 @@ class ArtifactsConfig(BaseModel):
     save_md: bool = True
 
 
-class PipelineConfig(BaseModel):
+class StageConfig(BaseModel):
+    """Everything a single agent stage needs to run"""
+
+    llm: LLMConfig = LLMConfig()
+    artifacts: ArtifactsConfig = ArtifactsConfig()
+
+
+class PipelineConfig(StageConfig):
     pipeline: PipelineSection
     stages: StagesConfig
-    llm: LLMConfig
-    artifacts: ArtifactsConfig = ArtifactsConfig()
 
 
 def load_config(path: Path) -> PipelineConfig:
