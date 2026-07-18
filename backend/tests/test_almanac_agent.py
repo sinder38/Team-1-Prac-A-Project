@@ -129,18 +129,12 @@ def _verify_artifacts(tmp_path, week_str, expected_json, expected_md_contains):
 
 
 def test_almanac_integration_fallback(setup_integration):
-    # ---------------------------------------------------------------
-    # Fallback scenario: 2026-12-15 is December Week 3 → (12, 3)
-    # No WEEKLY_PATTERNS entry exists for (12, 3).
-    # Agent falls back to MONTHLY_STATS[12]:
-    #   "monthly_bias": "Bullish"
-    # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 12, 15)
     ctx = PipelineContext(prediction_date=prediction_date)
     config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -169,17 +163,12 @@ def test_almanac_integration_fallback(setup_integration):
 
 
 def test_almanac_integration_week_1_memorial_day(setup_integration):
-    # ---------------------------------------------------------------
-    # WEEKLY_PATTERNS[(5, 4)] — Memorial Day Week, 26-30 May
-    #   "seasonal_bias": "Mixed"
-    #   "confidence": "Low-Medium"
-    # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 5, 27)
     ctx = PipelineContext(prediction_date=prediction_date)
     config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -214,17 +203,12 @@ def test_almanac_integration_week_1_memorial_day(setup_integration):
 
 
 def test_almanac_integration_week_2_early_june(setup_integration):
-    # ---------------------------------------------------------------
-    # WEEKLY_PATTERNS[(6, 1)] — Early June Week, 2-6 June
-    #   "seasonal_bias": "Bearish"
-    #   "confidence": "Medium"
-    # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 3)
     ctx = PipelineContext(prediction_date=prediction_date)
     config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -256,17 +240,12 @@ def test_almanac_integration_week_2_early_june(setup_integration):
 
 
 def test_almanac_integration_week_3_mid_june(setup_integration):
-    # ---------------------------------------------------------------
-    # WEEKLY_PATTERNS[(6, 3)] — Mid-June Week, 15-19 June
-    #   "seasonal_bias": "Bearish"
-    #   "confidence": "Medium"
-    # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 16)
     ctx = PipelineContext(prediction_date=prediction_date)
     config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -300,17 +279,12 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
 
 
 def test_almanac_integration_week_4_late_june(setup_integration):
-    # ---------------------------------------------------------------
-    # WEEKLY_PATTERNS[(6, 4)] — Late June Week, 22-26 June
-    #   "seasonal_bias": "Mixed"
-    #   "confidence": "Low-Medium"
-    # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 24)
     ctx = PipelineContext(prediction_date=prediction_date)
     config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -337,17 +311,12 @@ def test_almanac_integration_week_4_late_june(setup_integration):
 
 
 def test_almanac_integration_week_5_early_july(setup_integration):
-    # ---------------------------------------------------------------
-    # WEEKLY_PATTERNS[(7, 1)] — Early July Week, 6-10 July
-    #   "seasonal_bias": "Bullish"
-    #   "confidence": "Medium"
-    # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 7, 7)
     ctx = PipelineContext(prediction_date=prediction_date)
     config = SimpleNamespace(artifacts=SimpleNamespace(save_json=True, save_md=True))
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
