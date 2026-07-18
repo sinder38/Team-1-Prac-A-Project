@@ -4,9 +4,6 @@ from dataclasses import asdict
 from datetime import date
 from pathlib import Path
 
-from flask import Blueprint, jsonify, request
-from werkzeug.exceptions import BadRequest
-
 from agents.io import week_stem
 from agents.pipeline.config import LLMModelEntry
 from agents.pipeline.context import PipelineContext
@@ -30,6 +27,9 @@ from agents.schemas import (
     SectorSignal,
     TechnicalOutput,
 )
+from flask import Blueprint, jsonify, request
+from werkzeug.exceptions import BadRequest
+
 from server.config import load_server_config
 from server.utils import artifact_path, err, parse_date, require_fields
 
@@ -39,7 +39,7 @@ DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "server.toml"
 
 CONFIG = load_server_config(DEFAULT_CONFIG)
 
-# Registry maps short model keys (as accepted by the /stages/llm endpoint) → LLMModelEntry.
+# Map each model slug accepted by /stages/llm to its configuration.
 # Sourced from server.toml's [llm].models, keyed by slug.
 _MODEL_REGISTRY: dict[str, LLMModelEntry] = {m.slug: m for m in CONFIG.llm.models}
 
@@ -313,11 +313,13 @@ def post_llm():
     try:
         _slug, _row = run_llm(ctx, CONFIG, _MODEL_REGISTRY[model_key])
     except Exception as e:
-        return jsonify({
-            "status": "failed",
-            "model": model_key,
-            "error": str(e),
-        }), 503
+        return jsonify(
+            {
+                "status": "failed",
+                "model": model_key,
+                "error": str(e),
+            }
+        ), 503
 
     llm_output = ctx.llm_outputs[-1]
     output_dict = asdict(llm_output)

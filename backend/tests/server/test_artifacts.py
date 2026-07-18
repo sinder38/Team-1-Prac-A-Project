@@ -1,8 +1,7 @@
 import json
-import pytest
-from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from server import create_app
 
 
@@ -20,7 +19,9 @@ def test_get_almanac_found(client, tmp_path):
     fake_path.write_text(json.dumps(artifact))
 
     with patch("server.artifacts.artifact_path", return_value=fake_path):
-        resp = client.get("/artifacts/almanac?run_id=run1&horizon_days=7&prediction_date=2026-06-18")
+        resp = client.get(
+            "/artifacts/almanac?run_id=run1&horizon_days=7&prediction_date=2026-06-18"
+        )
     assert resp.status_code == 200
     assert json.loads(resp.data)["monthly_bias"] == "Bullish"
 
@@ -28,7 +29,9 @@ def test_get_almanac_found(client, tmp_path):
 def test_get_almanac_not_found(client, tmp_path):
     fake_path = tmp_path / "almanac_W25_run1_7d.json"  # does not exist
     with patch("server.artifacts.artifact_path", return_value=fake_path):
-        resp = client.get("/artifacts/almanac?run_id=run1&horizon_days=7&prediction_date=2026-06-18")
+        resp = client.get(
+            "/artifacts/almanac?run_id=run1&horizon_days=7&prediction_date=2026-06-18"
+        )
     assert resp.status_code == 404
 
 
@@ -57,7 +60,11 @@ def test_get_llm_found(client, tmp_path):
     fake_path = tmp_path / "llm_nemotron_W25_run1_7d.json"
     fake_path.write_text(json.dumps(artifact))
     with patch("server.artifacts.artifact_path", return_value=fake_path):
-        resp = client.get("/artifacts/llm?run_id=run1&model=nemotron&horizon_days=7&prediction_date=2026-06-18")
+        query = (
+            "/artifacts/llm?run_id=run1&model=nemotron"
+            "&horizon_days=7&prediction_date=2026-06-18"
+        )
+        resp = client.get(query)
     assert resp.status_code == 200
 
 
@@ -71,11 +78,15 @@ def test_get_runs(client, tmp_path):
     (tmp_path / "almanac").mkdir()
     (tmp_path / "almanac" / "almanac_W25_run1_7d.json").write_text("{}")
     (tmp_path / "almanac" / "almanac_W25_run2_7d.json").write_text("{}")
-    (tmp_path / "almanac" / "almanac_W24_other_7d.json").write_text("{}")  # different week
+    (tmp_path / "almanac" / "almanac_W24_other_7d.json").write_text(
+        "{}"
+    )  # different week
 
     # Add LLM artifacts to test LLM filename pattern matching
     (tmp_path / "llm").mkdir()
-    (tmp_path / "llm" / "llm_nemotron_W25_run1_7d.json").write_text("{}")  # same run_id as almanac
+    (tmp_path / "llm" / "llm_nemotron_W25_run1_7d.json").write_text(
+        "{}"
+    )  # same run_id as almanac
     (tmp_path / "llm" / "llm_nemotron_W25_run3_7d.json").write_text("{}")  # new run_id
 
     with patch("server.artifacts.OUTPUTS_ROOT", tmp_path):
@@ -117,9 +128,11 @@ def test_list_weeks_across_stems(client, tmp_path):
     os.utime(older, (now - 10, now - 10))
     os.utime(newer, (now, now))
 
-    with patch("server.archive.OUTPUTS_ROOT", tmp_path), \
-         patch("server.utils.OUTPUTS_ROOT", tmp_path), \
-         patch("server.archive.list_archive_weeks", return_value=[]):
+    with (
+        patch("server.archive.OUTPUTS_ROOT", tmp_path),
+        patch("server.utils.OUTPUTS_ROOT", tmp_path),
+        patch("server.archive.list_archive_weeks", return_value=[]),
+    ):
         resp = client.get("/artifacts/weeks")
 
     assert resp.status_code == 200
@@ -134,8 +147,10 @@ def test_list_weeks_across_stems(client, tmp_path):
 
 
 def test_list_weeks_empty(client, tmp_path):
-    with patch("server.archive.OUTPUTS_ROOT", tmp_path / "missing"), \
-         patch("server.archive.list_archive_weeks", return_value=[]):
+    with (
+        patch("server.archive.OUTPUTS_ROOT", tmp_path / "missing"),
+        patch("server.archive.list_archive_weeks", return_value=[]),
+    ):
         resp = client.get("/artifacts/weeks")
     assert resp.status_code == 200
     assert json.loads(resp.data)["weeks"] == []

@@ -11,12 +11,13 @@ from server.utils import OUTPUTS_ROOT, REPO_ROOT, artifact_path, parse_date
 
 DATA_ROOT = REPO_ROOT / "data"
 
-# Stem must sit right before the file extension (rejects mid-name junk like notes_W99_draft.md).
+# The week stem must be directly before the file extension. This rejects names
+# such as notes_W99_draft.md.
 _STEM_RE = re.compile(r"_(W\d{2})\.")
 _RUN_DATE_RE = re.compile(r"run\s+(\d{4}-\d{2}-\d{2})", re.I)
 _CONFIDENCE_SCORE = {"Low": 40, "Low-Medium": 55, "Medium": 65, "High": 85}
 
-# data/outputs run-artifact filenames, e.g. almanac_W25_run-abc_7d.json / llm_gemma_W25_run-abc_7d.json
+# Patterns for standard and LLM artifacts stored under data/outputs.
 _STANDARD_RUN = re.compile(r"^[a-z]+_(W\d{2})_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$")
 _LLM_RUN = re.compile(r"^llm_[a-z0-9]+_(W\d{2})_(.+?)_\d+d\.json$")
 
@@ -149,7 +150,10 @@ def discover_archive_stems() -> dict[str, date]:
             if m:
                 stems.add(m.group(1))
 
-    return {stem: _prediction_date_for_stem(stem) for stem in stems}
+    discovered: dict[str, date] = {}
+    for stem in stems:
+        discovered[stem] = _prediction_date_for_stem(stem)
+    return discovered
 
 
 def _extract_metrics(agent: str, text: str) -> list[dict]:
@@ -176,7 +180,119 @@ def _agent_card(agent_key: str, label: str, stem: str) -> dict | None:
 
 
 def _split_table_row(line: str) -> list[str]:
-    return [p.strip() for p in line.strip().strip("|").split("|")]
+    cells: list[str] = []
+    for part in line.strip().strip("|").split("|"):
+        cells.append(part.strip())
+    return cells
+
+
+def _comparison_table(
+    lines: list[str],
+) -> tuple[list[str], dict[str, list[str]]]:
+    """Read the model names and dimension rows from a Markdown table."""
+    header: list[str] = []
+    rows: dict[str, list[str]] = {}
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        if re.match(r"^\|\s*:?-{3,}", stripped):
+            continue
+
+        cells = _split_table_row(stripped)
+        if len(cells) < 2:
+            continue
+        if not header and cells[0].lower() in ("dimension", ""):
+            header = cells[1:]
+            continue
+        if not header:
+            continue
+
+        key = re.sub(r"[*_]", "", cells[0]).strip().lower()
+        rows[key] = cells[1 : 1 + len(header)]
+
+    return header, rows
+
+
+def _plain_english_summaries(lines: list[str]) -> dict[str, str]:
+    """Read the bullet list under the Plain-English summaries heading."""
+    summaries: dict[str, str] = {}
+    in_section = False
+
+    for line in lines:
+        if re.match(r"^##\s+Plain-English", line, re.I):
+            in_section = True
+            continue
+        if in_section and line.startswith("##"):
+            break
+        if not in_section:
+            continue
+
+        match = re.match(r"^-\s+\*\*(.+?):\*\*\s*(.+)$", line.strip())
+        if match:
+            model_name = match.group(1).strip()
+            summaries[model_name] = match.group(2).strip()
+
+    return summaries
+
+
+def _comparison_model(
+    name: str,
+    index: int,
+    rows: dict[str, list[str]],
+    summaries: dict[str, str],
+) -> dict:
+    """Build the frontend data for one model column."""
+    model = {
+        "name": name,
+        "consensus": "—",
+        "confidence": 50,
+        "confidenceLabel": "—",
+        "spx": "—",
+        "ndx": "—",
+        "iwm": "—",
+        "evidence": "—",
+        "contradiction": "—",
+        "invalidation": "—",
+        "plainEnglish": summaries.get(name, "—"),
+    }
+
+    for dimension, field in _DIM_KEYS.items():
+        values = rows.get(dimension)
+        if not values or index >= len(values):
+            continue
+
+        value = values[index].strip() or "—"
+        if field == "confidenceLabel":
+            model["confidenceLabel"] = value
+            model["confidence"] = _CONFIDENCE_SCORE.get(value, 50)
+        else:
+            model[field] = value
+
+    return model
+
+
+def _consensus_result(models: list[dict]) -> tuple[str, int]:
+    """Return the most common regime and the disagreement percentage."""
+    counts: dict[str, int] = {}
+    for model in models:
+        regime = model["consensus"]
+        counts[regime] = counts.get(regime, 0) + 1
+
+    final_consensus = "Uncertain"
+    agreeing_models = 0
+    for regime, count in counts.items():
+        if count > agreeing_models:
+            final_consensus = regime
+            agreeing_models = count
+
+    if not models:
+        return final_consensus, 0
+
+    disagreeing_models = len(models) - agreeing_models
+    disagreement_ratio = round(disagreeing_models / len(models) * 100)
+    return final_consensus, disagreement_ratio
 
 
 def _parse_llm_comparison(stem: str) -> dict | None:
@@ -186,83 +302,21 @@ def _parse_llm_comparison(stem: str) -> dict | None:
         return None
 
     lines = text.splitlines()
-    header: list[str] | None = None
-    rows: dict[str, list[str]] = {}
-
-    for line in lines:
-        stripped = line.strip()
-        if not stripped.startswith("|"):
-            continue
-        if re.match(r"^\|\s*:?-{3,}", stripped):
-            continue
-        cells = _split_table_row(stripped)
-        if len(cells) < 2:
-            continue
-        if header is None and cells[0].lower() in ("dimension", ""):
-            header = cells[1:]
-            continue
-        if header is None:
-            continue
-        key = re.sub(r"[*_]", "", cells[0]).strip().lower()
-        rows[key] = cells[1 : 1 + len(header)]
-
+    header, rows = _comparison_table(lines)
     if not header:
         return None
 
-    # Plain-English bullet list under ## Plain-English summaries
-    plain: dict[str, str] = {}
-    in_plain = False
-    for line in lines:
-        if re.match(r"^##\s+Plain-English", line, re.I):
-            in_plain = True
-            continue
-        if in_plain and line.startswith("##"):
-            break
-        if in_plain:
-            m = re.match(r"^-\s+\*\*(.+?):\*\*\s*(.+)$", line.strip())
-            if m:
-                plain[m.group(1).strip()] = m.group(2).strip()
-
-    models = []
-    for i, name in enumerate(header):
-        model = {
-            "name": name,
-            "consensus": "—",
-            "confidence": 50,
-            "confidenceLabel": "—",
-            "spx": "—",
-            "ndx": "—",
-            "iwm": "—",
-            "evidence": "—",
-            "contradiction": "—",
-            "invalidation": "—",
-            "plainEnglish": plain.get(name, "—"),
-        }
-        for dim_label, field in _DIM_KEYS.items():
-            values = rows.get(dim_label)
-            if not values or i >= len(values):
-                continue
-            value = values[i].strip() or "—"
-            if field == "confidenceLabel":
-                model["confidenceLabel"] = value
-                model["confidence"] = _CONFIDENCE_SCORE.get(value, 50)
-            else:
-                model[field] = value
+    summaries = _plain_english_summaries(lines)
+    models: list[dict] = []
+    for index, name in enumerate(header):
+        model = _comparison_model(name, index, rows, summaries)
         models.append(model)
 
-    counts: dict[str, int] = {}
-    for m in models:
-        regime = m["consensus"]
-        counts[regime] = counts.get(regime, 0) + 1
-    final = max(counts, key=lambda key: counts.get(key, 0)) if counts else "Uncertain"
-    agreeing = counts.get(final, 0)
-    disagreement = (
-        round(((len(models) - agreeing) / len(models)) * 100) if models else 0
-    )
+    final_consensus, disagreement_ratio = _consensus_result(models)
 
     return {
-        "finalConsensus": final,
-        "disagreementRatio": disagreement,
+        "finalConsensus": final_consensus,
+        "disagreementRatio": disagreement_ratio,
         "models": models,
     }
 
@@ -319,9 +373,13 @@ def _human_score(stem: str, pred: date | None = None) -> dict | None:
         pred = discover_archive_stems().get(stem) or _prediction_date_for_stem(stem)
     week = _label_for_stem(stem, pred)
 
-    scores = {k: 0 for k in _HUMAN_DIM_KEYS.values()}
-    reasoning = {k: "" for k in _HUMAN_DIM_KEYS.values()}
-    ai_said = {k: "—" for k in _HUMAN_DIM_KEYS.values()}
+    scores: dict[str, int] = {}
+    reasoning: dict[str, str] = {}
+    ai_said: dict[str, str] = {}
+    for key in _HUMAN_DIM_KEYS.values():
+        scores[key] = 0
+        reasoning[key] = ""
+        ai_said[key] = "—"
 
     for line in text.splitlines():
         if not line.strip().startswith("|"):
@@ -355,9 +413,8 @@ def _human_score(stem: str, pred: date | None = None) -> dict | None:
     )
     total = int(total_m.group(1)) if total_m else sum(scores.values())
 
-    # ponytail: coarse "was this source mentioned at all" flags for the UI checkboxes,
-    # not a real "was this source weighted" signal. Section headers make these almost
-    # always true; treat as decorative. Upgrade path is parsing the evidence table.
+    # These flags only show whether a source is mentioned in the report. They
+    # do not measure how strongly the team weighted that source.
     evidence = {
         "almanac": "Almanac" in text,
         "macro": "Macro" in text,
@@ -411,71 +468,115 @@ def load_archive_week(stem: str) -> dict | None:
 
 
 def list_archive_weeks() -> list[dict]:
-    weeks = [
-        {
-            "week": _label_for_stem(stem, pred),
-            "stem": stem,
-            "prediction_date": pred.isoformat(),
-            "run_id": None,
-            "source": "archive",
-        }
-        for stem, pred in discover_archive_stems().items()
-    ]
-    return sorted(weeks, key=lambda w: w["week"])
+    weeks: list[dict] = []
+    for stem, pred in discover_archive_stems().items():
+        weeks.append(
+            {
+                "week": _label_for_stem(stem, pred),
+                "stem": stem,
+                "prediction_date": pred.isoformat(),
+                "run_id": None,
+                "source": "archive",
+            }
+        )
+    weeks.sort(key=_week_sort_value)
+    return weeks
+
+
+def _week_sort_value(entry: dict) -> str:
+    """Return the label used to order week entries."""
+    return str(entry["week"])
+
+
+def _latest_run_ids() -> dict[str, str]:
+    """Find the newest run ID for each week in the output folders."""
+    best_runs: dict[str, tuple[float, str]] = {}
+    if not OUTPUTS_ROOT.exists():
+        return {}
+
+    for folder in OUTPUTS_ROOT.iterdir():
+        if not folder.is_dir():
+            continue
+
+        for path in folder.glob("*.json"):
+            match = _STANDARD_RUN.match(path.name)
+            if not match:
+                match = _LLM_RUN.match(path.name)
+            if not match:
+                continue
+
+            stem = match.group(1)
+            run_id = match.group(2)
+            try:
+                modified_time = path.stat().st_mtime
+            except OSError:
+                modified_time = 0.0
+
+            candidate = (modified_time, run_id)
+            current = best_runs.get(stem)
+            if current is None or candidate > current:
+                best_runs[stem] = candidate
+
+    latest: dict[str, str] = {}
+    for stem, (_, run_id) in best_runs.items():
+        latest[stem] = run_id
+    return latest
+
+
+def _run_prediction_date(stem: str, run_id: str) -> date:
+    """Read a prediction date from any available artifact in the run."""
+    for agent in ("almanac", "technical", "macro", "evidence"):
+        if agent == "evidence":
+            path = artifact_path(agent, stem, run_id)
+        else:
+            path = artifact_path(
+                agent,
+                stem,
+                run_id,
+                horizon_days=7,
+            )
+        if not path.exists():
+            continue
+
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            raw_date = data.get("prediction_date")
+            if raw_date:
+                return parse_date(str(raw_date)[:10])
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            continue
+
+    year = date.today().isocalendar().year
+    week_number = int(stem[1:])
+    return date.fromisocalendar(year, week_number, 1)
+
+
+def _run_week_entry(stem: str, run_id: str) -> dict:
+    """Build one frontend week entry for a generated JSON run."""
+    prediction_date = _run_prediction_date(stem, run_id)
+    year = prediction_date.isocalendar().year
+    label = f"{year}-{stem}"
+    return {
+        "week": label,
+        "stem": stem,
+        "prediction_date": prediction_date.isoformat(),
+        "run_id": run_id,
+        "source": "run",
+    }
 
 
 def list_all_weeks() -> list[dict]:
     """JSON run weeks from data/outputs, plus archive markdown weeks for gaps."""
     by_week: dict[str, dict] = {}
 
-    if OUTPUTS_ROOT.exists():
-        # stem -> (mtime, run_id) of the winning run. Newest mtime wins; equal mtime →
-        # lexicographic run_id (stable tie-break). Comparing the tuple gives both.
-        best: dict[str, tuple[float, str]] = {}
-        for subdir in OUTPUTS_ROOT.iterdir():
-            if not subdir.is_dir():
-                continue
-            for f in subdir.glob("*.json"):
-                m = _STANDARD_RUN.match(f.name) or _LLM_RUN.match(f.name)
-                if not m:
-                    continue
-                stem, run_id = m.group(1), m.group(2)
-                try:
-                    mtime = f.stat().st_mtime
-                except OSError:
-                    mtime = 0.0
-                candidate = (mtime, run_id)
-                if stem not in best or candidate > best[stem]:
-                    best[stem] = candidate
-
-        for stem, (_mtime, run_id) in best.items():
-            pred = None
-            for agent in ("almanac", "technical", "macro", "evidence"):
-                if agent == "evidence":
-                    path = artifact_path(agent, stem, run_id)
-                else:
-                    path = artifact_path(agent, stem, run_id, horizon_days=7)
-                if not path.exists():
-                    continue
-                try:
-                    raw = json.loads(path.read_text(encoding="utf-8")).get("prediction_date")
-                    if raw:
-                        pred = parse_date(str(raw)[:10])
-                        break
-                except (OSError, ValueError, TypeError, json.JSONDecodeError):
-                    continue
-            if pred is None:
-                pred = date.fromisocalendar(date.today().isocalendar()[0], int(stem[1:]), 1)
-            label = f"{pred.isocalendar()[0]}-{stem}"
-            by_week[label] = {
-                "week": label,
-                "stem": stem,
-                "prediction_date": pred.isoformat(),
-                "run_id": run_id,
-                "source": "run",
-            }
+    for stem, run_id in _latest_run_ids().items():
+        entry = _run_week_entry(stem, run_id)
+        by_week[entry["week"]] = entry
 
     for entry in list_archive_weeks():
         by_week.setdefault(entry["week"], entry)
 
-    return [by_week[k] for k in sorted(by_week)]
+    weeks: list[dict] = []
+    for week in sorted(by_week):
+        weeks.append(by_week[week])
+    return weeks
