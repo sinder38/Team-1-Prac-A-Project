@@ -27,28 +27,24 @@ def get_conn() -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
+    conn.execute("""
+                CREATE TABLE IF NOT EXISTS agent_outputs (
+                    agent_type      TEXT NOT NULL,
+                    week_stem       TEXT NOT NULL,
+                    run_id          TEXT NOT NULL,
+                    horizon_days    INTEGER NOT NULL,
+                    model           TEXT NOT NULL,
+                    prediction_date TEXT,
+                    data            TEXT NOT NULL,
+                    created_at      TEXT NOT NULL,
+                    PRIMARY KEY (agent_type, week_stem, run_id, horizon_days, model)
+                )
+            """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_agent_outputs_week "
+        "ON agent_outputs (week_stem)"
+    )
     return conn
-
-
-def init_db() -> None:
-    with get_conn() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS agent_outputs (
-                agent_type      TEXT NOT NULL,
-                week_stem       TEXT NOT NULL,
-                run_id          TEXT NOT NULL,
-                horizon_days    INTEGER NOT NULL,
-                model           TEXT NOT NULL,
-                prediction_date TEXT,
-                data            TEXT NOT NULL,
-                created_at      TEXT NOT NULL,
-                PRIMARY KEY (agent_type, week_stem, run_id, horizon_days, model)
-            )
-        """)
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_agent_outputs_week "
-            "ON agent_outputs (week_stem)"
-        )
 
 
 def _key_horizon(horizon_days: int | None) -> int:
@@ -69,7 +65,6 @@ def save_artifact(
     model: str | None = None,
     prediction_date: date | str | None = None,
 ) -> None:
-    init_db()
     payload = data if isinstance(data, str) else json.dumps(data, indent=2, default=str)
     pred = (
         prediction_date.isoformat()
@@ -111,7 +106,6 @@ def load_artifact(
     horizon_days: int | None = None,
     model: str | None = None,
 ) -> dict[str, Any]:
-    init_db()
     with get_conn() as conn:
         row = conn.execute(
             """
@@ -157,7 +151,6 @@ def artifact_exists(
 
 
 def list_run_ids(week_stem: str) -> list[str]:
-    init_db()
     with get_conn() as conn:
         rows = conn.execute(
             """
