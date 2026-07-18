@@ -3,14 +3,14 @@
 from typing import Mapping
 
 from agents.delta.models import (
-    ActualRow,
     AGENT_ORDER,
     ASSET_LABELS,
     BASE_WEIGHTS,
-    DeltaRow,
-    PredictionRow,
     SECTOR_ASSETS,
     TRACKED_ASSETS,
+    ActualRow,
+    DeltaRow,
+    PredictionRow,
     WeekAccuracy,
     WeightAdjustment,
     percentage,
@@ -25,37 +25,42 @@ def score_available_assets(
     predictions: Mapping[str, PredictionRow],
     actuals: Mapping[str, ActualRow],
 ) -> tuple[list[DeltaRow], list[str], list[str]]:
-    rows = [
-        score_asset(predictions[asset], actuals[asset])
-        for asset in TRACKED_ASSETS
-        if asset in predictions and asset in actuals
-    ]
-    missing_predictions = [
-        asset for asset in TRACKED_ASSETS if asset not in predictions
-    ]
-    missing_actuals = [
-        asset
-        for asset in TRACKED_ASSETS
-        if asset in predictions and asset not in actuals
-    ]
+    """Score matching rows and record which required rows are missing."""
+    rows: list[DeltaRow] = []
+    missing_predictions: list[str] = []
+    missing_actuals: list[str] = []
+
+    # Check assets in one fixed order so the report is stable each time.
+    for asset in TRACKED_ASSETS:
+        if asset not in predictions:
+            missing_predictions.append(asset)
+            continue
+        if asset not in actuals:
+            missing_actuals.append(asset)
+            continue
+        rows.append(score_asset(predictions[asset], actuals[asset]))
+
     return rows, missing_predictions, missing_actuals
 
 
 def score_asset(prediction: PredictionRow, actual: ActualRow) -> DeltaRow:
+    """Compare one predicted direction and range with its actual move."""
     range_hit: bool | None = None
     error_percent: float | None = None
+
+    # Range scoring is optional because some sector predictions only include
+    # a direction. In that case both values remain None and the report says N/A.
     if prediction.range_low is not None and prediction.range_high is not None:
-        range_hit = (
-            prediction.range_low
-            <= actual.actual_move
-            <= prediction.range_high
-        )
+        range_hit = prediction.range_low <= actual.actual_move <= prediction.range_high
         if range_hit:
             error_percent = 0.0
         elif actual.actual_move < prediction.range_low:
             error_percent = prediction.range_low - actual.actual_move
         else:
             error_percent = actual.actual_move - prediction.range_high
+
+    predicted_directions = prediction.direction.upper().split("-")
+    direction_correct = actual.actual_direction in predicted_directions
 
     return DeltaRow(
         asset=prediction.asset,
@@ -67,13 +72,9 @@ def score_asset(prediction: PredictionRow, actual: ActualRow) -> DeltaRow:
         confidence=prediction.confidence,
         actual_move=actual.actual_move,
         actual_direction=actual.actual_direction,
-        direction_correct=(
-            actual.actual_direction in prediction.direction.upper().split("-")
-        ),
+        direction_correct=direction_correct,
         range_hit=range_hit,
-        error_percent=(
-            round(error_percent, 2) if error_percent is not None else None
-        ),
+        error_percent=(round(error_percent, 2) if error_percent is not None else None),
     )
 
 
@@ -82,21 +83,30 @@ def summarize_week(
     actuals_week: str,
     rows: list[DeltaRow],
 ) -> WeekAccuracy:
-    errors = [
-        row.error_percent
-        for row in rows
-        if row.error_percent is not None
-    ]
+    """Combine individual asset results into one weekly score."""
+    errors: list[float] = []
+    direction_hits = 0
+    ranged_assets = 0
+    range_hits = 0
+
+    for row in rows:
+        if row.direction_correct:
+            direction_hits += 1
+        if row.range_hit is not None:
+            ranged_assets += 1
+        if row.range_hit is True:
+            range_hits += 1
+        if row.error_percent is not None:
+            errors.append(row.error_percent)
+
     return WeekAccuracy(
         prediction_week=prediction_week,
         actuals_week=actuals_week,
         scored_assets=len(rows),
-        direction_hits=sum(row.direction_correct for row in rows),
-        ranged_assets=sum(row.range_hit is not None for row in rows),
-        range_hits=sum(row.range_hit is True for row in rows),
-        average_range_error=(
-            round(sum(errors) / len(errors), 2) if errors else 0.0
-        ),
+        direction_hits=direction_hits,
+        ranged_assets=ranged_assets,
+        range_hits=range_hits,
+        average_range_error=(round(sum(errors) / len(errors), 2) if errors else 0.0),
     )
 
 
@@ -105,25 +115,28 @@ def suggest_weight_adjustments(
     history: list[WeekAccuracy],
     current_weights: Mapping[str, float],
 ) -> list[WeightAdjustment]:
-    suggested = {
-        agent: float(current_weights.get(agent, BASE_WEIGHTS[agent]))
-        for agent in AGENT_ORDER
-    }
-    reasons = {
-        agent: "No change from the previous reviewed weights."
-        for agent in AGENT_ORDER
-    }
+    """Suggest small weight changes using cumulative accuracy."""
+    suggested: dict[str, float] = {}
+    reasons: dict[str, str] = {}
+    for agent in AGENT_ORDER:
+        suggested[agent] = float(current_weights.get(agent, BASE_WEIGHTS[agent]))
+        reasons[agent] = "No change from the previous reviewed weights."
 
-    direction_accuracy = percentage(
-        sum(week.direction_hits for week in history),
-        sum(week.scored_assets for week in history),
-    )
-    ranged_assets = sum(week.ranged_assets for week in history)
-    range_accuracy = percentage(
-        sum(week.range_hits for week in history),
-        ranged_assets,
-    )
+    total_direction_hits = 0
+    total_scored_assets = 0
+    total_range_hits = 0
+    total_ranged_assets = 0
+    for week in history:
+        total_direction_hits += week.direction_hits
+        total_scored_assets += week.scored_assets
+        total_range_hits += week.range_hits
+        total_ranged_assets += week.ranged_assets
 
+    direction_accuracy = percentage(total_direction_hits, total_scored_assets)
+    range_accuracy = percentage(total_range_hits, total_ranged_assets)
+
+    # A five percentage-point transfer is intentionally small. Delta gives the
+    # team a trial suggestion rather than silently making a large decision.
     if direction_accuracy < LOW_ACCURACY_THRESHOLD:
         _transfer_weight(suggested, "llm", "human_score")
         reasons["llm"] = (
@@ -135,7 +148,7 @@ def suggest_weight_adjustments(
             "challenge and review receive a small trial increase."
         )
 
-    if ranged_assets and range_accuracy < LOW_ACCURACY_THRESHOLD:
+    if total_ranged_assets and range_accuracy < LOW_ACCURACY_THRESHOLD:
         _transfer_weight(suggested, "almanac", "technical")
         reasons["almanac"] = (
             "Cumulative range accuracy is below 60%, so broad seasonality "
@@ -146,14 +159,21 @@ def suggest_weight_adjustments(
             "and volatility checks receive a small trial increase."
         )
 
-    if rows and all(row.direction_correct for row in rows):
+    all_directions_correct = bool(rows)
+    for row in rows:
+        if not row.direction_correct:
+            all_directions_correct = False
+            break
+
+    if all_directions_correct:
         reasons["macro"] = (
             "The latest direction score was stable, so macro weight stays "
             "unchanged until another completed week is available."
         )
 
-    return [
-        WeightAdjustment(
+    adjustments: list[WeightAdjustment] = []
+    for agent in AGENT_ORDER:
+        adjustment = WeightAdjustment(
             agent=agent,
             current_weight=round(
                 float(current_weights.get(agent, BASE_WEIGHTS[agent])),
@@ -162,8 +182,8 @@ def suggest_weight_adjustments(
             suggested_weight=round(suggested[agent], 2),
             reason=reasons[agent],
         )
-        for agent in AGENT_ORDER
-    ]
+        adjustments.append(adjustment)
+    return adjustments
 
 
 def build_prescription(
@@ -171,11 +191,15 @@ def build_prescription(
     missing_prediction_assets: list[str],
     adjustments: list[WeightAdjustment],
 ) -> str:
+    """Turn the score and weight changes into practical next-week actions."""
     actions: list[str] = []
-    wrong_directions = [
-        row.asset for row in rows if not row.direction_correct
-    ]
-    missed_ranges = [row.asset for row in rows if row.range_hit is False]
+    wrong_directions: list[str] = []
+    missed_ranges: list[str] = []
+    for row in rows:
+        if not row.direction_correct:
+            wrong_directions.append(row.asset)
+        if row.range_hit is False:
+            missed_ranges.append(row.asset)
 
     if wrong_directions:
         actions.append(
@@ -184,8 +208,7 @@ def build_prescription(
         )
     if missed_ranges:
         actions.append(
-            "Recheck volatility and range width for "
-            f"{join_assets(missed_ranges)}."
+            f"Recheck volatility and range width for {join_assets(missed_ranges)}."
         )
     if missing_prediction_assets:
         actions.append(
@@ -194,17 +217,17 @@ def build_prescription(
             "sector can be scored."
         )
 
-    changed = [
-        item
-        for item in adjustments
-        if item.current_weight != item.suggested_weight
-    ]
+    changed: list[WeightAdjustment] = []
+    for item in adjustments:
+        if item.current_weight != item.suggested_weight:
+            changed.append(item)
     if changed:
-        changes = ", ".join(
-            f"{item.agent} {item.current_weight:.2f} to "
-            f"{item.suggested_weight:.2f}"
-            for item in changed
-        )
+        change_texts: list[str] = []
+        for item in changed:
+            change_texts.append(
+                f"{item.agent} {item.current_weight:.2f} to {item.suggested_weight:.2f}"
+            )
+        changes = ", ".join(change_texts)
         actions.append(f"Use these small trial weights next sprint: {changes}.")
     if not actions:
         return (
@@ -215,11 +238,17 @@ def build_prescription(
 
 
 def sector_coverage(rows: list[DeltaRow]) -> int:
-    return sum(row.asset in SECTOR_ASSETS for row in rows)
+    count = 0
+    for row in rows:
+        if row.asset in SECTOR_ASSETS:
+            count += 1
+    return count
 
 
 def join_assets(assets: list[str]) -> str:
-    labels = [f"{ASSET_LABELS[item]} ({item})" for item in assets]
+    labels: list[str] = []
+    for item in assets:
+        labels.append(f"{ASSET_LABELS[item]} ({item})")
     if not labels:
         return "none"
     if len(labels) == 1:
@@ -238,6 +267,7 @@ def _transfer_weight(
     source: str,
     target: str,
 ) -> None:
+    """Move one small amount while keeping the source above its minimum."""
     available = max(0.0, weights[source] - MIN_AGENT_WEIGHT)
     transfer = min(WEIGHT_STEP, available)
     weights[source] -= transfer

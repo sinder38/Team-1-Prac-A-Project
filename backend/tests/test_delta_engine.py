@@ -3,14 +3,14 @@ from pathlib import Path
 
 import pytest
 
-from agents.delta.delta_engine import (
-    DeltaAgent,
-    DeltaEngine,
+from agents.delta import DeltaAgent
+from agents.delta.models import SECTOR_ASSETS, DeltaReport
+from agents.delta.parsing import (
     parse_actuals_markdown,
+    parse_prediction_json,
     parse_prediction_markdown,
 )
-from agents.delta.models import DeltaReport, SECTOR_ASSETS
-from agents.delta.parsing import parse_prediction_json
+from agents.delta.report import render_delta_markdown
 from run_delta_engine import REPO_ROOT, display_path
 
 CORE_PREDICTION = """
@@ -82,8 +82,7 @@ def _write_pair(
     actuals_dir.mkdir(parents=True, exist_ok=True)
     separator = "_" if underscore else "-"
     prediction_path = (
-        prediction_dir
-        / f"prediction_2026{separator}{prediction_week}_Team1.md"
+        prediction_dir / f"prediction_2026{separator}{prediction_week}_Team1.md"
     )
     actuals_path = actuals_dir / f"actuals_{actuals_week}.md"
     prediction_path.write_text(prediction, encoding="utf-8")
@@ -92,9 +91,7 @@ def _write_pair(
 
 
 def test_parsers_read_core_indexes_and_all_sectors():
-    predictions = parse_prediction_markdown(
-        CORE_PREDICTION + SECTOR_PREDICTION
-    )
+    predictions = parse_prediction_markdown(CORE_PREDICTION + SECTOR_PREDICTION)
     actuals = parse_actuals_markdown(ACTUALS)
 
     assert predictions["SPX"].range_low == -0.5
@@ -139,11 +136,11 @@ def test_engine_scores_fourteen_assets_without_inventing_sector_ranges(
         prediction=CORE_PREDICTION + SECTOR_PREDICTION,
     )
 
-    report = DeltaEngine().run(
-        prediction_path,
-        actuals_path,
+    report = DeltaAgent(repo_root=tmp_path).run(
         prediction_week="W28",
         actuals_week="W29",
+        prediction_path=prediction_path,
+        actuals_path=actuals_path,
     )
 
     assert len(report.rows) == 14
@@ -163,13 +160,13 @@ def test_engine_reports_missing_sector_predictions_for_old_format(tmp_path):
         "W29",
     )
 
-    report = DeltaEngine().run(
-        prediction_path,
-        actuals_path,
+    report = DeltaAgent(repo_root=tmp_path).run(
         prediction_week="W28",
         actuals_week="W29",
+        prediction_path=prediction_path,
+        actuals_path=actuals_path,
     )
-    markdown = DeltaEngine().render_markdown(report)
+    markdown = render_delta_markdown(report)
 
     assert len(report.rows) == 3
     assert report.missing_prediction_assets == list(SECTOR_ASSETS)
@@ -189,11 +186,11 @@ def test_engine_rejects_current_or_future_week_actuals(
     )
 
     with pytest.raises(ValueError, match="only be scored against W29"):
-        DeltaEngine().run(
-            prediction_path,
-            actuals_path,
+        DeltaAgent(repo_root=tmp_path).run(
             prediction_week="W28",
             actuals_week=actuals_week,
+            prediction_path=prediction_path,
+            actuals_path=actuals_path,
         )
 
 
@@ -231,9 +228,7 @@ def test_agent_writes_markdown_and_structured_json(tmp_path):
     assert data["prediction_week"] == "vW28"
     assert data["actuals_week"] == "W29"
     assert data["history"][0]["prediction_week"] == "W28"
-    assert "Prescription for next sprint" in markdown_path.read_text(
-        encoding="utf-8"
-    )
+    assert "Prescription for next sprint" in markdown_path.read_text(encoding="utf-8")
 
 
 def test_report_can_be_rebuilt_from_json(tmp_path):
@@ -242,8 +237,6 @@ def test_report_can_be_rebuilt_from_json(tmp_path):
     report = agent.run("W28", "W29")
     _, json_path = agent.write_outputs(report)
 
-    restored = DeltaReport.from_dict(
-        json.loads(json_path.read_text(encoding="utf-8"))
-    )
+    restored = DeltaReport.from_dict(json.loads(json_path.read_text(encoding="utf-8")))
 
     assert restored == report

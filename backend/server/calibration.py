@@ -78,9 +78,7 @@ def build_calibration_payload(
         "XLRE",
         "XLU",
     }
-    sector_coverage = sum(
-        1 for row in rows if row.get("asset") in sector_tickers
-    )
+    sector_coverage = sum(1 for row in rows if row.get("asset") in sector_tickers)
     suggested_weights = {
         str(item["agent"]): round(float(item["suggested_weight"]) * 100, 1)
         for item in adjustments

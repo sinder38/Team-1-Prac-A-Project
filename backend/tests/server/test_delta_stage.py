@@ -56,7 +56,7 @@ def test_post_delta_runs_pipeline_stage(client, tmp_path):
 
     def set_delta(ctx, config, actuals_markdown, now):
         assert actuals_markdown == "# Completed actuals"
-        assert config.artifacts.save_md is True
+        assert config.delta.prediction_week == "previous"
         assert now.isoformat() == "2026-07-17T21:00:00+00:00"
         ctx.delta = _report()
 

@@ -8,9 +8,9 @@ from agents.almanac.almanac_agent import AlmanacAgent
 from agents.delta import DeltaAgent
 from agents.evidence.evidence_agent import EvidenceAgent
 from agents.io import FileSaver, week_stem
-from agents.llm.multi_model_runner import OpenRouterAgent, _row
+from agents.llm.multi_model_runner import _row, build_agent
 from agents.macro.macro_agent import MacroAgent
-from agents.pipeline.config import LLMModelEntry, PipelineConfig
+from agents.pipeline.config import LLMModelEntry, StageConfig
 from agents.pipeline.context import PipelineContext
 from agents.schemas import EvidenceOutput
 from agents.technical.technical_agent import TechnicalAgent
@@ -21,7 +21,7 @@ MARKET_CLOSE_BUFFER = time(16, 15)
 
 
 def _save_artifacts(
-    agent, output, prediction_date: date, config: PipelineConfig
+    agent, output, prediction_date: date, config: StageConfig
 ) -> None:
     week_stem_date = week_stem(prediction_date)
 
@@ -43,7 +43,7 @@ def _save_artifacts(
         FileSaver(md_path).save(md, filename)
 
 
-def run_almanac(ctx: PipelineContext, config: PipelineConfig) -> None:
+def run_almanac(ctx: PipelineContext, config: StageConfig) -> None:
 
     agent = AlmanacAgent()
     output = agent.run(ctx.prediction_date)
@@ -51,7 +51,7 @@ def run_almanac(ctx: PipelineContext, config: PipelineConfig) -> None:
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
 
-def run_technical(ctx: PipelineContext, config: PipelineConfig) -> None:
+def run_technical(ctx: PipelineContext, config: StageConfig) -> None:
 
     agent = TechnicalAgent()
     output = agent.run(ctx.prediction_date)
@@ -59,7 +59,7 @@ def run_technical(ctx: PipelineContext, config: PipelineConfig) -> None:
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
 
-def run_macro(ctx: PipelineContext, config: PipelineConfig) -> None:
+def run_macro(ctx: PipelineContext, config: StageConfig) -> None:
     agent = MacroAgent()
     output = agent.run(ctx.prediction_date)
     ctx.macro = output
@@ -68,7 +68,7 @@ def run_macro(ctx: PipelineContext, config: PipelineConfig) -> None:
 
 def run_evidence(
     ctx: PipelineContext,
-    config: PipelineConfig,
+    config: StageConfig,
     data_root: Path | None = None,
     market_data_provider=None,
     yield_data_provider=None,
@@ -95,7 +95,7 @@ def run_evidence(
 
 def run_delta(
     ctx: PipelineContext,
-    config: PipelineConfig,
+    config: StageConfig,
     repo_root: Path | None = None,
     actuals_markdown: str | None = None,
     now: datetime | None = None,
@@ -122,12 +122,12 @@ def run_delta(
     ctx.delta = output
     week = prediction_week.removeprefix("v")
     if config.artifacts.save_md:
-        agent.engine.write_markdown(
+        agent.write_markdown(
             output,
             root / "data" / "qa" / f"delta_{week}.md",
         )
     # Delta history and future weight suggestions need a structured artifact.
-    agent.engine.write_json(
+    agent.write_json(
         output,
         root / "data" / "outputs" / "delta" / f"delta_{week}.json",
     )
@@ -163,12 +163,12 @@ def _require_completed_week(
 
 
 def run_llm(
-    ctx: PipelineContext, config: PipelineConfig, entry: LLMModelEntry
+    ctx: PipelineContext, config: StageConfig, entry: LLMModelEntry
 ) -> tuple[str, dict]:
     """Run one LLM model. Returns (slug, row_dict) for the comparison table."""
 
     # TODO: max_retries could be model specific with a default instead
-    agent = OpenRouterAgent(model_name=entry.label, model_id=entry.id, max_retries=config.llm.max_retries)
+    agent = build_agent(entry, max_retries=config.llm.max_retries)
 
     prompt = agent.build_prompt(ctx.prediction_date, ctx)
     raw = agent.query(prompt)

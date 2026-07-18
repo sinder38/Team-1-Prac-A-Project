@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from agents.delta.models import (
-    ActualRow,
     CORE_ASSETS,
-    PredictionRow,
     TRACKED_ASSETS,
+    ActualRow,
+    PredictionRow,
 )
 
 ASSET_ALIASES = {
@@ -34,6 +34,7 @@ FLAT_MOVE_THRESHOLD = 0.05
 
 
 def parse_prediction_file(path: Path) -> dict[str, PredictionRow]:
+    """Read a locked prediction from either JSON or Markdown."""
     if not path.exists():
         raise FileNotFoundError(f"Prediction file not found: {path}")
     if path.suffix.lower() == ".json":
@@ -46,14 +47,17 @@ def parse_prediction_file(path: Path) -> dict[str, PredictionRow]:
 
 
 def parse_actuals_file(path: Path) -> dict[str, ActualRow]:
+    """Read the weekly actuals Markdown file."""
     if not path.exists():
         raise FileNotFoundError(f"Actuals file not found: {path}")
     return parse_actuals_markdown(path.read_text(encoding="utf-8"))
 
 
 def parse_prediction_markdown(markdown: str) -> dict[str, PredictionRow]:
+    """Read prediction rows from a Markdown table."""
     rows: dict[str, PredictionRow] = {}
     for line in markdown.splitlines():
+        # Headings and paragraphs are ignored. A table row starts with |.
         if not line.lstrip().startswith("|"):
             continue
         cells = _table_cells(line)
@@ -61,6 +65,8 @@ def parse_prediction_markdown(markdown: str) -> dict[str, PredictionRow]:
         if not asset:
             continue
 
+        # Only inspect cells after the asset name. This avoids reading a word
+        # such as "Technology" as part of another column.
         following = cells[asset_index + 1 :]
         direction = _first_direction(following)
         if not direction:
@@ -79,6 +85,7 @@ def parse_prediction_markdown(markdown: str) -> dict[str, PredictionRow]:
 
 
 def parse_prediction_json(data: Any) -> dict[str, PredictionRow]:
+    """Read prediction rows from the JSON formats used by the project."""
     rows: dict[str, PredictionRow] = {}
     for item in _prediction_json_rows(data):
         asset_text = str(
@@ -98,9 +105,7 @@ def parse_prediction_json(data: Any) -> dict[str, PredictionRow]:
             direction=direction,
             range_low=range_low,
             range_high=range_high,
-            confidence=_normalise_confidence(
-                str(item.get("confidence", ""))
-            ),
+            confidence=_normalise_confidence(str(item.get("confidence", ""))),
         )
 
     _require_core_assets(rows, "prediction")
@@ -108,6 +113,7 @@ def parse_prediction_json(data: Any) -> dict[str, PredictionRow]:
 
 
 def parse_actuals_markdown(markdown: str) -> dict[str, ActualRow]:
+    """Read actual percentage moves from a Markdown table."""
     rows: dict[str, ActualRow] = {}
     for line in markdown.splitlines():
         if not line.lstrip().startswith("|"):
@@ -117,14 +123,13 @@ def parse_actuals_markdown(markdown: str) -> dict[str, ActualRow]:
         if not asset:
             continue
 
-        actual_text = next(
-            (
-                _clean_markdown(cell)
-                for cell in cells[asset_index + 1 :]
-                if "%" in cell and _has_number(cell)
-            ),
-            "",
-        )
+        # The first percentage after the asset name is the weekly actual move.
+        # A normal loop makes this selection easier to follow than next(...).
+        actual_text = ""
+        for cell in cells[asset_index + 1 :]:
+            if "%" in cell and _has_number(cell):
+                actual_text = _clean_markdown(cell)
+                break
         if not actual_text:
             continue
         move = _parse_single_percent(actual_text)
@@ -139,6 +144,7 @@ def parse_actuals_markdown(markdown: str) -> dict[str, ActualRow]:
 
 
 def plain_week(week: str) -> str:
+    """Return a checked week label such as W24."""
     cleaned = week.strip()
     if cleaned.lower().startswith("vw"):
         cleaned = cleaned[1:]
@@ -156,11 +162,13 @@ def week_number(week: str) -> int:
 
 
 def next_week(week: str) -> str:
+    """Return the following week label, including the year-end rollover."""
     number = week_number(week)
     return "W01" if number == 53 else f"W{number + 1:02d}"
 
 
 def validate_week_pair(prediction_week: str, actuals_week: str) -> None:
+    """Require actuals from the week immediately after the prediction."""
     expected = next_week(prediction_week)
     if plain_week(actuals_week) != expected:
         raise ValueError(
@@ -171,15 +179,23 @@ def validate_week_pair(prediction_week: str, actuals_week: str) -> None:
 
 def _prediction_json_rows(data: Any) -> list[dict[str, Any]]:
     if isinstance(data, list):
-        return [item for item in data if isinstance(item, dict)]
+        rows: list[dict[str, Any]] = []
+        for item in data:
+            if isinstance(item, dict):
+                rows.append(item)
+        return rows
     if not isinstance(data, dict):
         return []
 
     rows: list[dict[str, Any]] = []
+    # Different team files use different container names. Support the known
+    # names without guessing values from unrelated JSON fields.
     for key in ("predictions", "assets", "indices", "sectors"):
         value = data.get(key)
         if isinstance(value, list):
-            rows.extend(item for item in value if isinstance(item, dict))
+            for item in value:
+                if isinstance(item, dict):
+                    rows.append(item)
     if rows:
         return rows
 
@@ -192,6 +208,8 @@ def _prediction_json_rows(data: Any) -> list[dict[str, Any]]:
 def _range_from_json(
     item: Mapping[str, Any],
 ) -> tuple[float | None, float | None]:
+    # The application has used separate low/high fields, dictionaries, lists
+    # and text ranges. Convert all four forms to the same pair of floats.
     low = item.get("range_low")
     high = item.get("range_high")
     if low is not None and high is not None:
@@ -220,6 +238,7 @@ def _find_asset(cells: list[str]) -> tuple[int, str]:
 
 def _asset_from_text(text: str) -> str:
     cleaned = _clean_markdown(text).upper()
+    # Check ticker symbols before full names because symbols are unambiguous.
     for asset in TRACKED_ASSETS:
         if re.search(rf"\b{re.escape(asset)}\b", cleaned):
             return asset
@@ -241,7 +260,7 @@ def _normalise_direction(text: str) -> str:
     cleaned = _clean_markdown(text).upper()
     cleaned = re.sub(r"[\u2013\u2014/]", "-", cleaned)
     cleaned = re.sub(r"\s*-\s*", "-", cleaned)
-    for direction in (
+    accepted_directions = (
         "FLAT-UP",
         "FLAT-DOWN",
         "UP-FLAT",
@@ -249,9 +268,16 @@ def _normalise_direction(text: str) -> str:
         "UP",
         "DOWN",
         "FLAT",
-    ):
+    )
+    for direction in accepted_directions:
         if re.search(rf"\b{direction}\b", cleaned):
-            return "-".join(dict.fromkeys(direction.split("-")))
+            # UP-FLAT and FLAT-UP mean the same mixed direction. Return one
+            # consistent order so later scoring only needs a simple split.
+            if direction == "UP-FLAT":
+                return "FLAT-UP"
+            if direction == "DOWN-FLAT":
+                return "FLAT-DOWN"
+            return direction
     aliases = {
         "NEUTRAL-BULLISH": "FLAT-UP",
         "NEUTRAL-BEARISH": "FLAT-DOWN",
@@ -259,10 +285,10 @@ def _normalise_direction(text: str) -> str:
         "BEARISH": "DOWN",
         "NEUTRAL": "FLAT",
     }
-    return next(
-        (direction for label, direction in aliases.items() if label in cleaned),
-        "",
-    )
+    for label, direction in aliases.items():
+        if label in cleaned:
+            return direction
+    return ""
 
 
 def _first_range(
@@ -279,10 +305,10 @@ def _first_range(
 def _parse_percent_range(
     text: str,
 ) -> tuple[float | None, float | None]:
-    values = [
-        float(value)
-        for value in re.findall(r"[-+]?\d+(?:\.\d+)?", text)
-    ]
+    values: list[float] = []
+    matches = re.findall(r"[-+]?\d+(?:\.\d+)?", text)
+    for value in matches:
+        values.append(float(value))
     if len(values) < 2:
         return None, None
     return _ordered_range(values[0], values[1])
@@ -323,6 +349,8 @@ def _parse_single_percent(text: str) -> float:
 
 
 def _actual_direction(text: str, move: float) -> str:
+    # Prefer an explicit word from the evidence. Use the sign only when the
+    # table contains a number without an UP/DOWN label.
     lowered = text.lower()
     if "down" in lowered:
         return "DOWN"
@@ -334,7 +362,10 @@ def _actual_direction(text: str, move: float) -> str:
 
 
 def _table_cells(line: str) -> list[str]:
-    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+    cells: list[str] = []
+    for cell in line.strip().strip("|").split("|"):
+        cells.append(cell.strip())
+    return cells
 
 
 def _clean_markdown(text: str) -> str:
@@ -346,6 +377,9 @@ def _has_number(text: str) -> bool:
 
 
 def _require_core_assets(rows: Mapping[str, object], label: str) -> None:
-    missing = [asset for asset in CORE_ASSETS if asset not in rows]
+    missing: list[str] = []
+    for asset in CORE_ASSETS:
+        if asset not in rows:
+            missing.append(asset)
     if missing:
         raise ValueError(f"Missing {label} rows for: {', '.join(missing)}")

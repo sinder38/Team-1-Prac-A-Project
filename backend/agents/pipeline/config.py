@@ -6,13 +6,15 @@ from pydantic import BaseModel, model_validator
 
 class LLMModelEntry(BaseModel):
     id: str
-    slug: str = ""   # short file/path identifier; derived from id if not set in TOML
-    name: str = ""   # human-readable label; derived from slug if not set in TOML
+    slug: str = ""
+    name: str = ""
+    provider: str = "openrouter"
 
     @model_validator(mode="after")
     def _fill_derived(self) -> "LLMModelEntry":
         if not self.slug:
-            self.slug = self.id.split("/", 1)[1].split(":")[0]
+            model_id = self.id.split("/", 1)[-1]
+            self.slug = model_id.split(":", 1)[0]
         if not self.name:
             self.name = self.slug.replace("-", " ").title()
         return self
@@ -40,8 +42,8 @@ class DeltaConfig(BaseModel):
 
 
 class LLMConfig(BaseModel):
-    models: list[LLMModelEntry]
-    max_retries: int
+    models: list[LLMModelEntry] = []
+    max_retries: int = 3
 
 
 class ArtifactsConfig(BaseModel):
@@ -49,12 +51,17 @@ class ArtifactsConfig(BaseModel):
     save_md: bool = True
 
 
-class PipelineConfig(BaseModel):
+class StageConfig(BaseModel):
+    """Settings shared by command-line and server pipeline stages."""
+
+    llm: LLMConfig = LLMConfig()
+    artifacts: ArtifactsConfig = ArtifactsConfig()
+    delta: DeltaConfig = DeltaConfig()
+
+
+class PipelineConfig(StageConfig):
     pipeline: PipelineSection
     stages: StagesConfig
-    delta: DeltaConfig = DeltaConfig()
-    llm: LLMConfig
-    artifacts: ArtifactsConfig = ArtifactsConfig()
 
 
 def load_config(path: Path) -> PipelineConfig:

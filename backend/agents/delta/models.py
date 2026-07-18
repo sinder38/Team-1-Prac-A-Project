@@ -87,10 +87,12 @@ class WeekAccuracy:
 
     @property
     def direction_accuracy(self) -> float:
+        """Return the direction score as a percentage."""
         return percentage(self.direction_hits, self.scored_assets)
 
     @property
     def range_accuracy(self) -> float | None:
+        """Return None when the prediction did not include any ranges."""
         if not self.ranged_assets:
             return None
         return percentage(self.range_hits, self.ranged_assets)
@@ -119,37 +121,54 @@ class DeltaReport:
 
     @property
     def direction_correct_count(self) -> int:
-        return sum(row.direction_correct for row in self.rows)
+        count = 0
+        for row in self.rows:
+            if row.direction_correct:
+                count += 1
+        return count
 
     @property
     def ranged_asset_count(self) -> int:
-        return sum(row.range_hit is not None for row in self.rows)
+        count = 0
+        for row in self.rows:
+            if row.range_hit is not None:
+                count += 1
+        return count
 
     @property
     def range_hit_count(self) -> int:
-        return sum(row.range_hit is True for row in self.rows)
+        count = 0
+        for row in self.rows:
+            if row.range_hit is True:
+                count += 1
+        return count
 
     @property
     def average_error_percent(self) -> float:
-        errors = [
-            row.error_percent
-            for row in self.rows
-            if row.error_percent is not None
-        ]
+        errors: list[float] = []
+        for row in self.rows:
+            if row.error_percent is not None:
+                errors.append(row.error_percent)
         if not errors:
             return 0.0
         return round(sum(errors) / len(errors), 2)
 
     @property
     def cumulative_direction_accuracy(self) -> float:
-        hits = sum(week.direction_hits for week in self.history)
-        total = sum(week.scored_assets for week in self.history)
+        hits = 0
+        total = 0
+        for week in self.history:
+            hits += week.direction_hits
+            total += week.scored_assets
         return percentage(hits, total)
 
     @property
     def cumulative_range_accuracy(self) -> float | None:
-        hits = sum(week.range_hits for week in self.history)
-        total = sum(week.ranged_assets for week in self.history)
+        hits = 0
+        total = 0
+        for week in self.history:
+            hits += week.range_hits
+            total += week.ranged_assets
         if not total:
             return None
         return percentage(hits, total)
@@ -157,23 +176,28 @@ class DeltaReport:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "DeltaReport":
         """Rebuild a report loaded from the structured JSON artifact."""
+        rows: list[DeltaRow] = []
+        for item in data.get("rows", []):
+            rows.append(DeltaRow(**item))
+
+        history: list[WeekAccuracy] = []
+        for item in data.get("history", []):
+            history.append(WeekAccuracy(**item))
+
+        adjustments: list[WeightAdjustment] = []
+        for item in data.get("weight_adjustments", []):
+            adjustments.append(WeightAdjustment(**item))
+
         return cls(
             schema_version=int(data["schema_version"]),
             prediction_week=str(data["prediction_week"]),
             actuals_week=str(data["actuals_week"]),
-            rows=[DeltaRow(**item) for item in data.get("rows", [])],
-            missing_prediction_assets=list(
-                data.get("missing_prediction_assets", [])
-            ),
+            rows=rows,
+            missing_prediction_assets=list(data.get("missing_prediction_assets", [])),
             missing_actual_assets=list(data.get("missing_actual_assets", [])),
-            history=[
-                WeekAccuracy(**item) for item in data.get("history", [])
-            ],
+            history=history,
             history_notes=list(data.get("history_notes", [])),
-            weight_adjustments=[
-                WeightAdjustment(**item)
-                for item in data.get("weight_adjustments", [])
-            ],
+            weight_adjustments=adjustments,
             prescription=str(data.get("prescription", "")),
         )
 

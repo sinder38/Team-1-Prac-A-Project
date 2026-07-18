@@ -61,9 +61,7 @@ def test_run_delta_populates_context_and_writes_artifacts(tmp_path):
     assert context.delta is not None
     assert context.delta.prediction_week == "vW24"
     assert (tmp_path / "data" / "qa" / "delta_W24.md").exists()
-    assert (
-        tmp_path / "data" / "outputs" / "delta" / "delta_W24.json"
-    ).exists()
+    assert (tmp_path / "data" / "outputs" / "delta" / "delta_W24.json").exists()
 
 
 def test_run_delta_rejects_actuals_before_friday_close(tmp_path):

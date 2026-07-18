@@ -2,9 +2,9 @@
 
 from agents.delta.models import (
     ASSET_LABELS,
+    SECTOR_ASSETS,
     DeltaReport,
     DeltaRow,
-    SECTOR_ASSETS,
     WeekAccuracy,
     WeightAdjustment,
 )
@@ -13,7 +13,10 @@ from agents.delta.scoring import join_assets, sector_coverage
 
 
 def render_delta_markdown(report: DeltaReport) -> str:
+    """Build the complete weekly report one section at a time."""
     week = plain_week(report.prediction_week)
+
+    # Start with the file identity and the two weeks being compared.
     lines = [
         f"# delta_{week}.md",
         "",
@@ -33,47 +36,60 @@ def render_delta_markdown(report: DeltaReport) -> str:
             "Range hit? | Range error |"
         ),
         "| --- | --- | ---: | --- | ---: | --- | --- | --- | ---: |",
-        *[_render_score_row(row) for row in report.rows],
-        "",
-        "## Current-week summary",
-        "",
-        (
-            f"- Direction accuracy: {report.direction_correct_count} / "
-            f"{len(report.rows)}"
-        ),
-        (
-            f"- Range accuracy: {report.range_hit_count} / "
-            f"{report.ranged_asset_count}"
-        ),
-        f"- Average range error: {report.average_error_percent:.2f}%",
-        (
-            f"- Sector coverage: {sector_coverage(report.rows)} / "
-            f"{len(SECTOR_ASSETS)}"
-        ),
-        "",
-        "## Cumulative accuracy",
-        "",
-        (
-            "This history only uses locked predictions with the matching "
-            "completed actuals. Missing weeks are not estimated."
-        ),
-        "",
-        (
-            "| Prediction | Actuals | Assets scored | Direction accuracy | "
-            "Range accuracy | Average range error |"
-        ),
-        "| --- | --- | ---: | ---: | ---: | ---: |",
-        *[_render_history_row(item) for item in report.history],
-        "",
-        (
-            "- Cumulative direction accuracy: "
-            f"{report.cumulative_direction_accuracy:.1f}%"
-        ),
-        (
-            "- Cumulative range accuracy: "
-            f"{_optional_percentage(report.cumulative_range_accuracy)}"
-        ),
     ]
+    for row in report.rows:
+        lines.append(_render_score_row(row))
+
+    # Add summary values after the detailed asset rows.
+    range_summary = (
+        f"- Range accuracy: {report.range_hit_count} / {report.ranged_asset_count}"
+    )
+    coverage_summary = (
+        f"- Sector coverage: {sector_coverage(report.rows)} / {len(SECTOR_ASSETS)}"
+    )
+    lines.extend(
+        [
+            "",
+            "## Current-week summary",
+            "",
+            (
+                f"- Direction accuracy: {report.direction_correct_count} / "
+                f"{len(report.rows)}"
+            ),
+            range_summary,
+            f"- Average range error: {report.average_error_percent:.2f}%",
+            coverage_summary,
+            "",
+            "## Cumulative accuracy",
+            "",
+            (
+                "This history only uses locked predictions with the matching "
+                "completed actuals. Missing weeks are not estimated."
+            ),
+            "",
+            (
+                "| Prediction | Actuals | Assets scored | Direction accuracy | "
+                "Range accuracy | Average range error |"
+            ),
+            "| --- | --- | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for item in report.history:
+        lines.append(_render_history_row(item))
+
+    lines.extend(
+        [
+            "",
+            (
+                "- Cumulative direction accuracy: "
+                f"{report.cumulative_direction_accuracy:.1f}%"
+            ),
+            (
+                "- Cumulative range accuracy: "
+                f"{_optional_percentage(report.cumulative_range_accuracy)}"
+            ),
+        ]
+    )
 
     _add_coverage_gaps(lines, report)
     _add_history_notes(lines, report)
@@ -90,10 +106,13 @@ def render_delta_markdown(report: DeltaReport) -> str:
             "",
             "| Agent | Current weight | Suggested weight | Reason |",
             "| --- | ---: | ---: | --- |",
-            *[
-                _render_weight_row(item)
-                for item in report.weight_adjustments
-            ],
+        ]
+    )
+    for item in report.weight_adjustments:
+        lines.append(_render_weight_row(item))
+
+    lines.extend(
+        [
             "",
             "## Prescription for next sprint",
             "",
@@ -104,6 +123,7 @@ def render_delta_markdown(report: DeltaReport) -> str:
 
 
 def _add_coverage_gaps(lines: list[str], report: DeltaReport) -> None:
+    """Add a section only when an expected prediction or actual is missing."""
     if not report.missing_prediction_assets and not report.missing_actual_assets:
         return
     lines.extend(["", "## Coverage gaps", ""])
@@ -114,23 +134,22 @@ def _add_coverage_gaps(lines: list[str], report: DeltaReport) -> None:
         )
     if report.missing_actual_assets:
         lines.append(
-            "- Missing actual rows: "
-            + join_assets(report.missing_actual_assets)
+            "- Missing actual rows: " + join_assets(report.missing_actual_assets)
         )
 
 
 def _add_history_notes(lines: list[str], report: DeltaReport) -> None:
+    """Explain why any earlier week could not be included."""
     if not report.history_notes:
         return
     lines.extend(["", "## History notes", ""])
-    lines.extend(f"- {note}" for note in report.history_notes)
+    for note in report.history_notes:
+        lines.append(f"- {note}")
 
 
 def _render_score_row(row: DeltaRow) -> str:
     range_hit = "N/A" if row.range_hit is None else _yes_no(row.range_hit)
-    range_error = (
-        "N/A" if row.error_percent is None else f"{row.error_percent:.2f}%"
-    )
+    range_error = "N/A" if row.error_percent is None else f"{row.error_percent:.2f}%"
     fields = [
         f"{ASSET_LABELS[row.asset]} ({row.asset})",
         row.predicted_direction,
