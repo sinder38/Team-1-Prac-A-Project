@@ -1,0 +1,41 @@
+/**
+ * Global styles for the app (Tailwind + scrollbars).
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Opera GX / forced-dark browsers still use light form controls */
+:root {
+  color-scheme: light;
+}
+
+@layer base {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    @apply bg-white text-gray-900;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}

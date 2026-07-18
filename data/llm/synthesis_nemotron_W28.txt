@@ -1,0 +1,17 @@
+# LLM Agent Output — NVIDIA Nemotron 3 Super — Week of 2026-07-10
+
+1. Weekly Regime: Bullish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - SPX and NDX closed up 1.17% and 1.67% respectively last week, with technology and energy sectors leading gains.
+   - VIX fell 5.39% indicating reduced fear, while oil rose 4.18% supporting energy-related stocks.
+   - Technical indicators show SPX and NDX above their 8- and 21-day EMAs with a bullish bias.
+4. Key Contradictions:
+   - Macro bias is binary-risk due to the upcoming Fed decision; a dovish surprise could drive yields lower and hurt equities.
+   - Almanac signals show mixed seasonal bias and bearish tendencies for financials, materials, and energy, which could weigh on broader market sentiment.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
+6. Predicted % move — SPX: -4.1% to 0.1%
+   Predicted % move — NDX: -4.3% to 2.8%
+   Predicted % move — IWM: -4.2% to 2.3%
+7. Plain-English brief: Expect the S&P 500 and Nasdaq 100 to trade sideways to slightly higher next week, while the Russell 2000 may remain range-bound, with risks tilted toward a Fed-driven move.
+8. Disclaimer: This is not financial advice.

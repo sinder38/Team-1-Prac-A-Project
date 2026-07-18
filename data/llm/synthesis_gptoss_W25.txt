@@ -1,0 +1,17 @@
+# LLM Agent Output — OpenAI gpt-oss-120b — Week of 2026-06-21
+
+1. Weekly Regime: Uncertain
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Technical agents show bullish trend bias for SPX, NDX and IWM with EMA8 above EMA21 and price above both EMAs.
+   - Almanac agent signals a bearish monthly and seasonal bias, especially for financials, energy and materials, offsetting the technical bullishness.
+   - Macro agent notes a “Binary‑risk” environment after the June 18 Fed decision, with a 97.4% probability of rates holding and limited upside from yield curve stability.
+4. Key Contradictions:
+   - Technical bias is bullish while almanac bias is bearish for the same week, creating mixed directional signals.
+   - Macro outlook is risk‑averse (binary‑risk) despite strong sector performance in technology, which could limit upside if broader risk appetite wanes.
+5. Invalidation Conditions: A materially more dovish Fed outcome that drives Treasury yields lower and sparks expectations of rate cuts would invalidate the current cautious stance and could flip the regime bullish.
+6. Predicted % move — SPX: 0.5% to 1.5%
+   Predicted % move — NDX: 1.5% to 3.5%
+   Predicted % move — IWM: 0.5% to 1.5%
+7. Plain-English brief: The S&P 500, Nasdaq 100 and Russell 2000 are all technically in a mild uptrend, but the broader calendar and seasonal factors are still weighing on the market. Expect modest gains—roughly 0.5% to 1.5% for SPX and IWM, and 1.5% to 3.5% for NDX—unless the Fed surprises to the downside, which would boost risk assets further. Watch technology stocks for upside and financials/energy for weakness.
+8. Disclaimer: This is not financial advice.

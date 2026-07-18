@@ -7,15 +7,16 @@ Usage:
 
 import argparse
 import sys
-import tomllib
 from datetime import date
 from pathlib import Path
 
+from pydantic import ValidationError
+
 sys.path.insert(0, str(Path(__file__).parent))
 
+from agents.pipeline.config import load_config
 from agents.pipeline.context import PipelineContext
 from agents.pipeline.stages import (
-    LLM_REGISTRY,
     run_almanac,
     run_evidence,
     run_llm,
@@ -43,24 +44,28 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    with open(args.config, "rb") as f:
-        config = tomllib.load(f)
+    try:
+        config = load_config(args.config)
+    except FileNotFoundError:
+        print(f"[pipeline] ERROR: config file not found: {args.config}", file=sys.stderr)
+        sys.exit(1)
+    except ValidationError as e:
+        print(f"[pipeline] ERROR: invalid config:\n{e}", file=sys.stderr)
+        sys.exit(1)
 
-    prediction_date = resolve_date(config["pipeline"]["prediction_date"])
-    stages = config["stages"]
-    models = config["llm"]["models"]
+    prediction_date = resolve_date(config.pipeline.prediction_date)
 
     ctx = PipelineContext(prediction_date=prediction_date)
 
     stage_map = {
-        "almanac": run_almanac,
-        "technical": run_technical,
-        "macro": run_macro,
-        "evidence": run_evidence,
+        "almanac": (config.stages.almanac, run_almanac),
+        "technical": (config.stages.technical, run_technical),
+        "macro": (config.stages.macro, run_macro),
+        "evidence": (config.stages.evidence, run_evidence),
     }
 
-    for name, fn in stage_map.items():
-        if not stages.get(name, False):
+    for name, (enabled, fn) in stage_map.items():
+        if not enabled:
             print(f"[pipeline] skipping {name} (disabled in config)")
             continue
         print(f"[pipeline] running {name}...")
@@ -72,26 +77,24 @@ def main() -> None:
         print(f"[pipeline] {name} done.")
 
     rows_by_slug: dict[str, dict] = {}
-    for model_key in models:
-        if model_key not in LLM_REGISTRY:
-            print(f"[pipeline] ERROR: unknown LLM model '{model_key}'", file=sys.stderr)
-            sys.exit(1)
-        print(f"[pipeline] running llm:{model_key}...")
+    for entry in config.llm.models:
+        print(f"[pipeline] running llm:{entry.slug}...")
         try:
-            slug, row = run_llm(ctx, config, model_key)
+            slug, row = run_llm(ctx, config, entry)
             rows_by_slug[slug] = row
+            print(f"[pipeline] llm:{entry.slug} done.")
         except Exception as e:
-            print(f"[pipeline] ERROR in llm:{model_key}: {e}", file=sys.stderr)
+            print(f"[pipeline] ERROR in llm:{entry.slug}: {e}", file=sys.stderr)
             sys.exit(1)
-        print(f"[pipeline] llm:{model_key} done.")
+        print(f"[pipeline] llm:{entry.slug} done.")
 
     # Write comparison table if any LLMs ran
-    if rows_by_slug and config.get("artifacts", {}).get("save_md", True):
+    if rows_by_slug and config.artifacts.save_md:
         from agents.io import FileSaver, week_stem
         from agents.llm.multi_model_runner import build_comparison_md
 
         tag = week_stem(prediction_date)
-        comparison_md = build_comparison_md(rows_by_slug, tag, prediction_date)
+        comparison_md = build_comparison_md(rows_by_slug, config.llm.models, tag, prediction_date)
         FileSaver(REPO_ROOT / "data" / "llm").save(
             comparison_md, f"llm_comparison_{tag}.md"
         )
