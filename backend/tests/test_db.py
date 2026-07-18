@@ -11,7 +11,6 @@ from agents import db
 def _tmp_db(tmp_path, monkeypatch):
     path = tmp_path / "predictions.db"
     monkeypatch.setenv("DATABASE_PATH", str(path))
-    db.init_db()
     yield path
 
 
