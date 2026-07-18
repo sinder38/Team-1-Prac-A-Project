@@ -18,5 +18,5 @@ models = [
 max_retries = 5
 
 [artifacts]
-save_json = false
+save_json = true
 save_md   = true
