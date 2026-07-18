@@ -1,7 +1,9 @@
 from datetime import date
 from pathlib import Path
 
-DATA_ROOT = Path(__file__).parent.parent / "data" / "outputs"
+from agents.paths import OUTPUTS_DIR
+
+DATA_ROOT = OUTPUTS_DIR
 
 
 def week_stem(prediction_date: date) -> str:

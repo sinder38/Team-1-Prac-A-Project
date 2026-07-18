@@ -6,6 +6,10 @@ from datetime import date
 from pathlib import Path
 from typing import Final, Protocol
 
+import matplotlib
+
+matplotlib.use("Agg")
+
 import matplotlib.patches as mpatches
 import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt

@@ -9,8 +9,9 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DB_PATH = REPO_ROOT / "data" / "predictions.db"
+from agents.paths import DB_PATH
+
+DEFAULT_DB_PATH = DB_PATH
 
 # SQLite UNIQUE treats NULLs as distinct — use sentinels in the key columns.
 _NO_HORIZON = -1
