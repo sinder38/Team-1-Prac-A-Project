@@ -1,4 +1,3 @@
-import json
 import json as _json
 from dataclasses import asdict
 from datetime import date
@@ -7,6 +6,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import BadRequest
 
+from agents.db import save_artifact, load_artifact, artifact_exists
 from agents.io import week_stem
 from agents.pipeline.config import (
     ArtifactsConfig,
@@ -37,7 +37,7 @@ from agents.schemas import (
     SectorSignal,
     TechnicalOutput,
 )
-from server.utils import artifact_path, err, parse_date, require_fields
+from server.utils import err, parse_date, require_fields
 
 stages_bp = Blueprint("stages", __name__, url_prefix="/stages")
 # TODO: move to config instead of manual
@@ -56,11 +56,6 @@ _MODEL_REGISTRY: dict[str, LLMModelEntry] = {
     "gemma": LLMModelEntry(id="google/gemma-4-31b-it:free"),
     "laguna": LLMModelEntry(id="poolside/laguna-m.1:free"),
 }
-
-
-def _write_artifact(path: Path, data: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
 
 
 @stages_bp.route("/almanac", methods=["POST"])
@@ -89,8 +84,14 @@ def post_almanac():
 
     output_dict = asdict(ctx.almanac)
     output_dict["horizon_days"] = horizon_days
-    path = artifact_path("almanac", stem, run_id, horizon_days=horizon_days)
-    _write_artifact(path, output_dict)
+    save_artifact(
+        agent_type="almanac",
+        week_stem=stem,
+        run_id=run_id,
+        horizon_days=horizon_days,
+        data=output_dict,
+        prediction_date=prediction_date,
+    )
     output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
 
@@ -120,8 +121,14 @@ def post_technical():
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.technical)
     output_dict["horizon_days"] = horizon_days
-    path = artifact_path("technical", stem, run_id, horizon_days=horizon_days)
-    _write_artifact(path, output_dict)
+    save_artifact(
+        agent_type="technical",
+        week_stem=stem,
+        run_id=run_id,
+        horizon_days=horizon_days,
+        data=output_dict,
+        prediction_date=prediction_date,
+    )
     output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
 
@@ -151,8 +158,14 @@ def post_macro():
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.macro)
     output_dict["horizon_days"] = horizon_days
-    path = artifact_path("macro", stem, run_id, horizon_days=horizon_days)
-    _write_artifact(path, output_dict)
+    save_artifact(
+        agent_type="macro",
+        week_stem=stem,
+        run_id=run_id,
+        horizon_days=horizon_days,
+        data=output_dict,
+        prediction_date=prediction_date,
+    )
     output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
 
@@ -178,8 +191,13 @@ def post_evidence():
 
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.evidence)
-    path = artifact_path("evidence", stem, run_id)
-    _write_artifact(path, output_dict)
+    save_artifact(
+        agent_type="evidence",
+        week_stem=stem,
+        run_id=run_id,
+        data=output_dict,
+        prediction_date=prediction_date,
+    )
     output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200
 
@@ -210,12 +228,18 @@ def post_llm():
     # Check all 4 required agent artifacts exist
     missing = []
     for agent_type in ("almanac", "technical", "macro", "evidence"):
-        if agent_type == "evidence":
-            path = artifact_path(agent_type, stem, run_id)
-        else:
-            path = artifact_path(agent_type, stem, run_id, horizon_days=horizon_days)
-        if not path.exists():
-            missing.append(str(path))
+        exists = (
+            artifact_exists(agent_type=agent_type, week_stem=stem, run_id=run_id)
+            if agent_type == "evidence"
+            else artifact_exists(
+                agent_type=agent_type,
+                week_stem=stem,
+                run_id=run_id,
+                horizon_days=horizon_days,
+            )
+        )
+        if not exists:
+            missing.append(agent_type)
 
     if missing:
         return err(
@@ -223,18 +247,25 @@ def post_llm():
             404,
         )
 
-    # Load agent outputs from disk into PipelineContext
+    # Load agent outputs from db
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
 
-        def _load(agent_type, **kwargs):
-            p = artifact_path(agent_type, stem, run_id, **kwargs)
-            return json.loads(p.read_text(encoding="utf-8"))
+        almanac_data = load_artifact(
+            agent_type="almanac", week_stem=stem, run_id=run_id, horizon_days=horizon_days
+        )
 
-        almanac_data = _load("almanac", horizon_days=horizon_days)
-        technical_data = _load("technical", horizon_days=horizon_days)
-        macro_data = _load("macro", horizon_days=horizon_days)
-        evidence_data = _load("evidence")
+        technical_data = load_artifact(
+            agent_type="technical", week_stem=stem, run_id=run_id, horizon_days=horizon_days
+        )
+
+        macro_data = load_artifact(
+            agent_type="macro", week_stem=stem, run_id=run_id, horizon_days=horizon_days
+        )
+
+        evidence_data = load_artifact(
+            agent_type="evidence", week_stem=stem, run_id=run_id
+        )
 
         ctx.almanac = AlmanacOutput(
             prediction_date=date.fromisoformat(almanac_data["prediction_date"]),
@@ -314,9 +345,13 @@ def post_llm():
     llm_output = ctx.llm_outputs[-1]
     output_dict = asdict(llm_output)
     output_dict["horizon_days"] = horizon_days
-    path = artifact_path(
-        "llm", stem, run_id, model=model_key, horizon_days=horizon_days
+    save_artifact(
+        agent_type="llm",
+        week_stem=stem,
+        run_id=run_id,
+        horizon_days=horizon_days,
+        model=model_key,
+        data=output_dict,
+        prediction_date=prediction_date,
     )
-    _write_artifact(path, output_dict)
-    output_dict = _json.loads(_json.dumps(output_dict, default=str))
     return jsonify(output_dict), 200

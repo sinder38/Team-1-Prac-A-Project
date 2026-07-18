@@ -1,9 +1,8 @@
-import re
-
 from flask import Blueprint, jsonify, request
 
+from agents.db import load_artifact, list_run_ids
 from agents.io import week_stem
-from server.utils import OUTPUTS_ROOT, artifact_path, err, load_artifact, parse_date
+from server.utils import err, parse_date
 
 artifacts_bp = Blueprint("artifacts", __name__, url_prefix="/artifacts")
 
@@ -47,7 +46,7 @@ def get_almanac():
     if error:
         return error
     try:
-        data = load_artifact(artifact_path("almanac", stem, run_id, horizon_days=horizon_days))
+        data = load_artifact(agent_type="almanac", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -65,7 +64,7 @@ def get_technical():
     if error:
         return error
     try:
-        data = load_artifact(artifact_path("technical", stem, run_id, horizon_days=horizon_days))
+        data = load_artifact(agent_type="technical", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -83,7 +82,7 @@ def get_macro():
     if error:
         return error
     try:
-        data = load_artifact(artifact_path("macro", stem, run_id, horizon_days=horizon_days))
+        data = load_artifact(agent_type="macro", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -98,7 +97,7 @@ def get_evidence():
     if error:
         return error
     try:
-        data = load_artifact(artifact_path("evidence", stem, run_id))
+        data = load_artifact(agent_type="evidence", week_stem=stem, run_id=run_id)
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -119,7 +118,7 @@ def get_llm():
     if error:
         return error
     try:
-        data = load_artifact(artifact_path("llm", stem, run_id, model=model, horizon_days=horizon_days))
+        data = load_artifact(agent_type="llm", week_stem=stem, run_id=run_id, horizon_days=horizon_days, model=model)
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -136,34 +135,8 @@ def get_runs():
         return err(f"Invalid prediction_date: {raw_date!r}", 400)
 
     stem = week_stem(prediction_date)
-    if not OUTPUTS_ROOT.exists():
-        return jsonify({"prediction_date": raw_date, "week": stem, "run_ids": []}), 200
-    run_ids: set[str] = set()
-
-    # Scan all agent subdirectories for files matching the week stem.
-    # Filename patterns:
-    #   Standard: {agent_type}_{stem}_{run_id}[_{suffix}].json (e.g. almanac_W25_run1_7d.json)
-    #   LLM: llm_{model}_{stem}_{run_id}_{horizon_days}d.json (e.g. llm_nemotron_W25_run1_7d.json)
-    stem_escaped = re.escape(stem)
-    standard_pattern = re.compile(rf"^[a-z]+_{stem_escaped}_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$")
-    llm_pattern = re.compile(rf"^llm_[a-z0-9]+_{stem_escaped}_(.+?)_\d+d\.json$")
-
-    for subdir in OUTPUTS_ROOT.iterdir():
-        if not subdir.is_dir():
-            continue
-        for f in subdir.glob(f"*_{stem}_*.json"):
-            # Try standard pattern first
-            m = standard_pattern.match(f.name)
-            if m:
-                run_ids.add(m.group(1))
-            else:
-                # Try LLM pattern
-                m = llm_pattern.match(f.name)
-                if m:
-                    run_ids.add(m.group(1))
-
     return jsonify({
         "prediction_date": raw_date,
         "week": stem,
-        "run_ids": sorted(run_ids),
+        "run_ids": list_run_ids(stem),
     }), 200

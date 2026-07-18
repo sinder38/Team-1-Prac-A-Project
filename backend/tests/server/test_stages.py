@@ -15,7 +15,8 @@ from agents.schemas import (
 
 
 @pytest.fixture
-def client():
+def client(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "test.db"))
     app = create_app()
     app.config["TESTING"] = True
     with app.test_client() as c:
@@ -71,8 +72,7 @@ LLM_OUT = LLMOutput(
 
 
 def test_post_almanac_returns_output(client, tmp_path):
-    with patch("server.stages.run_almanac") as mock_run, \
-         patch("server.stages.artifact_path", return_value=tmp_path / "out.json"):
+    with patch("server.stages.run_almanac") as mock_run:
         mock_run.side_effect = lambda ctx, config: setattr(ctx, "almanac", ALMANAC_OUTPUT)
         resp = client.post("/stages/almanac", json={
             "prediction_date": "2026-06-18",
@@ -80,8 +80,7 @@ def test_post_almanac_returns_output(client, tmp_path):
             "horizon_days": 7,
         })
     assert resp.status_code == 200
-    data = json.loads(resp.data)
-    assert data["monthly_bias"] == "Bullish"
+    assert json.loads(resp.data)["monthly_bias"] == "Bullish"
 
 
 def test_post_almanac_missing_field(client):
@@ -104,8 +103,7 @@ def test_post_almanac_bad_date(client):
 
 
 def test_post_evidence_no_horizon(client, tmp_path):
-    with patch("server.stages.run_evidence") as mock_run, \
-         patch("server.stages.artifact_path", return_value=tmp_path / "out.json"):
+    with patch("server.stages.run_evidence") as mock_run:
         mock_run.side_effect = lambda ctx, config, **kw: setattr(ctx, "evidence", EVIDENCE_OUTPUT)
         resp = client.post("/stages/evidence", json={
             "prediction_date": "2026-06-18",
@@ -116,13 +114,12 @@ def test_post_evidence_no_horizon(client, tmp_path):
 
 
 def test_post_llm_missing_agent_artifacts(client, tmp_path):
-    with patch("server.stages.artifact_path", side_effect=lambda t, *a, **kw: tmp_path / f"{t}.json"):
-        resp = client.post("/stages/llm", json={
-            "prediction_date": "2026-06-18",
-            "run_id": "run1",
-            "model": "example",
-            "horizon_days": 7,
-        })
+    resp = client.post("/stages/llm", json={
+        "prediction_date": "2026-06-18",
+        "run_id": "run1",
+        "model": "example",
+        "horizon_days": 7,
+    })
     assert resp.status_code == 404
     body = json.loads(resp.data)
     assert "almanac" in body["error"]

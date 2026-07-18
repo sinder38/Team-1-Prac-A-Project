@@ -1,5 +1,6 @@
 """Pipeline stage functions — one per agent type."""
 
+import json
 from datetime import date
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from agents.pipeline.config import LLMModelEntry, PipelineConfig
 from agents.pipeline.context import PipelineContext
 from agents.schemas import EvidenceOutput
 from agents.technical.technical_agent import TechnicalAgent
+from agents.db import save_artifact
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -21,12 +23,18 @@ def _save_artifacts(
 ) -> None:
     week_stem_date = week_stem(prediction_date)
 
-    # TODO: move saving as json into database
     if config.artifacts.save_json:
-        FileSaver.for_agent(agent.agent_type).save(
-            agent.render_json(output, prediction_date),
-            f"{week_stem(prediction_date)}.json",
-        )
+        data = json.loads(agent.render_json(output, prediction_date))
+        kwargs = {
+            "agent_type": agent.agent_type,
+            "week_stem": week_stem_date,
+            "run_id": "pipeline",
+            "data": data,
+            "prediction_date": prediction_date,
+        }
+        if agent.agent_type != "evidence":
+            kwargs["horizon_days"] = 7
+        save_artifact(**kwargs)
 
     if config.artifacts.save_md:
         md = agent.render_md(output, prediction_date)
