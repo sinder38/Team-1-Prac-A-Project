@@ -8,12 +8,11 @@ from agents.evidence.evidence_agent import EvidenceAgent
 from agents.io import FileSaver, week_stem
 from agents.llm.multi_model_runner import OpenRouterAgent, _row
 from agents.macro.macro_agent import MacroAgent
+from agents.paths import DATA_DIR
 from agents.pipeline.config import LLMModelEntry, PipelineConfig
 from agents.pipeline.context import PipelineContext
 from agents.schemas import EvidenceOutput
 from agents.technical.technical_agent import TechnicalAgent
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _save_artifacts(
@@ -31,7 +30,7 @@ def _save_artifacts(
     if config.artifacts.save_md:
         md = agent.render_md(output, prediction_date)
 
-        md_path = REPO_ROOT / "data" / agent.agent_type
+        md_path = DATA_DIR / agent.agent_type
         if agent.agent_type == "evidence":
             filename = f"actuals_{week_stem_date}.md"
         else:
@@ -103,7 +102,7 @@ def run_llm(
     ctx.llm_outputs.append(output)
 
     if config.artifacts.save_md:
-        FileSaver(REPO_ROOT / "data" / "llm").save(
+        FileSaver(DATA_DIR / "llm").save(
             agent.render_md(output, ctx.prediction_date),
             f"synthesis_{entry.slug}_{week_stem(ctx.prediction_date)}.txt",
         )
