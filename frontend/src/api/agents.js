@@ -2,7 +2,7 @@
  * Saved runs and agent outputs, read from the Flask backend's /artifacts/* routes.
  */
 import { getJson } from './http'
-import { DEFAULT_HORIZON_DAYS, LLM_MODELS } from './pipeline'
+import { DEFAULT_HORIZON_DAYS, getLlmModels } from './pipeline'
 
 const CONFIDENCE_SCORE = { Low: 40, 'Low-Medium': 55, Medium: 65, High: 85 }
 
@@ -160,9 +160,10 @@ export async function getAgentOutputs({
 
   let llmComparison = null
   if (includeLlm) {
+    const configured = await getLlmModels()
     const models = []
     await Promise.all(
-      LLM_MODELS.map(async ({ key, name }) => {
+      configured.map(async ({ key, name }) => {
         try {
           const data = await getJson(`/artifacts/llm?${qs}&model=${key}`)
           models.push({ name, data })

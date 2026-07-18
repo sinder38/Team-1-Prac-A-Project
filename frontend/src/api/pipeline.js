@@ -9,17 +9,19 @@
  *   2 LLM API Calls            -> POST /stages/evidence, then POST /stages/llm per model
  *   3 Delta Calibration Engine -> no endpoint yet
  */
-import { postJson } from './http'
+import { getJson, postJson } from './http'
 import { stageLogs } from '../lib/exampleData'
 
 export const DEFAULT_HORIZON_DAYS = 7
 
-export const LLM_MODELS = [
-  { key: 'nemotron', name: 'NVIDIA Nemotron' },
-  { key: 'hy3', name: 'Tencent HY3' },
-  { key: 'gemma', name: 'Google Gemma' },
-  { key: 'laguna', name: 'Poolside Laguna' },
-]
+/** Models enabled on the server (server.toml). Prefer this over a hardcoded list. */
+export async function getLlmModels() {
+  const data = await getJson('/stages/models')
+  return (data.models || []).map(m => ({
+    key: m.key,
+    name: m.name || m.key,
+  }))
+}
 
 export function getStageLogs(index) {
   return stageLogs(index)
@@ -44,15 +46,19 @@ export async function runStage(index, run) {
         prediction_date: run.predictionDate,
         run_id: run.runId,
       })
+      const models = await getLlmModels()
+      if (!models.length) {
+        throw new Error('No LLM models configured on the server (check server.toml).')
+      }
       const failures = []
-      for (const { key, name } of LLM_MODELS) {
+      for (const { key, name } of models) {
         try {
           await postJson('/stages/llm', { ...stageBody(run), model: key })
         } catch (err) {
           failures.push(`${name}: ${err?.message || 'request failed'}`)
         }
       }
-      if (failures.length === LLM_MODELS.length) {
+      if (failures.length === models.length) {
         throw new Error(`All LLM models failed.\n${failures.join('\n')}`)
       }
       return { failures }

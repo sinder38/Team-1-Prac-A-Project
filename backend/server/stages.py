@@ -49,6 +49,24 @@ def _write_artifact(path: Path, data: dict) -> None:
     path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
 
 
+@stages_bp.route("/models", methods=["GET"])
+def list_models():
+    """Models currently enabled in server.toml — frontend should use this list."""
+    return jsonify(
+        {
+            "models": [
+                {
+                    "key": m.slug,
+                    "name": m.label,
+                    "id": m.id,
+                    "provider": m.provider,
+                }
+                for m in CONFIG.llm.models
+            ]
+        }
+    ), 200
+
+
 @stages_bp.route("/almanac", methods=["POST"])
 def post_almanac():
     body = request.get_json(force=True) or {}
