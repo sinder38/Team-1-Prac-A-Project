@@ -1,0 +1,17 @@
+# LLM Agent Output — Nemotron 3 Super 120B A12B — Week of 2026-07-18
+
+1. Weekly Regime: Neutral
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - Technical shows SPX EMA8 (7515) above EMA21 (7491) with neutral trend bias, NDX EMA8 below EMA21 indicating bearish momentum, and IWM prices near the midpoint of its support/resistance band.
+   - Macro data reveals rising WTI oil (+15.5% weekly), falling gold (-2.2%), a declining DXY, and a high probability (97.4%) of the Fed holding rates, creating a binary‑risk backdrop.
+   - Almanac sector signals are mixed—Technology (XLK) bullish due to a seasonal long window, while Financials (XLF), Energy (XLE), Materials (XLB) and Gold are bearish, reflecting a divided market environment.
+4. Key Contradictions:
+   - While the Almanac bullish tech bias supports NDX upside, the technical agent shows a clear bearish trend for NDX (EMA8 < EMA21, trend_bias: Bearish).
+   - SPX technical neutrality contrasts with the macro binary‑risk stance, which could spark either a risk‑on rally or a risk‑off sell‑off depending on Fed outcome.
+5. Invalidation Conditions: A materially more dovish‑than‑expected Fed decision that pushes Treasury yields lower and raises rate‑cut expectations would invalidate the cautious stance and could trigger a bullish breakout above key resistance levels.
+6. Predicted % move — SPX: -2.0% to 1.5%
+   Predicted % move — NDX: -2.5% to 0.5%
+   Predicted % move — IWM: -1.5% to 2.0%
+7. Plain-English brief: For the week ahead, expect the S&P 500 to trade in a tight range with a slight downside tilt, the Nasdaq 100 to face modest downward pressure, and the Russell 2000 to move sideways‑to‑slightly‑up. Overall market direction is mixed, leading to a neutral weekly regime with low‑medium confidence.
+8. Disclaimer: This is not financial advice.
