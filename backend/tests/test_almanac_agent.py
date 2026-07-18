@@ -2,7 +2,6 @@ import json
 import pytest
 from datetime import date
 from pathlib import Path
-from typing import cast
 
 from agents.almanac.almanac_agent import AlmanacAgent
 from agents.schemas import AlmanacOutput, Bias, Confidence
@@ -151,7 +150,7 @@ def test_almanac_integration_fallback(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, cast("PipelineConfig", config))
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -206,7 +205,7 @@ def test_almanac_integration_week_1_memorial_day(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, cast("PipelineConfig", config))
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -266,7 +265,7 @@ def test_almanac_integration_week_2_early_june(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, cast("PipelineConfig", config))
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -325,7 +324,7 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, cast("PipelineConfig", config))
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -381,7 +380,7 @@ def test_almanac_integration_week_4_late_june(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, cast("PipelineConfig", config))
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -436,7 +435,7 @@ def test_almanac_integration_week_5_early_july(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, cast("PipelineConfig", config))
+    run_almanac(ctx, config)  # type: ignore[reportArgumentType]
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
