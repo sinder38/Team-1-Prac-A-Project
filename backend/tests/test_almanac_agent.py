@@ -2,6 +2,7 @@ import json
 import pytest
 from datetime import date
 from pathlib import Path
+from typing import cast
 
 from agents.almanac.almanac_agent import AlmanacAgent
 from agents.schemas import AlmanacOutput, Bias, Confidence
@@ -48,7 +49,7 @@ def test_lookup_seasonal_data_success():
     output = agent.lookup_seasonal_data(date(2026, 6, 16))
     #
     # Source: WEEKLY_PATTERNS[(6, 3)] at almanac_data.py:416-435
-    #   "name": "Mid-June weakness / CPI follow-through week"
+    #   "name": "Mid-June weakness / Triple-Witching week"
     #   "seasonal_bias": "Bearish"
     #   "confidence": "Medium"
     #   "thesis": "Seasonality is still a headwind in mid-June..."
@@ -150,7 +151,7 @@ def test_almanac_integration_fallback(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, cast("PipelineConfig", config))
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -205,7 +206,7 @@ def test_almanac_integration_week_1_memorial_day(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, cast("PipelineConfig", config))
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -265,7 +266,7 @@ def test_almanac_integration_week_2_early_june(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, cast("PipelineConfig", config))
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -324,7 +325,7 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, cast("PipelineConfig", config))
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -368,20 +369,19 @@ def test_almanac_integration_week_4_late_june(setup_integration):
     #
     #   Monthly: June is #12 (dead last) in midterm cycle. p.87.
     #
-    # ⚠ DISCREPANCY: WEEKLY_PATTERNS[(6, 4)] at almanac_data.py:436-456
-    #   has "seasonal_bias": "Mixed" and "confidence": "Low-Medium",
-    #   but the book says Bearish / Moderate.  This test is set to
-    #   match the book (truth).  It will FAIL until almanac_data.py
-    #   is fixed.  See also: the encoded "quarter-end positioning"
-    #   narrative is not in the book for this week — the book focuses
-    #   on the post-Triple-Witching downdraft.
+    # → Encoded as WEEKLY_PATTERNS[(6, 4)] at almanac_data.py:442-465
+    #   "seasonal_bias": "Bearish" (matches book)
+    #   "confidence": "Medium"    (matches book "Moderate")
+    #
+    # MONTHLY_STATS[6] at almanac_data.py:169-197
+    #   "monthly_bias": "Bearish" (matches book)
     # ---------------------------------------------------------------
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 24)
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, cast("PipelineConfig", config))
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
@@ -422,9 +422,8 @@ def test_almanac_integration_week_5_early_july(setup_integration):
     #              weakest rally of all seasons" (p.76)
     #     Thu-Fri: No specific daily trends highlighted.
     #
-    # → Encoded as WEEKLY_PATTERNS[(7, 1)] at almanac_data.py:477-496
-    #   "seasonal_bias": "Bullish" (matches book, though book notes
-    #     "/Mixed" qualifier and NASDAQ midterm weakness)
+    # → Encoded as WEEKLY_PATTERNS[(7, 1)] at almanac_data.py:486-511
+    #   "seasonal_bias": "Mixed" (matches book "Bullish / Mixed")
     #   "confidence": "Medium" (book says "Moderate to Strong";
     #     Confidence enum has no MEDIUM_HIGH value, so MEDIUM is closest)
     #
@@ -437,7 +436,7 @@ def test_almanac_integration_week_5_early_july(setup_integration):
     ctx = PipelineContext(prediction_date=prediction_date)
     config = {"artifacts": {"save_json": True, "save_md": True}}
 
-    run_almanac(ctx, config)
+    run_almanac(ctx, cast("PipelineConfig", config))
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
