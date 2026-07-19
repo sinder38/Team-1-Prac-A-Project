@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from agents.almanac.almanac_agent import AlmanacAgent
+from agents.db import save_agent_artifact, ingest_human_score_md
 from agents.evidence.evidence_agent import EvidenceAgent
 from agents.io import FileSaver, week_stem
 from agents.llm.multi_model_runner import OpenRouterAgent, _row
@@ -13,7 +14,6 @@ from agents.pipeline.config import LLMModelEntry, PipelineConfig
 from agents.pipeline.context import PipelineContext
 from agents.schemas import EvidenceOutput
 from agents.technical.technical_agent import TechnicalAgent
-from agents.db import save_artifact
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -34,7 +34,7 @@ def _save_artifacts(
         }
         if agent.agent_type != "evidence":
             kwargs["horizon_days"] = 7
-        save_artifact(**kwargs)
+        save_agent_artifact(**kwargs)
 
     if config.artifacts.save_md:
         md = agent.render_md(output, prediction_date)
@@ -48,7 +48,6 @@ def _save_artifacts(
 
 
 def run_almanac(ctx: PipelineContext, config: PipelineConfig) -> None:
-
     agent = AlmanacAgent()
     output = agent.run(ctx.prediction_date)
     ctx.almanac = output
@@ -56,7 +55,6 @@ def run_almanac(ctx: PipelineContext, config: PipelineConfig) -> None:
 
 
 def run_technical(ctx: PipelineContext, config: PipelineConfig) -> None:
-
     agent = TechnicalAgent()
     output = agent.run(ctx.prediction_date)
     ctx.technical = output

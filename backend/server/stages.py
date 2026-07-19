@@ -6,7 +6,8 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import BadRequest
 
-from agents.db import save_artifact, load_artifact, artifact_exists
+from agents.db import (save_agent_artifact, load_agent_artifact, agent_artifact_exists, save_llm_artifact,
+                       load_llm_artifact, ingest_human_score_md)
 from agents.io import week_stem
 from agents.pipeline.config import (
     ArtifactsConfig,
@@ -84,7 +85,7 @@ def post_almanac():
 
     output_dict = asdict(ctx.almanac)
     output_dict["horizon_days"] = horizon_days
-    save_artifact(
+    save_agent_artifact(
         agent_type="almanac",
         week_stem=stem,
         run_id=run_id,
@@ -121,7 +122,7 @@ def post_technical():
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.technical)
     output_dict["horizon_days"] = horizon_days
-    save_artifact(
+    save_agent_artifact(
         agent_type="technical",
         week_stem=stem,
         run_id=run_id,
@@ -158,7 +159,7 @@ def post_macro():
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.macro)
     output_dict["horizon_days"] = horizon_days
-    save_artifact(
+    save_agent_artifact(
         agent_type="macro",
         week_stem=stem,
         run_id=run_id,
@@ -191,7 +192,7 @@ def post_evidence():
 
     stem = week_stem(prediction_date)
     output_dict = asdict(ctx.evidence)
-    save_artifact(
+    save_agent_artifact(
         agent_type="evidence",
         week_stem=stem,
         run_id=run_id,
@@ -229,9 +230,9 @@ def post_llm():
     missing = []
     for agent_type in ("almanac", "technical", "macro", "evidence"):
         exists = (
-            artifact_exists(agent_type=agent_type, week_stem=stem, run_id=run_id)
+            agent_artifact_exists(agent_type=agent_type, week_stem=stem, run_id=run_id)
             if agent_type == "evidence"
-            else artifact_exists(
+            else agent_artifact_exists(
                 agent_type=agent_type,
                 week_stem=stem,
                 run_id=run_id,
@@ -251,19 +252,19 @@ def post_llm():
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
 
-        almanac_data = load_artifact(
+        almanac_data = load_agent_artifact(
             agent_type="almanac", week_stem=stem, run_id=run_id, horizon_days=horizon_days
         )
 
-        technical_data = load_artifact(
+        technical_data = load_agent_artifact(
             agent_type="technical", week_stem=stem, run_id=run_id, horizon_days=horizon_days
         )
 
-        macro_data = load_artifact(
+        macro_data = load_agent_artifact(
             agent_type="macro", week_stem=stem, run_id=run_id, horizon_days=horizon_days
         )
 
-        evidence_data = load_artifact(
+        evidence_data = load_agent_artifact(
             agent_type="evidence", week_stem=stem, run_id=run_id
         )
 
@@ -345,8 +346,7 @@ def post_llm():
     llm_output = ctx.llm_outputs[-1]
     output_dict = asdict(llm_output)
     output_dict["horizon_days"] = horizon_days
-    save_artifact(
-        agent_type="llm",
+    save_llm_artifact(
         week_stem=stem,
         run_id=run_id,
         horizon_days=horizon_days,
@@ -355,3 +355,74 @@ def post_llm():
         prediction_date=prediction_date,
     )
     return jsonify(output_dict), 200
+
+
+@stages_bp.route("/human-score", methods=["POST"])
+def post_human_score():
+    """
+    Late step: agents + LLM already in DB.
+    Scans data/human/human_score_{Wxx}.md and stores into human.db.
+    If the .md is not uploaded yet → 404 and skip.
+    """
+    body = request.get_json(force=True) or {}
+    try:
+        require_fields(body, "prediction_date", "run_id", "horizon_days")
+        prediction_date = parse_date(body["prediction_date"])
+        run_id = str(body["run_id"])
+        horizon_days = int(body["horizon_days"])
+        if horizon_days <= 0:
+            raise ValueError("horizon_days must be a positive integer")
+    except (BadRequest, KeyError) as e:
+        return err(str(e), 400)
+    except (ValueError, TypeError) as e:
+        return err(str(e), 400)
+
+    stem = week_stem(prediction_date)
+
+    # Preconditions: prior stages already done (no re-run)
+    missing = []
+    for agent_type in ("almanac", "technical", "macro", "evidence"):
+        exists = (
+            agent_artifact_exists(agent_type=agent_type, week_stem=stem, run_id=run_id)
+            if agent_type == "evidence"
+            else agent_artifact_exists(
+                agent_type=agent_type,
+                week_stem=stem,
+                run_id=run_id,
+                horizon_days=horizon_days,
+            )
+        )
+        if not exists:
+            missing.append(agent_type)
+
+    if missing:
+        return err(
+            f"Run agents first. Missing for run_id={run_id!r}: {', '.join(missing)}",
+            404,
+        )
+
+    # At least one LLM row for this week/run/horizon
+    try:
+        with __import__("agents.db", fromlist=["get_llm_conn"]).get_llm_conn() as conn:
+            row = conn.execute(
+                """
+                SELECT 1 FROM llm_outputs
+                WHERE week_stem = ? AND run_id = ? AND horizon_days = ?
+                LIMIT 1
+                """,
+                (stem, run_id, horizon_days),
+            ).fetchone()
+    except Exception as e:
+        return err(str(e), 500)
+
+    if row is None:
+        return err(f"Run LLM first. No llm_outputs for {stem}/{run_id} horizon={horizon_days}", 404)
+
+    if not ingest_human_score_md(stem):
+        return err(
+            f"human_score_{stem}.md not uploaded yet — skipped. "
+            f"Add data/human/human_score_{stem}.md then POST again.",
+            404,
+        )
+
+    return jsonify({"week": stem, "run_id": run_id, "stored": True}), 200

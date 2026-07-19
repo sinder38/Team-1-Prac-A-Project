@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from agents.db import load_artifact, list_run_ids
+from agents.db import load_agent_artifact, load_llm_artifact, list_run_ids, load_human_score
 from agents.io import week_stem
 from server.utils import err, parse_date
 
@@ -8,10 +8,6 @@ artifacts_bp = Blueprint("artifacts", __name__, url_prefix="/artifacts")
 
 
 def _stem_from_args() -> tuple[str, tuple | None]:
-    """Extract week_stem from prediction_date query param.
-
-    Returns (stem, None) on success, or ("", error_response) on failure.
-    """
     raw = request.args.get("prediction_date")
     if not raw:
         return "", err("Missing required query param: prediction_date", 400)
@@ -46,7 +42,7 @@ def get_almanac():
     if error:
         return error
     try:
-        data = load_artifact(agent_type="almanac", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
+        data = load_agent_artifact(agent_type="almanac", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -64,7 +60,7 @@ def get_technical():
     if error:
         return error
     try:
-        data = load_artifact(agent_type="technical", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
+        data = load_agent_artifact(agent_type="technical", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -82,7 +78,7 @@ def get_macro():
     if error:
         return error
     try:
-        data = load_artifact(agent_type="macro", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
+        data = load_agent_artifact(agent_type="macro", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -97,7 +93,9 @@ def get_evidence():
     if error:
         return error
     try:
-        data = load_artifact(agent_type="evidence", week_stem=stem, run_id=run_id)
+        data = load_agent_artifact(
+            agent_type="evidence", week_stem=stem, run_id=run_id
+        )
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -118,7 +116,12 @@ def get_llm():
     if error:
         return error
     try:
-        data = load_artifact(agent_type="llm", week_stem=stem, run_id=run_id, horizon_days=horizon_days, model=model)
+        data = load_llm_artifact(
+            week_stem=stem,
+            run_id=run_id,
+            horizon_days=horizon_days,
+            model=model,
+        )
     except FileNotFoundError as e:
         return err(str(e), 404)
     return jsonify(data), 200
@@ -140,3 +143,20 @@ def get_runs():
         "week": stem,
         "run_ids": list_run_ids(stem),
     }), 200
+
+
+@artifacts_bp.route("/human-score", methods=["GET"])
+def get_human_score():
+    stem = request.args.get("stem") or request.args.get("week")
+    if not stem:
+        stem, error = _stem_from_args()  # uses prediction_date
+        if error:
+            return error
+    stem = str(stem).strip().upper()
+    if len(stem) > 3 and "-W" in stem:
+        stem = stem.split("-")[1]  # 2026-W25 → W25
+    try:
+        data = load_human_score(week_stem=stem)
+    except FileNotFoundError as e:
+        return err(str(e), 404)
+    return jsonify({"week": stem, "data": data}), 200
