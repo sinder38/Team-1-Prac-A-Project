@@ -222,6 +222,18 @@ wheels = [
 ]
 
 [[package]]
+name = "cme-fedwatch"
+version = "0.1.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "curl-cffi" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/17/be/5a488f4e5c519e9dabacaa29ecee49e938b130745a438c4e9b320a357ce8/cme_fedwatch-0.1.3.tar.gz", hash = "sha256:437ff5ea45f319dd4ba410217d259b2e241fe006f32b4e950321559a0ab17004", size = 17140, upload-time = "2026-07-11T09:11:05.064Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0d/d5/53587d5137fb465b873f2e577d77ead3264ba04ae2c85bf164b44c5b6bb4/cme_fedwatch-0.1.3-py3-none-any.whl", hash = "sha256:03d9790d457cc201105f2c00904ada99d4c4f22816354e137596d53a7e54e40a", size = 14858, upload-time = "2026-07-11T09:11:03.963Z" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -719,6 +731,7 @@ name = "market-prediction"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "cme-fedwatch" },
     { name = "flask" },
     { name = "matplotlib" },
     { name = "openai" },
@@ -738,9 +751,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cme-fedwatch", specifier = ">=0.1.2" },
     { name = "flask", specifier = ">=3.0" },
     { name = "matplotlib", specifier = ">=3.8" },
-    { name = "openai", specifier = ">=2.41.1" },
+    { name = "openai", specifier = ">=2.41.0" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "playwright", specifier = ">=1.60.0" },
     { name = "pydantic", specifier = ">=2.0" },

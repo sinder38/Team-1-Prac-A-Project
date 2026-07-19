@@ -86,6 +86,8 @@ class CalendarEvent:
     impact: str
     expected: str = "N/A"
     previous: str = "N/A"
+    priority: int = 0
+    source_url: str = ""
 
 
 @dataclass

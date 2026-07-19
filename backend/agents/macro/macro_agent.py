@@ -6,20 +6,23 @@ Usage:
     python backend/agents/macro/macro_agent.py 2026-06-16
 """
 import json
-import os
 import sys
+from csv import DictReader
 from datetime import date
 from dataclasses import asdict
+from io import StringIO
+from pathlib import Path
 import requests
-import yfinance as yf
 import pandas as pd
+import yfinance as yf
 from dotenv import load_dotenv
 
-from agents.macro.macro_event_data import (
-    UPCOMING_EVENTS,
-    CONFIRMED_NEWS,
-    FOMC_MARKET_PRICING,
-    KEY_EARNINGS,
+from agents.macro.macro_event_data import Event
+from agents.macro.macro_sources import (
+    ConfirmedNewsSource,
+    EarningsWhispersCalendar,
+    FedWatchSource,
+    TradingEconomicsCalendar,
 )
 from agents.base import BaseAgent
 from agents.paths import DATA_DIR, OUTPUTS_DIR
@@ -36,6 +39,18 @@ load_dotenv()
 
 class MacroAgent(BaseAgent):
     agent_type = "macro"
+
+    def __init__(
+            self,
+            calendar_source: TradingEconomicsCalendar | None = None,
+            news_source: ConfirmedNewsSource | None = None,
+            earnings_source: EarningsWhispersCalendar | None = None,
+            fedwatch_source: FedWatchSource | None = None,
+    ):
+        self.calendar_source = calendar_source or TradingEconomicsCalendar()
+        self.news_source = news_source or ConfirmedNewsSource()
+        self.earnings_source = earnings_source or EarningsWhispersCalendar()
+        self.fedwatch_source = fedwatch_source or FedWatchSource()
 
     @staticmethod
     def report_week_label(prediction_date: date) -> str:
@@ -84,51 +99,39 @@ class MacroAgent(BaseAgent):
         """Format weekly percentage moves with explicit signs."""
         return f"{value:+.2f}%"
 
-    def fetch_fred(self, series: str, api_key: str) -> float | None:
-        """Fetch latest observation from FRED API."""
-        url = (
-            "https://api.stlouisfed.org/fred/series/observations"
-            f"?series_id={series}"
-            f"&api_key={api_key}"
-            "&file_type=json"
-            "&sort_order=desc"
-            "&limit=1"
-        )
+    def fetch_fred_observations(self, series: str) -> list[tuple[date, float]]:
+        """Fetch FRED observations from the public no-key CSV endpoint."""
+        url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
         try:
-            data = requests.get(url).json()
-            return float(data["observations"][0]["value"])
-        except (requests.RequestException, KeyError, ValueError, IndexError) as e:
+            response = requests.get(url, timeout=20)
+            response.raise_for_status()
+            observations: list[tuple[date, float]] = []
+            for row in DictReader(StringIO(response.text)):
+                value = row.get(series)
+                if not value or value == ".":
+                    continue
+                observations.append((date.fromisoformat(row["observation_date"]), float(value)))
+            return observations
+        except (requests.RequestException, KeyError, ValueError) as e:
             print(f"Error fetching {series}: {e}")
-            return None
+            return []
 
-    def fetch_fred_weekly_change(self, series: str, api_key: str) -> float:
+    def fetch_fred(self, series: str) -> float | None:
+        """Fetch latest observation from FRED without requiring an API key."""
+        observations = self.fetch_fred_observations(series)
+        return observations[-1][1] if observations else None
+
+    def fetch_fred_weekly_change(self, series: str) -> float:
         """Weekly change in percentage points for FRED series."""
-        url = (
-            "https://api.stlouisfed.org/fred/series/observations"
-            f"?series_id={series}"
-            f"&api_key={api_key}"
-            "&file_type=json"
-            "&sort_order=desc"
-            "&limit=8"
-        )
-        try:
-            data = requests.get(url).json()
-            values = [
-                float(obs["value"])
-                for obs in data["observations"]
-                if obs["value"] != "."
-            ]
-            if len(values) >= 7:
-                return round(values[0] - values[5], 2)
-            return 0.0
-        except (requests.RequestException, KeyError, ValueError, IndexError) as e:
-            print(f"Error fetching weekly change for {series}: {e}")
-            return 0.0
+        observations = self.fetch_fred_observations(series)
+        if len(observations) >= 6:
+            return round(observations[-1][1] - observations[-6][1], 2)
+        return 0.0
 
-    def get_fed_rate(self, api_key: str) -> str:
+    def get_fed_rate(self) -> str:
         """Get current Fed rate (lower and upper bound)."""
-        low = self.fetch_fred("DFEDTARL", api_key)
-        high = self.fetch_fred("DFEDTARU", api_key)
+        low = self.fetch_fred("DFEDTARL")
+        high = self.fetch_fred("DFEDTARU")
         if low is not None and high is not None:
             return f"{low:.2f}%-{high:.2f}%"
 
@@ -136,11 +139,11 @@ class MacroAgent(BaseAgent):
         print("No Fed rate availible! Continuing without it...")
         return "N/A"
 
-    def get_yields(self, api_key: str) -> dict:
+    def get_yields(self) -> dict:
         """Get Treasury yields: 2-year, 10-year, 30-year."""
-        yield_2y = self.fetch_fred("DGS2", api_key)
-        yield_10y = self.fetch_fred("DGS10", api_key)
-        yield_30y = self.fetch_fred("DGS30", api_key)
+        yield_2y = self.fetch_fred("DGS2")
+        yield_10y = self.fetch_fred("DGS10")
+        yield_30y = self.fetch_fred("DGS30")
         return {
             "2y": yield_2y if yield_2y is not None else 0.0,
             "10y": yield_10y if yield_10y is not None else 0.0,
@@ -199,8 +202,12 @@ class MacroAgent(BaseAgent):
             ),
         )
 
-    def build_week_ahead_calendar(self) -> list[CalendarEvent]:
-        """Convert configured event fixtures to schema objects for export."""
+    def fetch_upcoming_events(self, prediction_date: date) -> list[Event]:
+        """Fetch next week's five most important TradingEconomics events."""
+        return self.calendar_source.get_top_events(prediction_date)
+
+    def build_week_ahead_calendar(self, events: list[Event]) -> list[CalendarEvent]:
+        """Convert sourced events to schema objects for export."""
         return [
             CalendarEvent(
                 date_label=event.date_label,
@@ -208,16 +215,18 @@ class MacroAgent(BaseAgent):
                 impact=event.impact.title(),
                 expected=event.expected,
                 previous=event.previous,
+                priority=event.priority,
+                source_url=event.source_url,
             )
-            for event in UPCOMING_EVENTS
+            for event in events
         ]
 
-    def build_primary_driver(self) -> str:
+    def build_primary_driver(self, events: list[Event]) -> str:
         """Describe the top-priority event as the report's primary driver."""
-        if not UPCOMING_EVENTS:
+        if not events:
             return "- No major scheduled events"
 
-        primary_event = max(UPCOMING_EVENTS, key=lambda e: e.priority)
+        primary_event = max(events, key=lambda e: e.priority)
         driver_name = primary_event.catalyst_name or primary_event.name
         driver_date = primary_event.catalyst_date or primary_event.date_label
         catalyst_type = "data" if any(
@@ -232,22 +241,24 @@ class MacroAgent(BaseAgent):
         """Build an invalidation statement according to the report."""
         if macro_bias == MacroBias.BINARY_RISK:
             return (
-                "A materially more dovish-than-expected Fed decision or press "
-                "conference that drives Treasury yields lower and increases "
-                "expectations for Fed rate cuts would reverse the current "
-                "cautious stance and support risk assets."
+                "If the marquee event lands close to consensus and cross-asset "
+                "markets remain orderly, the binary-risk stance should fade back "
+                "toward the underlying macro trend."
             )
         if macro_bias == MacroBias.HAWKISH:
             return (
-                "A materially softer inflation or growth signal that pushes "
-                "Treasury yields lower would invalidate the hawkish bias."
+                "Softer inflation, weaker labor data, or a clear drop in yields "
+                "and the dollar would invalidate the hawkish bias."
             )
         if macro_bias == MacroBias.DOVISH:
             return (
-                "A materially stronger inflation or growth signal that pushes "
-                "Treasury yields higher would invalidate the dovish bias."
+                "Hotter inflation, stronger growth data, or a renewed rise in "
+                "front-end yields would invalidate the dovish bias."
             )
-        return "Major events or significant shift in inflation expectations"
+        return (
+            "A decisive move in yields, the dollar, or inflation expectations "
+            "would invalidate the neutral macro read."
+        )
 
     def determine_macro_bias(
             self,
@@ -261,39 +272,39 @@ class MacroAgent(BaseAgent):
         score = 0
 
         # Dollar strength
-        if dxy_change > 1:
+        if dxy_change > 1.25:
             score += 1
-        elif dxy_change < -1:
+        elif dxy_change < -1.25:
             score -= 1
 
         # Front-end rates (2-year)
-        if yield_2y_change > 0.15:
+        if yield_2y_change > 0.20:
             score += 2
-        elif yield_2y_change < -0.15:
+        elif yield_2y_change < -0.20:
             score -= 2
 
         # Long-end rates (10-year)
-        if yield_10y_change > 0.10:
+        if yield_10y_change > 0.15:
             score += 1
-        elif yield_10y_change < -0.10:
+        elif yield_10y_change < -0.15:
             score -= 1
 
         # Gold (inverse relationship)
-        if gold_change > 1:
+        if gold_change > 1.5:
             score -= 1
-        elif gold_change < -1:
+        elif gold_change < -1.5:
             score += 1
 
         # Oil
-        if wti_change > 5:
+        if wti_change > 6.5:
             score += 1
-        elif wti_change < -5:
+        elif wti_change < -6.5:
             score -= 1
 
         # Determine bias based on score
-        if score >= 3:
+        if score >= 4:
             bias = MacroBias.HAWKISH
-        elif score <= -3:
+        elif score <= -4:
             bias = MacroBias.DOVISH
         else:
             bias = MacroBias.NEUTRAL
@@ -305,35 +316,48 @@ class MacroAgent(BaseAgent):
         score = 0
 
         for event in events:
-            if event.impact == "HIGH":
-                score += 3
-            elif event.impact == "MEDIUM":
+            impact = event.impact.upper()
+            if impact == "HIGH":
+                score += 2
+            elif impact == "MEDIUM":
                 score += 1
 
         return score
 
+    def is_exceptional_event_week(self, events: list[Event]) -> bool:
+        """Reserve Binary-risk for rare, high-conviction event clusters."""
+        if len(events) < 4:
+            return False
+
+        high_impact_events = [event for event in events if event.impact.upper() == "HIGH"]
+        if len(high_impact_events) < 4:
+            return False
+
+        top_priority = max(event.priority for event in events)
+        average_priority = sum(event.priority for event in events) / len(events)
+        return (
+            top_priority >= 85
+            and average_priority >= 80
+            and self.calculate_event_risk(events) >= 16
+        )
+
     def fetch_macro_data(self, prediction_date: date) -> MacroOutput:
         """
         Fetch Fed rate, Treasury yields, DXY, WTI, and Gold with weekly changes.
-        Uses FRED API for rates/yields and yfinance for commodities.
+        Uses no-key FRED CSV downloads for rates/yields and yfinance for commodities.
         """
-        api_key = os.getenv("FRED_API_KEY")
-
-        if not api_key:
-            raise ValueError("FRED_API_KEY environment variable is not set for macro")
-
         # Fed rate
-        fed_rate = self.get_fed_rate(api_key)
+        fed_rate = self.get_fed_rate()
 
         # Treasury yields (current levels)
-        yields = self.get_yields(api_key)
+        yields = self.get_yields()
         yield_2y = yields["2y"]
         yield_10y = yields["10y"]
         yield_30y = yields["30y"]
 
         # Treasury yield changes (weekly)
-        yield_2y_change = self.fetch_fred_weekly_change("DGS2", api_key)
-        yield_10y_change = self.fetch_fred_weekly_change("DGS10", api_key)
+        yield_2y_change = self.fetch_fred_weekly_change("DGS2")
+        yield_10y_change = self.fetch_fred_weekly_change("DGS10")
 
         # Fetch all commodities with price and weekly change
         dxy_data = self.fetch_commodity_data("DX-Y.NYB")
@@ -351,20 +375,30 @@ class MacroAgent(BaseAgent):
 
         # Confidence based on score magnitude
         abs_score = abs(score)
-        if abs_score >= 4:
+        if abs_score >= 5:
             confidence = Confidence.HIGH
-        elif abs_score >= 2:
+        elif abs_score >= 3:
             confidence = Confidence.MEDIUM
         else:
             confidence = Confidence.LOW
 
-        # Consider event risk score for bias and confidence
-        event_risk_score = self.calculate_event_risk(UPCOMING_EVENTS)
-        if event_risk_score >= 10:
+        upcoming_events = self.fetch_upcoming_events(prediction_date)
+        key_earnings = [
+            self.earnings_source.render_event(event)
+            for event in self.earnings_source.get_key_events(prediction_date)
+        ]
+        confirmed_news = [
+            self.news_source.render_item(item)
+            for item in self.news_source.get_ranked_items()
+        ]
+        fomc_pricing = self.fedwatch_source.get_pricing()
+
+        # Binary-risk is reserved for unusually concentrated, high-conviction event weeks.
+        if self.is_exceptional_event_week(upcoming_events):
             macro_bias = MacroBias.BINARY_RISK
             confidence = Confidence.MEDIUM
 
-        primary_driver = self.build_primary_driver()
+        primary_driver = self.build_primary_driver(upcoming_events)
         invalidation = self.build_invalidation(macro_bias)
 
         return MacroOutput(
@@ -380,15 +414,15 @@ class MacroAgent(BaseAgent):
             primary_driver=primary_driver,
             confidence=confidence,
             invalidation=invalidation,
-            next_fomc_date=FOMC_MARKET_PRICING.next_fomc_date,
-            hold_probability=FOMC_MARKET_PRICING.hold_probability,
-            cut_probability=FOMC_MARKET_PRICING.cut_probability,
-            fomc_direction=FOMC_MARKET_PRICING.direction_vs_last_week,
+            next_fomc_date=fomc_pricing.next_fomc_date,
+            hold_probability=fomc_pricing.hold_probability,
+            cut_probability=fomc_pricing.cut_probability,
+            fomc_direction=fomc_pricing.direction_vs_last_week,
             yield_curve=self.determine_yield_curve(yield_2y, yield_10y),
             yield_10y_direction=self.direction_from_change(yield_10y_change),
-            week_ahead_calendar=self.build_week_ahead_calendar(),
-            key_earnings=KEY_EARNINGS,
-            confirmed_news=CONFIRMED_NEWS,
+            week_ahead_calendar=self.build_week_ahead_calendar(upcoming_events),
+            key_earnings=key_earnings,
+            confirmed_news=confirmed_news,
         )
 
     def run(self, prediction_date: date, **kwargs) -> MacroOutput:
@@ -406,13 +440,13 @@ class MacroAgent(BaseAgent):
     def render_calendar_events(self, output: MacroOutput) -> str:
         """Render week-ahead calendar rows."""
         if not output.week_ahead_calendar:
-            return "- No high-impact macro calendar events configured."
+            return "- No high-impact macro calendar events were fetched from TradingEconomics."
 
         return "\n\n".join(
             (
-                f"- {event.date_label}: {event.name} — Expected: "
+                f"- {event.date_label}: [{event.name}]({event.source_url}) — Expected: "
                 f"{event.expected}, Previous: {event.previous} — "
-                f"IMPORTANCE: {event.impact}"
+                f"Impact: {event.impact} — Priority: {event.priority}/100"
             )
             for event in output.week_ahead_calendar
         )
@@ -420,14 +454,14 @@ class MacroAgent(BaseAgent):
     def render_key_earnings(self, output: MacroOutput) -> str:
         """Render key earnings rows."""
         if not output.key_earnings:
-            return "- No key earnings configured."
+            return "- No key earnings data was fetched from Earnings Whispers or TradingEconomics."
 
         return "\n\n".join(output.key_earnings)
 
     def render_confirmed_news(self, output: MacroOutput) -> str:
-        """Render confirmed Reuters/AP news rows."""
+        """Render confirmed NewsData.io news rows."""
         if not output.confirmed_news:
-            return "- No confirmed Reuters/AP news events configured."
+            return "- No Reuters/AP headlines were fetched from NewsData.io. Set NEWSDATA_API_KEY to enable confirmed news."
 
         return "\n\n".join(output.confirmed_news)
 
@@ -452,11 +486,11 @@ WEEK-AHEAD CALENDAR (TradingEconomics):
 
 {self.render_calendar_events(output)}
 
-KEY EARNINGS THIS WEEK (Earnings Whispers):
+KEY EARNINGS THIS WEEK (Earnings Whispers / TradingEconomics):
 
 {self.render_key_earnings(output)}
 
-CONFIRMED NEWS EVENTS (Reuters / AP):
+CONFIRMED NEWS EVENTS (NewsData.io — Reuters/AP only):
 
 {self.render_confirmed_news(output)}
 
@@ -497,11 +531,11 @@ WEEK-AHEAD CALENDAR (TradingEconomics):
 
 {self.render_calendar_events(output)}
 
-KEY EARNINGS THIS WEEK (Earnings Whispers):
+KEY EARNINGS THIS WEEK (Earnings Whispers / TradingEconomics): 
 
 {self.render_key_earnings(output)}
 
-CONFIRMED NEWS EVENTS (Reuters / AP):
+CONFIRMED NEWS EVENTS (NewsData.io — Reuters/AP only): 
 
 {self.render_confirmed_news(output)}
 
