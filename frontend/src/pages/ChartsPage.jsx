@@ -1,8 +1,7 @@
 /**
  * Price charts for the tracked instruments (SPX, NDX, IWM, Gold, Oil, DXY).
  * Candlestick + 8/21 EMA, styled like ProRealTime / yfinance.
- * TODO (backend task): data comes from example generator — swap getMarketHistory
- * to the real yfinance-backed endpoint (see src/api/market.js).
+ * Price charts backed by GET /market/history (yfinance OHLC via backend).
  */
 import { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'

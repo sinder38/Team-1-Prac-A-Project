@@ -116,7 +116,10 @@ def test_post_evidence_no_horizon(client, tmp_path):
 
 
 def test_post_llm_missing_agent_artifacts(client, tmp_path):
-    with patch("server.stages.artifact_path", side_effect=lambda t, *a, **kw: tmp_path / f"{t}.json"):
+    from agents.pipeline.config import LLMModelEntry
+
+    with patch("server.stages.artifact_path", side_effect=lambda t, *a, **kw: tmp_path / f"{t}.json"), \
+         patch.dict("server.stages._MODEL_REGISTRY", {"example": LLMModelEntry(id="example/example:free")}):
         resp = client.post("/stages/llm", json={
             "prediction_date": "2026-06-18",
             "run_id": "run1",
@@ -137,3 +140,14 @@ def test_post_llm_unknown_model(client):
     })
     assert resp.status_code == 400
     assert "model" in json.loads(resp.data)["error"]
+
+
+def test_list_models(client):
+    resp = client.get("/stages/models")
+    assert resp.status_code == 200
+    models = json.loads(resp.data)["models"]
+    assert models
+    assert all("key" in m and "name" in m for m in models)
+    keys = {m["key"] for m in models}
+    assert "llama3.2-1b" in keys
+    assert "nemotron" not in keys

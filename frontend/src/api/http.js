@@ -4,11 +4,11 @@
  */
 export async function getJson(url, options) {
   const res = await fetch(url, options)
+  const body = await res.json().catch(() => ({ error: res.statusText }))
   if (!res.ok) {
-    const body = await res.json().catch(() => ({ error: res.statusText }))
     throw new Error(body.error || res.statusText)
   }
-  return res.json()
+  return body
 }
 
 export async function postJson(url, body) {

@@ -26,20 +26,20 @@ FINVIZ_TEXT: Final[str] = "#e8e8e8"
 
 class EvidenceChartRenderer(Protocol):
     def render_performance_chart(
-            self,
-            path: Path,
-            instruments: list[tuple[str, float | None]],
-            week_start: date,
-            week_end: date,
+        self,
+        path: Path,
+        instruments: list[tuple[str, float | None]],
+        week_start: date,
+        week_end: date,
     ) -> None:
         """Render a 1-week performance bar chart to path."""
 
     def render_sector_heatmap(
-            self,
-            path: Path,
-            sectors: list[tuple[str, float | None, str]],
-            week_start: date,
-            week_end: date,
+        self,
+        path: Path,
+        sectors: list[tuple[str, float | None, str]],
+        week_start: date,
+        week_end: date,
     ) -> None:
         """Render a sector performance heatmap to path."""
 
@@ -59,7 +59,7 @@ def _format_week_range(week_start: date, week_end: date) -> str:
 
 
 def has_chartable_sector_data(
-        sectors: list[tuple[str, float | None, str]],
+    sectors: list[tuple[str, float | None, str]],
 ) -> bool:
     return any(change is not None for _, change, _ in sectors)
 
@@ -68,11 +68,11 @@ class MatplotlibEvidenceChartRenderer:
     """Render Finviz-inspired charts with matplotlib."""
 
     def render_performance_chart(
-            self,
-            path: Path,
-            instruments: list[tuple[str, float | None]],
-            week_start: date,
-            week_end: date,
+        self,
+        path: Path,
+        instruments: list[tuple[str, float | None]],
+        week_start: date,
+        week_end: date,
     ) -> None:
         available = sorted(
             [(label, value) for label, value in instruments if value is not None],
@@ -94,7 +94,14 @@ class MatplotlibEvidenceChartRenderer:
         ax.set_facecolor(FINVIZ_PANEL)
 
         y_positions = np.arange(len(labels))
-        ax.barh(y_positions, bar_lengths, left=0, color=colors, height=0.7, edgecolor="#0f0f1a")
+        ax.barh(
+            y_positions,
+            bar_lengths,
+            left=0,
+            color=colors,
+            height=0.7,
+            edgecolor="#0f0f1a",
+        )
         ax.invert_yaxis()
 
         max_length = max(bar_lengths) if bar_lengths else 1.0
@@ -133,11 +140,11 @@ class MatplotlibEvidenceChartRenderer:
         plt.close(fig)
 
     def render_sector_heatmap(
-            self,
-            path: Path,
-            sectors: list[tuple[str, float | None, str]],
-            week_start: date,
-            week_end: date,
+        self,
+        path: Path,
+        sectors: list[tuple[str, float | None, str]],
+        week_start: date,
+        week_end: date,
     ) -> bool:
         available = [
             (name, change, ticker)
@@ -239,18 +246,23 @@ class MatplotlibEvidenceChartRenderer:
 
 
 def render_evidence_charts(
-        *,
-        week_start: date,
-        week_end: date,
-        performance_rows: list[tuple[str, float | None]],
-        sector_rows: list[tuple[str, float | None, str]],
-        performance_path: Path,
-        sector_path: Path,
-        chart_renderer: EvidenceChartRenderer | None = None,
+    *,
+    week_start: date,
+    week_end: date,
+    performance_rows: list[tuple[str, float | None]],
+    sector_rows: list[tuple[str, float | None, str]],
+    performance_path: Path,
+    sector_path: Path,
+    chart_renderer: EvidenceChartRenderer | None = None,
 ) -> tuple[Path, Path | None]:
     """Render chart PNGs from pre-fetched weekly performance rows."""
     renderer = chart_renderer or MatplotlibEvidenceChartRenderer()
-    renderer.render_performance_chart(performance_path, performance_rows, week_start, week_end)
+    renderer.render_performance_chart(
+        performance_path,
+        performance_rows,
+        week_start,
+        week_end,
+    )
     sector_written = renderer.render_sector_heatmap(
         sector_path, sector_rows, week_start, week_end
     )

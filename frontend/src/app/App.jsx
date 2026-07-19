@@ -35,6 +35,10 @@ export default function App() {
     runStage: pipeline.runStage,
     runNext: pipeline.runNext,
     resetRun: pipeline.resetRun,
+    runId: pipeline.runId,
+    availableModels: pipeline.availableModels,
+    selectedModels: pipeline.selectedModels,
+    toggleModel: pipeline.toggleModel,
   }
 
   const pages = {
