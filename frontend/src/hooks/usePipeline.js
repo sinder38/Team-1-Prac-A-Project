@@ -2,8 +2,8 @@
  * Pipeline state for the app — the human runs each stage manually.
  * Stages 1-4 are run from the Dashboard; stage 5 (Human Score) is completed
  * by submitting the report on the Dashboard. Stages 1-2 call the real backend
- * (see src/api/pipeline.js and src/api/agents.js); calibration and human-score
- * submission are still local-only until the backend supports them.
+ * (see src/api/pipeline.js and src/api/agents.js). Human-score submission is
+ * still local-only until the backend supports it.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {

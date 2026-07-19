@@ -42,6 +42,7 @@ class BaseLLMAgent(BaseAgent):
                 ("almanac", ctx.almanac),
                 ("macro", ctx.macro),
                 ("evidence", ctx.evidence),
+                ("delta", ctx.delta),
             ]:
                 if output is None:
                     continue

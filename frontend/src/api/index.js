@@ -1,6 +1,6 @@
 /**
- * Backend API layer. Stages/artifacts hit the real Flask backend; calibration,
- * human-score submission, and market history are still stubbed (no backend yet).
+ * Backend API layer. Pipeline stages, artifacts, calibration, and market data
+ * use Flask. Human-score submission is still stored by the frontend.
  */
 export { getStageLogs, getLlmModels, runStage, DEFAULT_HORIZON_DAYS } from './pipeline'
 

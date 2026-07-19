@@ -1,18 +1,23 @@
 """Pipeline stage functions — one per agent type."""
 
-from datetime import date
+from datetime import date, datetime, time
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from agents.almanac.almanac_agent import AlmanacAgent
+from agents.delta import DeltaAgent
 from agents.evidence.evidence_agent import EvidenceAgent
 from agents.io import FileSaver, week_stem
-from agents.llm.multi_model_runner import build_agent, _row
+from agents.llm.multi_model_runner import _row, build_agent
 from agents.macro.macro_agent import MacroAgent
-from agents.paths import DATA_DIR
+from agents.paths import DATA_DIR, REPO_ROOT
 from agents.pipeline.config import LLMModelEntry, StageConfig
 from agents.pipeline.context import PipelineContext
 from agents.schemas import EvidenceOutput
 from agents.technical.technical_agent import TechnicalAgent
+
+US_EASTERN = ZoneInfo("America/New_York")
+MARKET_CLOSE_BUFFER = time(16, 15)
 
 
 def _save_artifacts(
@@ -86,6 +91,75 @@ def run_evidence(
 
     ctx.evidence = output
     _save_artifacts(agent, output, ctx.prediction_date, config)
+
+
+def run_delta(
+    ctx: PipelineContext,
+    config: StageConfig,
+    repo_root: Path | None = None,
+    actuals_markdown: str | None = None,
+    now: datetime | None = None,
+) -> None:
+    root = repo_root or REPO_ROOT
+    actuals_week = config.delta.actuals_week
+    if actuals_week == "auto":
+        actuals_week = week_stem(ctx.prediction_date)
+    _require_completed_week(ctx.prediction_date, actuals_week, now)
+
+    prediction_week = config.delta.prediction_week
+    if prediction_week == "previous":
+        actuals_number = int(actuals_week[1:])
+        prediction_week = (
+            "W53" if actuals_number == 1 else f"W{actuals_number - 1:02d}"
+        )
+
+    agent = DeltaAgent(repo_root=root)
+    output = agent.run(
+        prediction_week=prediction_week,
+        actuals_week=actuals_week,
+        actuals_markdown=actuals_markdown,
+    )
+    ctx.delta = output
+    week = prediction_week.removeprefix("v")
+    if config.artifacts.save_md:
+        agent.write_markdown(
+            output,
+            root / "data" / "qa" / f"delta_{week}.md",
+        )
+    # Delta history and future weight suggestions need a structured artifact.
+    agent.write_json(
+        output,
+        root / "data" / "outputs" / "delta" / f"delta_{week}.json",
+    )
+
+
+def _require_completed_week(
+    reference_date: date,
+    actuals_week: str,
+    now: datetime | None = None,
+) -> None:
+    """Reject current-week scoring until the Friday close is available."""
+    week_number = int(actuals_week.removeprefix("vW").removeprefix("W"))
+    iso_year = reference_date.isocalendar().year
+    week_end = date.fromisocalendar(iso_year, week_number, 5)
+    current = now or datetime.now(US_EASTERN)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=US_EASTERN)
+    else:
+        current = current.astimezone(US_EASTERN)
+
+    is_after_close = (
+        current.date() > week_end
+        or (
+            current.date() == week_end
+            and current.time().replace(tzinfo=None) >= MARKET_CLOSE_BUFFER
+        )
+    )
+    if not is_after_close:
+        raise ValueError(
+            f"{actuals_week} actuals are not complete until Friday after "
+            "the US market close."
+        )
 
 
 def run_llm(
