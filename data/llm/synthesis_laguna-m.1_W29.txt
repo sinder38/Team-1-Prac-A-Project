@@ -1,0 +1,17 @@
+# LLM Agent Output — Laguna M.1 — Week of 2026-07-19
+
+1. Weekly Regime: Bearish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - All three major indices finished lower last week with NDX down 4.13% and Technology sector down 5.48%
+   - VIX surged 24.88% indicating rising fear while oil prices jumped 15.52% creating macro uncertainty
+   - Fed holds rates at 3.50%-3.75% with 97.4% probability but 10-year yield rising to 4.57%
+4. Key Contradictions:
+   - Technology sector shows bullish seasonal bias (March-July window) but evidence shows -5.48% weekly drop
+   - Energy sector surged 4.72% on oil strength yet almanac shows bearish seasonal bias for XLE
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision driving Treasury yields lower and increasing rate cut expectations would reverse the cautious stance
+6. Predicted % move — SPX: -2.2% to 1.7%
+   Predicted % move — NDX: -1.3% to 7.2%
+   Predicted % move — IWM: -1.1% to 2.9%
+7. Plain-English brief: Markets face near-term headwinds with tech weakness and rising volatility, though oversold conditions and seasonal tech support could limit downside
+8. Disclaimer: This is not financial advice.
