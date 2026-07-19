@@ -12,7 +12,6 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-sys.path.insert(0, str(Path(__file__).parent))
 
 from agents.pipeline.config import load_config
 from agents.pipeline.context import PipelineContext
