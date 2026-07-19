@@ -26,7 +26,7 @@ export default function DashboardPage({
         weekPicker={weekPicker}
       />
 
-      {controls.aiComplete && !controls.allDone && (
+      {controls.aiComplete && !controls.allDone && !humanScoreReport && (
         <div className="mx-4 mt-4">
           <ReviewForm
             outputs={outputs}
@@ -39,7 +39,7 @@ export default function DashboardPage({
 
       <AgentOutputsGrid outputs={outputs} />
 
-      {controls.allDone && humanScoreReport && (
+      {humanScoreReport && (
         <section className="mx-4 pb-6 pt-2">
           <div className="max-w-3xl">
             <div className="mb-4">

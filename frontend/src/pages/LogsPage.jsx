@@ -53,7 +53,7 @@ export default function LogsPage({ pipeline, controls, week, predictionDate }) {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          ['Run ID', pipeline.id || '—'],
+          ['Run ID', pipeline.id || controls.runId || '—'],
           ['Status', pipeline.isRunning ? 'Running' : pipeline.lastRun ? 'Completed' : 'Idle'],
           ['Last Run', formatDateTime(pipeline.lastRun)],
           ['Accuracy', pipeline.accuracy ? `${pipeline.accuracy}%` : '—'],

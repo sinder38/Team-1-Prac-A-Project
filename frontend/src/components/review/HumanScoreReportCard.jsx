@@ -36,7 +36,7 @@ export default function HumanScoreReportCard({ report }) {
   const evidence = EVIDENCE_SOURCES.filter(s => form.evidence?.[s.key]).map(s => s.label)
 
   async function copyMarkdown() {
-    const md = buildHumanScoreMarkdown(form, { week, consensus, aiSaid, total })
+    const md = report.rawMarkdown || buildHumanScoreMarkdown(form, { week, consensus, aiSaid, total })
     try {
       await navigator.clipboard.writeText(md)
       setCopied(true)
@@ -145,7 +145,7 @@ export default function HumanScoreReportCard({ report }) {
       {open && (
         <div className="px-6 pb-5">
           <pre className="p-4 bg-white border border-gray-200 rounded-lg text-xs leading-relaxed text-gray-600 overflow-auto max-h-96 whitespace-pre-wrap">
-            {buildHumanScoreMarkdown(form, { week, consensus, aiSaid, total })}
+            {report.rawMarkdown || buildHumanScoreMarkdown(form, { week, consensus, aiSaid, total })}
           </pre>
         </div>
       )}
@@ -160,5 +160,6 @@ HumanScoreReportCard.propTypes = {
     consensus: PropTypes.string,
     aiSaid: PropTypes.object,
     total: PropTypes.number,
+    rawMarkdown: PropTypes.string,
   }),
 }
