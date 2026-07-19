@@ -1,42 +1,56 @@
+standup-notes-w29.md
+
 Scrum Master
+
 Main-Whitley
 Support - Shary
 
 What have you completed or contributed so far?
-I coordinated the sprint by following up with team members, tracking their progress, and updating the Scrum documentation, Kanban board, standup notes, and sprint retrospective. 
-I also monitored pull requests, communicated with developers to identify blockers, and helped keep the sprint organised.
+I coordinated the sprint by following up with team members and tracking their progress.
+I updated the Scrum documentation, Kanban board, standup notes, and sprint retrospective.
+I monitored pull requests and review progress.
+I communicated with developers to identify blockers.
+I helped keep the sprint organised.
 Did you face any blockers or challenges?
-The main challenge was receiving timely updates from all team members, as some responses were delayed. 
-In addition, several pull requests required multiple review rounds before they were ready to be merged, which made it more difficult to track the overall sprint progress.
+The main challenge was receiving timely updates from all team members.
+Some responses were delayed during the sprint.
+Several pull requests required multiple review rounds before they were ready to be merged.
+This made it more difficult to track the overall sprint progress.
 What went well during this sprint?
-Team communication improved as the sprint progressed, and more pull requests were submitted and reviewed. 
-Regular follow-ups helped keep everyone informed of the project's progress, and the Scrum documentation remained up to date throughout the sprint.
+Team communication improved as the sprint progressed.
+More pull requests were submitted and reviewed.
+Regular follow-ups kept everyone informed of the project's progress.
+The Scrum documentation remained up to date throughout the sprint.
 Is there anything we can improve as a team?
-We can improve by providing more regular progress updates, requesting pull request reviews earlier, and resolving blockers as soon as they arise. 
-Keeping everyone informed throughout the sprint will help improve collaboration and reduce delays.
+Provide more regular progress updates.
+Request pull request reviews earlier.
+Resolve blockers as soon as they arise.
+Keep everyone informed throughout the sprint to improve collaboration and reduce delays.
 
 
 Developers
 
-Georgii 
+Georgii
+
 What have you completed or contributed so far?
-Merge PRs
-Review PRs
-Fix PRs
-Add Ollama local option
-Explain how to do tasks in Voice channel
-Commit PO artifacts
-Some management 
+Merged pull requests.
+Reviewed pull requests.
+Fixed pull request issues.
+Added the Ollama local option.
+Explained tasks to the team in the voice channel.
+Committed the Product Owner artefacts.
+Handled project management tasks.
 Did you face any blockers or challenges?
-My time is wasted on some PRs
-I don't have a lot of time this week
-Some PRs are way too complex for me to review and merge in time.
-Some team members are inactive or their work is low quality.
+Some pull requests took too much time to review.
+I had limited time available this week.
+Some pull requests were too complex to review and merge quickly.
+Some team members were inactive or submitted low-quality work.
 What went well during this sprint?
-Core team of developers works well
-Scrum master does some of the managemnt work I used to
+The core development team worked well together.
+The Scrum Master took over some of the management responsibilities.
 Is there anything we can improve as a team?
-I dunno, maybe codeowners. But thats overkill for this project.
+Using CODEOWNERS could help with pull request reviews.
+However, it may be unnecessary for a project of this size.
 
 
 Oakkar
