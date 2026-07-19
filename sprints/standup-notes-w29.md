@@ -1,43 +1,41 @@
-Whitley – Scrum Master (Main), Figma(Main)
+Scrum Master
+Main-Whitley
+Support - Shary
 
-Whitley coordinated the sprint by following up with team members on their progress, updating the Scrum artefacts, and maintaining the sprint tracking documentation. She also ensured communication between team members and monitored ongoing development throughout the sprint.
+What have you completed or contributed so far?
+I coordinated the sprint by following up with team members, tracking their progress, updating the Scrum documentation, Kanban board, standup notes, and retrospective, and monitoring pull requests and reviews. I also communicated with developers to identify blockers and helped keep the sprint organised.
 
-Shary – Scrum Master (Support), Presentation, Figma(Support)
+Did you face any blockers or challenges?
+The main challenge was getting timely updates from everyone, as some team members were slow to respond. Some pull requests also required multiple review rounds before they could be merged, which made it more difficult to track overall sprint progress.
 
-Shary supported the Scrum Master by assisting with sprint coordination while also contributing to the presentation materials and updating the Figma board as needed.
+What went well during this sprint?
+Team communication improved as the sprint progressed, and more pull requests were submitted and reviewed. Regular follow-ups helped keep track of development progress, and the Scrum documentation stayed up to date throughout the sprint.
 
-Georgii – Developer / Product Owner
+Is there anything we can improve as a team?
+We can improve by communicating progress more consistently, requesting pull request reviews earlier, and resolving blockers sooner. Keeping everyone updated throughout the sprint will help reduce delays and make collaboration more efficient.
 
-Georgii continued reviewing and merging pull requests, assigned development tasks to the team, and worked on integrating the Human Score component into the project pipeline while providing technical guidance to developers.
 
-Oakkar – Developer
 
-Oakkar continued improving the frontend by working on the data view, graphs, historical data display, and other user interface enhancements. He also remained available to assist with frontend support when needed.
+Developers
+Georgii
+What have you completed or contributed so far?
+Merge PRs
+Review PRs
+Fix PRs
+Add Ollama local option
+Explain how to do tasks in Voice channel
+Commit PO artifacts
+Some management 
 
-Jason (Junyi Qi) – Developer
+Did you face any blockers or challenges?
+My time is wasted on some PRs
+I don't have a lot of time this week
+Some PRs are way too complex for me to review and merge in time.
+Some team members are inactive or their work is low quality.
 
-Jason continued developing the Delta Engine and focused on integrating it with the backend, frontend, and prediction pipeline to improve the overall system workflow.
+What went well during this sprint?
+Core team of developers works well
+Scrum master does some of the managemnt work I used to
 
-Naing Phone Pyae – Developer
-
-Naing Phone Pyae completed his existing pull request and prepared to begin another development task, contributing to the ongoing implementation of project features.
-
-Henry (TOBI) – Developer
-
-Henry updated the project README documentation and removed the duplicated prediction argument from the codebase, helping improve both the documentation and code quality.
-
-Sai Ko – Developer
-
-Sai Ko worked on cleaning up the project paths to improve the project's structure and maintainability before submitting the changes for review.
-
-Zaw Latt Naung – Developer
-
-Zaw Latt Naung focused on testing the Almanac component to ensure its functionality and identify any issues that required attention.
-
-Aeron – Human Score
-
-Aeron continued supporting the Human Score component and its integration into the project. No additional progress updates were shared during the sprint.
-
-Minghao – Presentation
-
-Minghao continued preparing the presentation materials for the sprint to support the team's final project demonstration. No additional progress updates were shared during the sprint.
+Is there anything we can improve as a team?
+I dunno, maybe codeowners. But thats overkill for this project.
