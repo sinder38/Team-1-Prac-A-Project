@@ -9,13 +9,19 @@ evidence  = true
 
 [llm]
 models = [
-    {id = "nvidia/nemotron-3-super-120b-a12b:free"},
-    {id = "tencent/hy3:free"},
-    # {id = "openai/gpt-oss-120b:free"},
-    {id = "google/gemma-4-31b-it:free"},
-    {id = "poolside/laguna-m.1:free"},
+    # Production testing with OpenRouter
+    # {id = "nvidia/nemotron-3-super-120b-a12b:free"},
+    # {id = "tencent/hy3:free"},
+    # # {id = "openai/gpt-oss-120b:free"},
+    # {id = "google/gemma-4-31b-it:free"},
+    # {id = "poolside/laguna-m.1:free"},
+    # {id = "gemma-4-26b-a4b-it:free"},
+
+    # For local testing with Ollama. llama3.2:1b is small enough to run at usable
+    # speed on CPU; llama3.1 (8B) takes minutes per prompt without a GPU.
+    {id = "llama3.2:1b", slug = "llama3.2-1b", provider = "ollama"},
 ]
-max_retries = 5
+max_retries = 2
 
 [artifacts]
 save_json = true

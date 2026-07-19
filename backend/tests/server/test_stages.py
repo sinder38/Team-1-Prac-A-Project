@@ -155,7 +155,7 @@ def test_post_llm_missing_agent_artifacts(client):
     resp = client.post("/stages/llm", json={
         "prediction_date": "2026-06-18",
         "run_id": "run1",
-        "model": "example",
+        "model": "llama3.2-1b",
         "horizon_days": 7,
     })
     assert resp.status_code == 404
@@ -172,6 +172,17 @@ def test_post_llm_unknown_model(client):
     })
     assert resp.status_code == 400
     assert "model" in json.loads(resp.data)["error"]
+
+
+def test_list_models(client):
+    resp = client.get("/stages/models")
+    assert resp.status_code == 200
+    models = json.loads(resp.data)["models"]
+    assert models
+    assert all("key" in m and "name" in m for m in models)
+    keys = {m["key"] for m in models}
+    assert "llama3.2-1b" in keys
+    assert "nemotron" not in keys
 
 
 def test_post_human_score_stores_md(client):

@@ -1,3 +1,11 @@
+"""Server runtime
+
+Reads server.toml (see server/config.py) for the LLM model registry offered
+by the /stages/llm endpoint. Edit that file to add/remove models.
+
+Usage:
+    uv run python run_server.py
+"""
 import sys
 from pathlib import Path
 

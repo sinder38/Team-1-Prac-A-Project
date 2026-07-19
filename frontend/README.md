@@ -16,6 +16,34 @@ charts, and filling in the weekly **Human Score** report.
 
 ---
 
+## Screenshots
+
+### Dashboard — pipeline overview
+
+Run each pipeline stage one at a time and view agent signals for the selected week.
+
+![Dashboard overview](docs/screenshots/dashboard.png)
+
+### Market charts
+
+Daily candlesticks with 8 & 21 EMA for SPX, NDX, IWM, and macro assets.
+
+![Market charts](docs/screenshots/charts.png)
+
+### Execution logs
+
+Track run status, stage progress, and pipeline activity.
+
+![Execution logs](docs/screenshots/logs.png)
+
+### Calibration tracker
+
+Overall accuracy, weekly trend, and per-agent alignment vs LLM consensus.
+
+![Calibration tracker](docs/screenshots/calibration.png)
+
+---
+
 ## Quick start
 
 ```bash

@@ -6,8 +6,13 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import BadRequest
 
-from agents.db import (save_agent_artifact, load_agent_artifact, agent_artifact_exists, save_llm_artifact,
-                       load_llm_artifact, ingest_human_score_md)
+from agents.db import (
+    save_agent_artifact,
+    load_agent_artifact,
+    agent_artifact_exists,
+    save_llm_artifact,
+    ingest_human_score_md,
+)
 from agents.io import week_stem
 from agents.pipeline.config import (
     ArtifactsConfig,
@@ -38,25 +43,36 @@ from agents.schemas import (
     SectorSignal,
     TechnicalOutput,
 )
+from server.config import load_server_config
 from server.utils import err, parse_date, require_fields
 
 stages_bp = Blueprint("stages", __name__, url_prefix="/stages")
-# TODO: move to config instead of manual
-_NO_ARTIFACTS_CONFIG = PipelineConfig(
-    pipeline=PipelineSection(prediction_date="auto"),
-    stages=StagesConfig(),
-    llm=LLMConfig(models=[], max_retries=5),
-    artifacts=ArtifactsConfig(save_json=False, save_md=False),
-)
 
-# Registry maps short model keys (as accepted by the /stages/llm endpoint) → LLMModelEntry.
-_MODEL_REGISTRY: dict[str, LLMModelEntry] = {
-    "example": LLMModelEntry(id="example/example:free"),
-    "nemotron": LLMModelEntry(id="nvidia/nemotron-3-super-120b-a12b:free"),
-    "gptoss": LLMModelEntry(id="openai/gpt-oss-120b:free"),
-    "gemma": LLMModelEntry(id="google/gemma-4-31b-it:free"),
-    "laguna": LLMModelEntry(id="poolside/laguna-m.1:free"),
-}
+DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "server.toml"
+
+CONFIG = load_server_config(DEFAULT_CONFIG)
+
+# Map each model slug accepted by /stages/llm to its configuration.
+# Sourced from server.toml's [llm].models, keyed by slug.
+_MODEL_REGISTRY: dict[str, LLMModelEntry] = {m.slug: m for m in CONFIG.llm.models}
+
+
+@stages_bp.route("/models", methods=["GET"])
+def list_models():
+    """Models currently enabled in server.toml — frontend should use this list."""
+    return jsonify(
+        {
+            "models": [
+                {
+                    "key": m.slug,
+                    "name": m.label,
+                    "id": m.id,
+                    "provider": m.provider,
+                }
+                for m in CONFIG.llm.models
+            ]
+        }
+    ), 200
 
 
 @stages_bp.route("/almanac", methods=["POST"])
@@ -76,7 +92,7 @@ def post_almanac():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_almanac(ctx, _NO_ARTIFACTS_CONFIG)
+        run_almanac(ctx, CONFIG)
     except Exception as e:
         return err(str(e), 500)
     assert ctx.almanac is not None
@@ -114,7 +130,7 @@ def post_technical():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_technical(ctx, _NO_ARTIFACTS_CONFIG)
+        run_technical(ctx, CONFIG)
     except Exception as e:
         return err(str(e), 500)
     assert ctx.technical is not None
@@ -151,7 +167,7 @@ def post_macro():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_macro(ctx, _NO_ARTIFACTS_CONFIG)
+        run_macro(ctx, CONFIG)
     except Exception as e:
         return err(str(e), 500)
     assert ctx.macro is not None
@@ -185,7 +201,7 @@ def post_evidence():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_evidence(ctx, _NO_ARTIFACTS_CONFIG)
+        run_evidence(ctx, CONFIG)
     except Exception as e:
         return err(str(e), 500)
     assert ctx.evidence is not None
@@ -339,9 +355,15 @@ def post_llm():
         return err(f"Failed to load agent artifacts: {e}", 500)
 
     try:
-        _slug, _row = run_llm(ctx, _NO_ARTIFACTS_CONFIG, _MODEL_REGISTRY[model_key])
+        _slug, _row = run_llm(ctx, CONFIG, _MODEL_REGISTRY[model_key])
     except Exception as e:
-        return err(str(e), 500)
+        return jsonify(
+            {
+                "status": "failed",
+                "model": model_key,
+                "error": str(e),
+            }
+        ), 503
 
     llm_output = ctx.llm_outputs[-1]
     output_dict = asdict(llm_output)

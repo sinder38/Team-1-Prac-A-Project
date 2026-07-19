@@ -1,7 +1,11 @@
+import re
+from collections.abc import Mapping
+
 from flask import Blueprint, jsonify, request
 
-from agents.db import load_agent_artifact, load_llm_artifact, list_run_ids, load_human_score
+from agents.db import load_agent_artifact, load_llm_artifact, list_run_ids
 from agents.io import week_stem
+from server.archive import list_all_weeks, load_archive_week, load_human_score
 from server.utils import err, parse_date
 
 artifacts_bp = Blueprint("artifacts", __name__, url_prefix="/artifacts")
@@ -17,7 +21,7 @@ def _stem_from_args() -> tuple[str, tuple | None]:
         return "", err(f"Invalid prediction_date: {raw!r}", 400)
 
 
-def _get_horizon_days(args: dict) -> tuple[int, tuple | None]:
+def _get_horizon_days(args: Mapping[str, str]) -> tuple[int, tuple | None]:
     raw = args.get("horizon_days")
     if raw is None:
         return 0, err("Missing required query param: horizon_days", 400)
@@ -30,101 +34,82 @@ def _get_horizon_days(args: dict) -> tuple[int, tuple | None]:
     return val, None
 
 
-@artifacts_bp.route("/almanac", methods=["GET"])
-def get_almanac():
+def _saved_artifact_response(
+        agent_type: str,
+        *,
+        needs_horizon: bool = False,
+        needs_model: bool = False,
+):
+    """Load one saved pipeline artifact from the DB using request query values."""
     run_id = request.args.get("run_id")
     if not run_id:
         return err("Missing required query param: run_id", 400)
-    horizon_days, error = _get_horizon_days(request.args)
-    if error:
-        return error
+
+    model = ""
+    if needs_model:
+        model = request.args.get("model")
+        if not model:
+            return err("Missing required query param: model", 400)
+
+    horizon_days = 0
+    if needs_horizon:
+        horizon_days, error = _get_horizon_days(request.args)
+        if error:
+            return error
+
     stem, error = _stem_from_args()
     if error:
         return error
+
     try:
-        data = load_agent_artifact(agent_type="almanac", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
-    except FileNotFoundError as e:
-        return err(str(e), 404)
+        if agent_type == "llm":
+            data = load_llm_artifact(
+                week_stem=stem,
+                run_id=run_id,
+                horizon_days=horizon_days,
+                model=model,
+            )
+        else:
+            kwargs: dict = {
+                "agent_type": agent_type,
+                "week_stem": stem,
+                "run_id": run_id,
+            }
+            if needs_horizon:
+                kwargs["horizon_days"] = horizon_days
+            data = load_agent_artifact(**kwargs)
+    except FileNotFoundError as exc:
+        return err(str(exc), 404)
     return jsonify(data), 200
+
+
+@artifacts_bp.route("/almanac", methods=["GET"])
+def get_almanac():
+    return _saved_artifact_response("almanac", needs_horizon=True)
 
 
 @artifacts_bp.route("/technical", methods=["GET"])
 def get_technical():
-    run_id = request.args.get("run_id")
-    if not run_id:
-        return err("Missing required query param: run_id", 400)
-    horizon_days, error = _get_horizon_days(request.args)
-    if error:
-        return error
-    stem, error = _stem_from_args()
-    if error:
-        return error
-    try:
-        data = load_agent_artifact(agent_type="technical", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
-    except FileNotFoundError as e:
-        return err(str(e), 404)
-    return jsonify(data), 200
+    return _saved_artifact_response("technical", needs_horizon=True)
 
 
 @artifacts_bp.route("/macro", methods=["GET"])
 def get_macro():
-    run_id = request.args.get("run_id")
-    if not run_id:
-        return err("Missing required query param: run_id", 400)
-    horizon_days, error = _get_horizon_days(request.args)
-    if error:
-        return error
-    stem, error = _stem_from_args()
-    if error:
-        return error
-    try:
-        data = load_agent_artifact(agent_type="macro", week_stem=stem, run_id=run_id, horizon_days=horizon_days)
-    except FileNotFoundError as e:
-        return err(str(e), 404)
-    return jsonify(data), 200
+    return _saved_artifact_response("macro", needs_horizon=True)
 
 
 @artifacts_bp.route("/evidence", methods=["GET"])
 def get_evidence():
-    run_id = request.args.get("run_id")
-    if not run_id:
-        return err("Missing required query param: run_id", 400)
-    stem, error = _stem_from_args()
-    if error:
-        return error
-    try:
-        data = load_agent_artifact(
-            agent_type="evidence", week_stem=stem, run_id=run_id
-        )
-    except FileNotFoundError as e:
-        return err(str(e), 404)
-    return jsonify(data), 200
+    return _saved_artifact_response("evidence")
 
 
 @artifacts_bp.route("/llm", methods=["GET"])
 def get_llm():
-    run_id = request.args.get("run_id")
-    if not run_id:
-        return err("Missing required query param: run_id", 400)
-    model = request.args.get("model")
-    if not model:
-        return err("Missing required query param: model", 400)
-    horizon_days, error = _get_horizon_days(request.args)
-    if error:
-        return error
-    stem, error = _stem_from_args()
-    if error:
-        return error
-    try:
-        data = load_llm_artifact(
-            week_stem=stem,
-            run_id=run_id,
-            horizon_days=horizon_days,
-            model=model,
-        )
-    except FileNotFoundError as e:
-        return err(str(e), 404)
-    return jsonify(data), 200
+    return _saved_artifact_response(
+        "llm",
+        needs_horizon=True,
+        needs_model=True,
+    )
 
 
 @artifacts_bp.route("/runs", methods=["GET"])
@@ -145,18 +130,55 @@ def get_runs():
     }), 200
 
 
+# Past weeks include generated JSON runs and older Markdown archives.
+
+
+def _normalize_week_stem(raw: str | None) -> tuple[str | None, tuple | None]:
+    """Parse stem query param. Accepts W25 or 2026-W25. Returns (stem, error)."""
+    if not raw:
+        return None, err("Missing required query param: stem (e.g. W25)", 400)
+    stem = raw.strip().upper()
+    if re.fullmatch(r"\d{4}-W\d{2}", stem):
+        stem = stem.split("-")[1]
+    if not re.fullmatch(r"W\d{2}", stem):
+        return None, err(f"Invalid stem: {raw!r} (expected W25 or 2026-W25)", 400)
+    return stem, None
+
+
+@artifacts_bp.route("/weeks", methods=["GET"])
+def list_weeks():
+    return jsonify({"weeks": list_all_weeks()}), 200
+
+
+@artifacts_bp.route("/archive", methods=["GET"])
+def get_archive():
+    raw_stem = request.args.get("stem") or request.args.get("week")
+    stem, error = _normalize_week_stem(raw_stem)
+    if error:
+        return error
+    if stem is None:
+        return err("Missing required query param: stem (e.g. W25)", 400)
+    try:
+        payload = load_archive_week(stem)
+    except ValueError as exc:
+        return err(str(exc), 400)
+    if payload is None:
+        return err(f"No archive data for {stem}", 404)
+    return jsonify(payload), 200
+
+
 @artifacts_bp.route("/human-score", methods=["GET"])
 def get_human_score():
-    stem = request.args.get("stem") or request.args.get("week")
-    if not stem:
-        stem, error = _stem_from_args()  # uses prediction_date
-        if error:
-            return error
-    stem = str(stem).strip().upper()
-    if len(stem) > 3 and "-W" in stem:
-        stem = stem.split("-")[1]  # 2026-W25 → W25
+    raw_stem = request.args.get("stem") or request.args.get("week")
+    stem, error = _normalize_week_stem(raw_stem)
+    if error:
+        return error
+    if stem is None:
+        return err("Missing required query param: stem (e.g. W25)", 400)
     try:
-        data = load_human_score(week_stem=stem)
-    except FileNotFoundError as e:
-        return err(str(e), 404)
-    return jsonify({"week": stem, "data": data}), 200
+        payload = load_human_score(stem)
+    except ValueError as exc:
+        return err(str(exc), 400)
+    if payload is None:
+        return err(f"No human score archive for {stem}", 404)
+    return jsonify(payload), 200
