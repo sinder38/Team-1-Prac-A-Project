@@ -7,9 +7,10 @@ import re
 from datetime import date
 from pathlib import Path
 
-from server.utils import OUTPUTS_ROOT, REPO_ROOT, artifact_path, parse_date
+from agents.paths import DATA_DIR
+from server.utils import OUTPUTS_ROOT, artifact_path, parse_date
 
-DATA_ROOT = REPO_ROOT / "data"
+DATA_ROOT = DATA_DIR
 
 # The week stem must be directly before the file extension. This rejects names
 # such as notes_W99_draft.md.
