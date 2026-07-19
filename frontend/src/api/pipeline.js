@@ -9,17 +9,21 @@
  *   2 LLM API Calls            -> POST /stages/evidence, then POST /stages/llm per model
  *   3 Previous Week Delta      -> POST /stages/delta
  */
-import { postJson } from './http'
+import { getJson, postJson } from './http'
 import { stageLogs } from '../lib/exampleData'
 
 export const DEFAULT_HORIZON_DAYS = 7
 
-export const LLM_MODELS = [
-  { key: 'nemotron', name: 'NVIDIA Nemotron' },
-  { key: 'gptoss', name: 'OpenAI gpt-oss' },
-  { key: 'gemma', name: 'Google Gemma' },
-  { key: 'laguna', name: 'Poolside Laguna' },
-]
+let _llmModelsCache = null
+
+// Get model registry from the backend
+export async function getLlmModels() {
+  if (!_llmModelsCache) {
+    const data = await getJson('/config/models')
+    _llmModelsCache = data.models || []
+  }
+  return _llmModelsCache
+}
 
 export function getStageLogs(index) {
   return stageLogs(index)
@@ -38,26 +42,41 @@ export async function runStage(index, run) {
         postJson('/stages/technical', stageBody(run)),
         postJson('/stages/macro', stageBody(run)),
       ])
-      return
-    case 2:
+      return { failures: [] }
+    case 2: {
       await postJson('/stages/evidence', {
         prediction_date: run.predictionDate,
         run_id: run.runId,
       })
-      await Promise.all(
-        LLM_MODELS.map(({ key }) =>
-          postJson('/stages/llm', { ...stageBody(run), model: key }),
-        ),
-      )
-      return
+      const allModels = await getLlmModels()
+      const models = run.models
+        ? allModels.filter(m => run.models.includes(m.key))
+        : allModels
+
+      if (!models.length) {
+        throw new Error('No LLM models configured on the server (check server.toml).')
+      }
+      const failures = []
+      for (const { key, name } of models) {
+        try {
+          await postJson('/stages/llm', { ...stageBody(run), model: key })
+        } catch (err) {
+          failures.push(`${name}: ${err?.message || 'request failed'}`)
+        }
+      }
+      if (failures.length === models.length) {
+        throw new Error(`All LLM models failed.\n${failures.join('\n')}`)
+      }
+      return { failures }
+    }
     case 3:
       await postJson('/stages/delta', {
         prediction_date: run.predictionDate,
         run_id: run.runId,
       })
-      return
+      return { failures: [] }
     default:
-      // Stage 0 is represented by the data fetching inside the agent stages.
-      return
+      // Stage 0 is represented by data fetching inside the agent stages.
+      return { failures: [] }
   }
 }

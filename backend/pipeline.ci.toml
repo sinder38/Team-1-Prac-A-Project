@@ -17,8 +17,10 @@ models = [
     {id = "nvidia/nemotron-3-super-120b-a12b:free"},
     {id = "tencent/hy3:free"},
     # {id = "openai/gpt-oss-120b:free"},
-    {id = "google/gemma-4-31b-it:free"},
+    # {id = "google/gemma-4-31b-it:free"},
+    {id = "gemma-4-26b-a4b-it:free"},
     {id = "poolside/laguna-m.1:free"},
+
 ]
 max_retries = 5
 

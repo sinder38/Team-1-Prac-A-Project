@@ -1,15 +1,17 @@
 /**
- * Market price history for the charts.
- * TODO (backend task): replace example data with GET /api/market/history?symbol=SPX
- * (backend should proxy yfinance OHLC). See ../lib/marketData.js for the shape.
+ * Market price history for the charts (yfinance via backend).
  */
-import { INSTRUMENTS, buildHistory } from '../lib/marketData'
+import { INSTRUMENTS } from '../lib/marketData'
 
 export function getInstruments() {
   return INSTRUMENTS.map(({ symbol, name, yahoo }) => ({ symbol, name, yahoo }))
 }
 
 export async function getMarketHistory(symbol) {
-  // TODO: GET /api/market/history?symbol=SPX
-  return buildHistory(symbol)
+  const resp = await fetch(`/market/history?symbol=${encodeURIComponent(symbol)}`)
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}))
+    throw new Error(body.error || `Market history failed (${resp.status})`)
+  }
+  return resp.json()
 }

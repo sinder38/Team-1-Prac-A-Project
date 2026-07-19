@@ -42,13 +42,32 @@ DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "server.toml"
 
 CONFIG = load_server_config(DEFAULT_CONFIG)
 
-# Map the slug accepted by /stages/llm to its configured model.
+# Map each model slug accepted by /stages/llm to its configuration.
+# Sourced from server.toml's [llm].models, keyed by slug.
 _MODEL_REGISTRY: dict[str, LLMModelEntry] = {m.slug: m for m in CONFIG.llm.models}
 
 
 def _write_artifact(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+
+
+@stages_bp.route("/models", methods=["GET"])
+def list_models():
+    """Models currently enabled in server.toml — frontend should use this list."""
+    return jsonify(
+        {
+            "models": [
+                {
+                    "key": m.slug,
+                    "name": m.label,
+                    "id": m.id,
+                    "provider": m.provider,
+                }
+                for m in CONFIG.llm.models
+            ]
+        }
+    ), 200
 
 
 @stages_bp.route("/almanac", methods=["POST"])
@@ -362,7 +381,13 @@ def post_llm():
     try:
         _slug, _row = run_llm(ctx, CONFIG, _MODEL_REGISTRY[model_key])
     except Exception as e:
-        return err(str(e), 500)
+        return jsonify(
+            {
+                "status": "failed",
+                "model": model_key,
+                "error": str(e),
+            }
+        ), 503
 
     llm_output = ctx.llm_outputs[-1]
     output_dict = asdict(llm_output)

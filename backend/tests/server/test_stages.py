@@ -140,3 +140,14 @@ def test_post_llm_unknown_model(client):
     })
     assert resp.status_code == 400
     assert "model" in json.loads(resp.data)["error"]
+
+
+def test_list_models(client):
+    resp = client.get("/stages/models")
+    assert resp.status_code == 200
+    models = json.loads(resp.data)["models"]
+    assert models
+    assert all("key" in m and "name" in m for m in models)
+    keys = {m["key"] for m in models}
+    assert "llama3.2-1b" in keys
+    assert "nemotron" not in keys

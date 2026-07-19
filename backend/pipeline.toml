@@ -15,6 +15,7 @@ models = [
     # # {id = "openai/gpt-oss-120b:free"},
     # {id = "google/gemma-4-31b-it:free"},
     # {id = "poolside/laguna-m.1:free"},
+    # {id = "gemma-4-26b-a4b-it:free"},
 
     # For local testing with Ollama. llama3.2:1b is small enough to run at usable
     # speed on CPU; llama3.1 (8B) takes minutes per prompt without a GPU.

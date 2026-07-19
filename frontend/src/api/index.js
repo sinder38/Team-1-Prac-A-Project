@@ -1,10 +1,10 @@
 /**
- * Backend API layer. Pipeline stages, artifacts, and calibration use Flask;
- * human-score submission and market history still use local placeholders.
+ * Backend API layer. Pipeline stages, artifacts, calibration, and market data
+ * use Flask. Human-score submission is still stored by the frontend.
  */
-export { getStageLogs, runStage, DEFAULT_HORIZON_DAYS } from './pipeline'
+export { getStageLogs, getLlmModels, runStage, DEFAULT_HORIZON_DAYS } from './pipeline'
 
-export { getAvailableWeeks, getAgentOutputs } from './agents'
+export { getAvailableWeeks, getAgentOutputs, getArchiveOutputs, getHumanScore } from './agents'
 export { getCalibrationScores } from './calibration'
 export { submitHumanScore, HUMAN_SCORE_DECISION } from './validation'
 export { getInstruments, getMarketHistory } from './market'
