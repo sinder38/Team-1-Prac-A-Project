@@ -6,7 +6,7 @@ const REGISTRY = [
   { key: 'hy3', name: 'Hy3', provider: 'openrouter' },
   { key: 'gemm26', name: 'Gemm26', provider: 'openrouter' },
   { key: 'laguna', name: 'Laguna', provider: 'openrouter' },
-  { key: 'llama3.2-1b', name: 'Llama3.2 1B', provider: 'ollama' },
+  { key: 'llama3.2-3b', name: 'Llama3.2 3B', provider: 'ollama' },
 ]
 
 describe('inferProviderMode', () => {
@@ -27,7 +27,7 @@ describe('inferProviderMode', () => {
 
   it('picks ollama when only local model columns are present', () => {
     const mode = inferProviderMode(
-      { models: [{ name: 'Llama3.2 1B' }] },
+      { models: [{ name: 'Llama3.2 3B' }] },
       REGISTRY,
     )
     expect(mode).toBe('ollama')

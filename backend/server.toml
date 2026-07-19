@@ -14,6 +14,6 @@ models = [
     {slug = "gemm26",   id = "gemma-4-26b-a4b-it:free", provider = "openrouter"},
     {slug = "laguna",   id = "poolside/laguna-m.1:free", provider = "openrouter"},
 
-    # Local (Ollama) — needs `ollama serve` + `ollama pull llama3.2:1b`
-    {slug = "llama3.2-1b", id = "llama3.2:1b", provider = "ollama"},
+    # Local (Ollama) — needs `ollama serve` + `ollama pull llama3.2:3b`
+    {slug = "llama3.2-3b", id = "llama3.2:3b", provider = "ollama"},
 ]
