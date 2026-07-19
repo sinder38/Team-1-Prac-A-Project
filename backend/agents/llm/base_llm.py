@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from datetime import date
-from pathlib import Path
 from typing import TYPE_CHECKING
 import json
 import re
 import sys
 
 from agents.base import BaseAgent
+from agents.paths import OUTPUTS_DIR
 from agents.schemas import LLMOutput, PredictedRange, Regime, Confidence
 
 if TYPE_CHECKING:
@@ -55,7 +55,7 @@ class BaseLLMAgent(BaseAgent):
                     )
         else:
             # Standalone / legacy path: read JSON from data/outputs/
-            outputs_dir = Path(__file__).resolve().parents[3] / "data" / "outputs"
+            outputs_dir = OUTPUTS_DIR
             week = prediction_date.isocalendar()
             week_key = f"{week.year}-W{week.week:02d}.json"
 
@@ -73,9 +73,8 @@ class BaseLLMAgent(BaseAgent):
             if not context_blocks:
                 week = prediction_date.isocalendar()
                 week_key = f"{week.year}-W{week.week:02d}.json"
-                outputs_dir = Path(__file__).resolve().parents[3] / "data" / "outputs"
                 raise ValueError(
-                    f"No agent inputs found for {week_key} under {outputs_dir}. "
+                    f"No agent inputs found for {week_key} under {OUTPUTS_DIR}. "
                     "Run the Technical/Almanac/Macro agents first."
                 )
 

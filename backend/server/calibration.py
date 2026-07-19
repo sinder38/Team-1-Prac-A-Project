@@ -8,14 +8,15 @@ from typing import Any
 
 from flask import Blueprint, jsonify
 
-from server.utils import REPO_ROOT, err
+from agents.paths import OUTPUTS_DIR
+from server.utils import err
 
 calibration_bp = Blueprint(
     "calibration",
     __name__,
     url_prefix="/calibration",
 )
-DELTA_OUTPUT_DIR = REPO_ROOT / "data" / "outputs" / "delta"
+DELTA_OUTPUT_DIR = OUTPUTS_DIR / "delta"
 
 
 @calibration_bp.route("/accuracy-tracker", methods=["GET"])
