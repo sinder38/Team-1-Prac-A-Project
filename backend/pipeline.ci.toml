@@ -6,6 +6,11 @@ almanac   = true
 technical = true
 macro     = true
 evidence  = true
+delta     = true
+
+[delta]
+prediction_week = "previous"
+actuals_week = "auto"
 
 [llm]
 models = [

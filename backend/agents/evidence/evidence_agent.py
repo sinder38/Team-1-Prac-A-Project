@@ -5,14 +5,12 @@ It saves the markdown as data/evidence/actuals_WXX.md.
 
 from __future__ import annotations
 
-import sys
 from datetime import date, timedelta
 from pathlib import Path
 from typing import cast
+import sys
 
 import pandas as pd
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from agents.base import BaseAgent
 from agents.evidence.data_sources import (
@@ -42,9 +40,8 @@ from agents.evidence.evidence_images import (
     screenshot_filenames,
 )
 from agents.io import FileSaver, week_stem
+from agents.paths import DATA_DIR
 from agents.schemas import EvidenceOutput
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class EvidenceAgent(BaseAgent[EvidenceOutput]):
@@ -58,7 +55,7 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
         chart_provider: ChartProvider | None = None,
         require_charts: bool = True,
     ):
-        self._data_root = data_root or REPO_ROOT / "data"
+        self._data_root = data_root or DATA_DIR
         self._market_data = market_data_provider or YahooFinanceEvidenceProvider()
         self._yield_data = yield_data_provider or FredYieldProvider()
         self._report_renderer = EvidenceReportRenderer()
@@ -284,7 +281,7 @@ if __name__ == "__main__":
     FileSaver.for_agent(agent.agent_type).save(
         agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}.json"
     )
-    FileSaver(REPO_ROOT / "data" / agent.agent_type).save(
+    FileSaver(DATA_DIR / agent.agent_type).save(
         agent.render_md(output, prediction_date),
         f"actuals_{week_stem(prediction_date)}.md",
     )

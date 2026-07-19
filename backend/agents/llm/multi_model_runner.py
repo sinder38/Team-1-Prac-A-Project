@@ -16,29 +16,24 @@ import sys
 import time
 import json
 from datetime import date
-from pathlib import Path
-
-# === Absolute path injection ===
-BASE_DIR = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(BASE_DIR))
 
 from openai import OpenAI  # type: ignore
 from dotenv import load_dotenv, find_dotenv  # type: ignore
 
 from agents.llm.base_llm import BaseLLMAgent
 from agents.io import FileSaver
+from agents.paths import BACKEND_DIR, DATA_DIR, OUTPUTS_DIR
 from agents.pipeline.config import LLMModelEntry, load_config
 
 # === Load environment variables ===
 load_dotenv(find_dotenv())
-load_dotenv(dotenv_path=BASE_DIR / ".env")
+load_dotenv(dotenv_path=BACKEND_DIR / ".env")
 
-REPO_ROOT = BASE_DIR.parent
-INPUTS_DIR = REPO_ROOT / "data" / "outputs"            # where the data agents write their JSON
-OUTPUTS_LLM_DIR = REPO_ROOT / "data" / "outputs" / "llm"
-HUMAN_LLM_DIR = REPO_ROOT / "data" / "llm"
+INPUTS_DIR = OUTPUTS_DIR            # where the data agents write their JSON
+OUTPUTS_LLM_DIR = OUTPUTS_DIR / "llm"
+HUMAN_LLM_DIR = DATA_DIR / "llm"
 
-DEFAULT_CONFIG = BASE_DIR / "pipeline.toml"
+DEFAULT_CONFIG = BACKEND_DIR / "pipeline.toml"
 
 # Single source of truth for the comparison-table rows: (display name, row key).
 COMPARISON_DIMENSIONS = [
@@ -264,9 +259,6 @@ if __name__ == "__main__":
     # =====================================================================
     # PRE-FLIGHT 2 — Inputs: refuse to run if upstream agents haven't delivered.
     # Prevents the models from fabricating on an empty context.
-    # NOTE: this is only meaningful once the Dev Lead fixes the base_llm root path
-    # (parents[3]); until then base_llm reads backend/data/outputs and this green
-    # light does NOT guarantee the models actually receive the context.
     # =====================================================================
     missing = [
         INPUTS_DIR / t / f"{iso_t}.json"

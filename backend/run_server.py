@@ -6,10 +6,7 @@ by the /stages/llm endpoint. Edit that file to add/remove models.
 Usage:
     uv run python run_server.py
 """
-import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
 
 from server import create_app
 

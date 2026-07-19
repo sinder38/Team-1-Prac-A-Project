@@ -25,6 +25,7 @@ from agents.macro.macro_sources import (
     TradingEconomicsCalendar,
 )
 from agents.base import BaseAgent
+from agents.paths import DATA_DIR, OUTPUTS_DIR
 from agents.schemas import (
     CalendarEvent,
     CommodityData,
@@ -32,8 +33,6 @@ from agents.schemas import (
     MacroBias,
     MacroOutput,
 )
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
 
 load_dotenv()
 
@@ -433,7 +432,7 @@ class MacroAgent(BaseAgent):
         """Serialize output to data/outputs/macro/{YYYY-WNN}.json."""
         week = prediction_date.isocalendar()
         filename = f"{week.year}-W{week.week:02d}.json"
-        out_dir = REPO_ROOT / "data" / "outputs" / self.agent_type
+        out_dir = OUTPUTS_DIR / self.agent_type
         out_dir.mkdir(parents=True, exist_ok=True)
         with open(out_dir / filename, "w", encoding="utf-8") as f:
             json.dump(asdict(output), f, indent=2, default=str)
@@ -510,7 +509,7 @@ Sources accessed: {prediction_date}
         """Render MacroOutput to MD matching data/formats/macro_agent.md"""
         week = prediction_date.isocalendar()
         filename = f"macro_agent_W{week.week:02d}.md"
-        out_dir = REPO_ROOT / "data" / "macro"
+        out_dir = DATA_DIR / "macro"
         out_dir.mkdir(parents=True, exist_ok=True)
 
         content = f"""Macro Agent Output — Week of {self.report_week_label(prediction_date)} — Source: R4

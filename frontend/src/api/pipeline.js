@@ -7,7 +7,7 @@
  *   0 Data Fetching            -> no endpoint; data fetching happens inside each agent below
  *   1 Multi-Agent Processing   -> POST /stages/{almanac,technical,macro}
  *   2 LLM API Calls            -> POST /stages/evidence, then POST /stages/llm per model
- *   3 Delta Calibration Engine -> no endpoint yet
+ *   3 Previous Week Delta      -> POST /stages/delta
  */
 import { getJson, postJson } from './http'
 import { stageLogs } from '../lib/exampleData'
@@ -69,8 +69,14 @@ export async function runStage(index, run) {
       }
       return { failures }
     }
+    case 3:
+      await postJson('/stages/delta', {
+        prediction_date: run.predictionDate,
+        run_id: run.runId,
+      })
+      return { failures: [] }
     default:
-      // Stage 0 (data fetching) and stage 3 (delta calibration) have no backend yet.
+      // Stage 0 is represented by data fetching inside the agent stages.
       return { failures: [] }
   }
 }

@@ -12,19 +12,19 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-sys.path.insert(0, str(Path(__file__).parent))
 
 from agents.pipeline.config import load_config
 from agents.pipeline.context import PipelineContext
 from agents.pipeline.stages import (
     run_almanac,
+    run_delta,
     run_evidence,
     run_llm,
     run_macro,
     run_technical,
 )
+from agents.paths import DATA_DIR
 
-REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_CONFIG = Path(__file__).parent / "pipeline.toml"
 
 
@@ -62,6 +62,7 @@ def main() -> None:
         "technical": (config.stages.technical, run_technical),
         "macro": (config.stages.macro, run_macro),
         "evidence": (config.stages.evidence, run_evidence),
+        "delta": (config.stages.delta, run_delta),
     }
 
     for name, (enabled, fn) in stage_map.items():
@@ -95,7 +96,7 @@ def main() -> None:
 
         tag = week_stem(prediction_date)
         comparison_md = build_comparison_md(rows_by_slug, config.llm.models, tag, prediction_date)
-        FileSaver(REPO_ROOT / "data" / "llm").save(
+        FileSaver(DATA_DIR / "llm").save(
             comparison_md, f"llm_comparison_{tag}.md"
         )
         print(f"[pipeline] wrote data/llm/llm_comparison_{tag}.md")

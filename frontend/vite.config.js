@@ -16,6 +16,10 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+      '/calibration': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
       '/market': {
         target: 'http://localhost:5000',
         changeOrigin: true,

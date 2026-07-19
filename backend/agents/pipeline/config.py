@@ -1,20 +1,20 @@
 import tomllib
 from pathlib import Path
-import argparse
 
 from pydantic import BaseModel, model_validator
 
 
 class LLMModelEntry(BaseModel):
     id: str
-    slug: str = ""   # short file/path identifier; derived from id if not set in TOML
-    name: str = ""   # human-readable label; derived from slug if not set in TOML
-    provider: str = "openrouter"  # "openrouter" | "ollama"
+    slug: str = ""
+    name: str = ""
+    provider: str = "openrouter"
 
     @model_validator(mode="after")
     def _fill_derived(self) -> "LLMModelEntry":
         if not self.slug:
-            self.slug = self.id.split("/", 1)[1].split(":")[0] if "/" in self.id else self.id
+            model_id = self.id.split("/", 1)[-1]
+            self.slug = model_id.split(":", 1)[0]
         if not self.name:
             self.name = self.slug.replace("-", " ").title()
         return self
@@ -33,6 +33,12 @@ class StagesConfig(BaseModel):
     technical: bool = False
     macro: bool = False
     evidence: bool = False
+    delta: bool = False
+
+
+class DeltaConfig(BaseModel):
+    prediction_week: str = "previous"
+    actuals_week: str = "auto"
 
 
 class LLMConfig(BaseModel):
@@ -46,10 +52,11 @@ class ArtifactsConfig(BaseModel):
 
 
 class StageConfig(BaseModel):
-    """Everything a single agent stage needs to run"""
+    """Settings shared by command-line and server pipeline stages."""
 
     llm: LLMConfig = LLMConfig()
     artifacts: ArtifactsConfig = ArtifactsConfig()
+    delta: DeltaConfig = DeltaConfig()
 
 
 class PipelineConfig(StageConfig):

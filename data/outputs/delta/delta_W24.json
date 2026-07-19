@@ -1,0 +1,117 @@
+{
+  "schema_version": 2,
+  "prediction_week": "vW24",
+  "actuals_week": "W25",
+  "rows": [
+    {
+      "asset": "SPX",
+      "predicted_direction": "FLAT-UP",
+      "predicted_range": "-0.5% to +1.2%",
+      "confidence": "Medium",
+      "actual_move": 0.93,
+      "actual_direction": "UP",
+      "direction_correct": true,
+      "range_hit": true,
+      "error_percent": 0.0
+    },
+    {
+      "asset": "NDX",
+      "predicted_direction": "FLAT-UP",
+      "predicted_range": "-0.5% to +2.0%",
+      "confidence": "Medium",
+      "actual_move": 2.6,
+      "actual_direction": "UP",
+      "direction_correct": true,
+      "range_hit": false,
+      "error_percent": 0.6
+    },
+    {
+      "asset": "IWM",
+      "predicted_direction": "UP",
+      "predicted_range": "+0.5% to +3.0%",
+      "confidence": "Medium",
+      "actual_move": 1.14,
+      "actual_direction": "UP",
+      "direction_correct": true,
+      "range_hit": true,
+      "error_percent": 0.0
+    }
+  ],
+  "missing_prediction_assets": [
+    "XLK",
+    "XLV",
+    "XLF",
+    "XLY",
+    "XLC",
+    "XLI",
+    "XLP",
+    "XLE",
+    "XLB",
+    "XLRE",
+    "XLU"
+  ],
+  "missing_actual_assets": [],
+  "history": [
+    {
+      "prediction_week": "W22",
+      "actuals_week": "W23",
+      "scored_assets": 3,
+      "direction_hits": 0,
+      "ranged_assets": 3,
+      "range_hits": 0,
+      "average_range_error": 3.61
+    },
+    {
+      "prediction_week": "W23",
+      "actuals_week": "W24",
+      "scored_assets": 3,
+      "direction_hits": 0,
+      "ranged_assets": 3,
+      "range_hits": 0,
+      "average_range_error": 3.35
+    },
+    {
+      "prediction_week": "W24",
+      "actuals_week": "W25",
+      "scored_assets": 3,
+      "direction_hits": 3,
+      "ranged_assets": 3,
+      "range_hits": 2,
+      "average_range_error": 0.2
+    }
+  ],
+  "history_notes": [],
+  "weight_adjustments": [
+    {
+      "agent": "almanac",
+      "current_weight": 0.2,
+      "suggested_weight": 0.15,
+      "reason": "Cumulative range accuracy is below 60%, so broad seasonality receives a small trial reduction."
+    },
+    {
+      "agent": "macro",
+      "current_weight": 0.2,
+      "suggested_weight": 0.2,
+      "reason": "The latest direction score was stable, so macro weight stays unchanged until another completed week is available."
+    },
+    {
+      "agent": "technical",
+      "current_weight": 0.25,
+      "suggested_weight": 0.3,
+      "reason": "Cumulative range accuracy is below 60%, so support, resistance, and volatility checks receive a small trial increase."
+    },
+    {
+      "agent": "llm",
+      "current_weight": 0.2,
+      "suggested_weight": 0.15,
+      "reason": "Cumulative direction accuracy is below 60%, so automated consensus receives a small trial reduction."
+    },
+    {
+      "agent": "human_score",
+      "current_weight": 0.15,
+      "suggested_weight": 0.2,
+      "reason": "Cumulative direction accuracy is below 60%, so final human challenge and review receive a small trial increase."
+    }
+  ],
+  "prescription": "Recheck volatility and range width for Nasdaq 100 (NDX). Add explicit direction rows for Technology (XLK), Health Care (XLV), Financials (XLF), Consumer Discretionary (XLY), Communication Services (XLC), Industrials (XLI), Consumer Staples (XLP), Energy (XLE), Materials (XLB), Real Estate (XLRE) and Utilities (XLU) so every required sector can be scored. Use these small trial weights next sprint: almanac 0.20 to 0.15, technical 0.25 to 0.30, llm 0.20 to 0.15, human_score 0.15 to 0.20."
+}
