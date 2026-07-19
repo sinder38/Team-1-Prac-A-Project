@@ -5,8 +5,9 @@ from pathlib import Path
 from flask import jsonify
 from werkzeug.exceptions import BadRequest
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-OUTPUTS_ROOT = REPO_ROOT / "data" / "outputs"
+from agents.paths import OUTPUTS_DIR
+
+OUTPUTS_ROOT = OUTPUTS_DIR
 
 
 def parse_date(value: str) -> date:

@@ -10,9 +10,15 @@ export const emptyAgentOutputs = {
 
 export const defaultCalibration = {
   currentAccuracy: 0,
-  targetAccuracy: 85,
+  rangeAccuracy: 0,
   weeklyTrend: [],
-  agentAccuracies: { almanac: 0, macro: 0, technical: 0 },
+  suggestedWeights: {},
+  latestDirectionAccuracy: 0,
+  latestRangeAccuracy: 0,
+  latestWeek: null,
+  sectorCoverage: 0,
+  sectorTotal: 11,
+  prescription: '',
   lastCalculated: null,
 }
 
