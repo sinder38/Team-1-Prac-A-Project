@@ -191,6 +191,18 @@ def test_get_archive_week(client):
     assert data["llmComparison"]["models"][0]["evidence"]
 
 
+def test_archive_llm_skips_empty_model_columns(client):
+    """W28 markdown still lists gpt-oss, but that column is all dashes — omit it."""
+    resp = client.get("/artifacts/archive?stem=W28")
+    if resp.status_code == 404:
+        return  # archive file optional in some checkouts
+    data = json.loads(resp.data)
+    names = [m["name"] for m in data["llmComparison"]["models"]]
+    assert names
+    assert not any("gpt-oss" in n.lower() for n in names)
+    assert any("hy3" in n.lower() for n in names)
+
+
 def test_get_archive_missing(client):
     resp = client.get("/artifacts/archive?stem=W99")
     assert resp.status_code == 404
@@ -211,3 +223,23 @@ def test_get_human_score_w25(client):
 def test_get_human_score_missing(client):
     resp = client.get("/artifacts/human-score?stem=W99")
     assert resp.status_code == 404
+
+
+def test_post_human_score_writes_file(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("server.archive.DATA_ROOT", tmp_path)
+    md = "# Human Score Analyst Output — Week 99\n\n## AI Consensus\n\n**Neutral**\n"
+    resp = client.post(
+        "/artifacts/human-score",
+        json={"stem": "W99", "markdown": md},
+    )
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data["ok"] is True
+    assert data["stem"] == "W99"
+    path = tmp_path / "human" / "human_score_W99.md"
+    assert path.read_text(encoding="utf-8") == md
+
+
+def test_post_human_score_requires_markdown(client):
+    resp = client.post("/artifacts/human-score", json={"stem": "W99"})
+    assert resp.status_code == 400

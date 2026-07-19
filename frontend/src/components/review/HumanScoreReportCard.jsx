@@ -5,7 +5,7 @@ import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { ClipboardCheck, ChevronDown, Copy, Check } from 'lucide-react'
 import { HUMAN_DIMENSIONS, EVIDENCE_SOURCES } from '../../lib/constants'
-import { buildHumanScoreMarkdown, formatSignedScore } from '../../lib/humanScore'
+import { buildHumanScoreMarkdown, formatSignedScore, weekTitleLabel } from '../../lib/humanScore'
 import { classifyBias } from '../../lib/bias'
 import { biasBadgeClass } from '../../lib/agentDisplay'
 
@@ -30,13 +30,14 @@ export default function HumanScoreReportCard({ report }) {
   const [copied, setCopied] = useState(false)
   if (!report?.form) return null
 
-  const { form, week, consensus, aiSaid, total } = report
+  const { form, week, consensus, aiSaid, total, llmComparison } = report
   const totalLabel = total > 0 ? `+${total}` : `${total}`
   const callTone = classifyBias(form.humanCall)
   const evidence = EVIDENCE_SOURCES.filter(s => form.evidence?.[s.key]).map(s => s.label)
+  const mdCtx = { week, consensus, aiSaid, total, llmComparison }
 
   async function copyMarkdown() {
-    const md = report.rawMarkdown || buildHumanScoreMarkdown(form, { week, consensus, aiSaid, total })
+    const md = report.rawMarkdown || buildHumanScoreMarkdown(form, mdCtx)
     try {
       await navigator.clipboard.writeText(md)
       setCopied(true)
@@ -56,7 +57,7 @@ export default function HumanScoreReportCard({ report }) {
             </div>
             <div className="min-w-0">
               <h4 className="text-lg font-semibold text-gray-900 truncate">
-                Human Score Report — {week}
+                Human Score Analyst Output — {weekTitleLabel(week)}
               </h4>
               <p className="text-sm text-gray-500 mt-0.5">
                 Confidence · {form.confidence}
@@ -145,7 +146,7 @@ export default function HumanScoreReportCard({ report }) {
       {open && (
         <div className="px-6 pb-5">
           <pre className="p-4 bg-white border border-gray-200 rounded-lg text-xs leading-relaxed text-gray-600 overflow-auto max-h-96 whitespace-pre-wrap">
-            {report.rawMarkdown || buildHumanScoreMarkdown(form, { week, consensus, aiSaid, total })}
+            {report.rawMarkdown || buildHumanScoreMarkdown(form, mdCtx)}
           </pre>
         </div>
       )}
@@ -160,6 +161,7 @@ HumanScoreReportCard.propTypes = {
     consensus: PropTypes.string,
     aiSaid: PropTypes.object,
     total: PropTypes.number,
+    llmComparison: PropTypes.object,
     rawMarkdown: PropTypes.string,
   }),
 }

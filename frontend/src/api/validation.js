@@ -1,6 +1,8 @@
 /**
- * TODO (backend task): Submit human review (R7).
+ * Human Score submit → POST /artifacts/human-score
+ * Writes data/human/human_score_WXX.md on the backend.
  */
+import { postJson } from './http'
 
 /** Decision values accepted by the human-score endpoint. */
 export const HUMAN_SCORE_DECISION = Object.freeze({
@@ -8,7 +10,21 @@ export const HUMAN_SCORE_DECISION = Object.freeze({
   DRAFT: 'draft',
 })
 
-export async function submitHumanScore(_formData, _decision) {
-  // TODO: POST /api/validation/human-score
-  return { ok: true }
+/**
+ * Persist a finished Human Score report.
+ * @param {{ week?: string, stem?: string, markdown: string }} payload
+ * @param {string} decision
+ */
+export async function submitHumanScore(payload, decision = HUMAN_SCORE_DECISION.SUBMITTED) {
+  if (decision !== HUMAN_SCORE_DECISION.SUBMITTED) {
+    return { ok: true, draft: true }
+  }
+  const { week, stem, markdown } = payload || {}
+  if (!markdown?.trim()) {
+    throw new Error('Missing markdown for human score')
+  }
+  return postJson('/artifacts/human-score', {
+    stem: stem || week,
+    markdown,
+  })
 }

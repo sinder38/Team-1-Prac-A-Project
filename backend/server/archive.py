@@ -274,11 +274,37 @@ def _comparison_model(
     return model
 
 
+_EMPTY_CELLS = frozenset({"", "—", "-", "–", "n/a", "na"})
+
+
+def _is_empty_cell(value: object) -> bool:
+    return str(value or "").strip().lower() in _EMPTY_CELLS
+
+
+def _model_has_output(model: dict) -> bool:
+    """True when a comparison column has real content (skip unused/failed models)."""
+    for key in (
+        "consensus",
+        "spx",
+        "ndx",
+        "iwm",
+        "evidence",
+        "contradiction",
+        "invalidation",
+        "plainEnglish",
+    ):
+        if not _is_empty_cell(model.get(key)):
+            return True
+    return False
+
+
 def _consensus_result(models: list[dict]) -> tuple[str, int]:
     """Return the most common regime and the disagreement percentage."""
     counts: dict[str, int] = {}
     for model in models:
         regime = model["consensus"]
+        if _is_empty_cell(regime):
+            continue
         counts[regime] = counts.get(regime, 0) + 1
 
     final_consensus = "Uncertain"
@@ -311,7 +337,11 @@ def _parse_llm_comparison(stem: str) -> dict | None:
     models: list[dict] = []
     for index, name in enumerate(header):
         model = _comparison_model(name, index, rows, summaries)
-        models.append(model)
+        if _model_has_output(model):
+            models.append(model)
+
+    if not models:
+        return None
 
     final_consensus, disagreement_ratio = _consensus_result(models)
 
@@ -360,6 +390,16 @@ def _clean_consensus_label(body: str) -> str:
 def load_human_score(stem: str) -> dict | None:
     """Parse data/human/human_score_{stem}.md into the frontend report shape."""
     return _human_score(_require_stem(stem))
+
+
+def save_human_score(stem: str, markdown: str) -> Path:
+    """Write human_score_{stem}.md under data/human/. Overwrites if present."""
+    stem = _require_stem(stem)
+    text = markdown if markdown.endswith("\n") else f"{markdown}\n"
+    path = DATA_ROOT / "human" / f"human_score_{stem}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
 
 
 def _human_score(stem: str, pred: date | None = None) -> dict | None:

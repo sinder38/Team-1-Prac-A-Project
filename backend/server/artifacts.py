@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from agents.io import week_stem
 from flask import Blueprint, jsonify, request
 
-from server.archive import list_all_weeks, load_archive_week, load_human_score
+from server.archive import list_all_weeks, load_archive_week, load_human_score, save_human_score
 from server.utils import OUTPUTS_ROOT, artifact_path, err, load_artifact, parse_date
 
 artifacts_bp = Blueprint("artifacts", __name__, url_prefix="/artifacts")
@@ -203,3 +203,28 @@ def get_human_score():
     if payload is None:
         return err(f"No human score archive for {stem}", 404)
     return jsonify(payload), 200
+
+
+@artifacts_bp.route("/human-score", methods=["POST"])
+def post_human_score():
+    """Save submitted HSR markdown to data/human/human_score_{stem}.md."""
+    body = request.get_json(silent=True) or {}
+    raw_stem = body.get("stem") or body.get("week")
+    stem, error = _normalize_week_stem(raw_stem)
+    if error:
+        return error
+    if stem is None:
+        return err("Missing required field: stem (e.g. W25)", 400)
+
+    markdown = body.get("markdown")
+    if not isinstance(markdown, str) or not markdown.strip():
+        return err("Missing required field: markdown", 400)
+
+    try:
+        path = save_human_score(stem, markdown)
+    except ValueError as exc:
+        return err(str(exc), 400)
+    except OSError as exc:
+        return err(f"Could not write human score: {exc}", 500)
+
+    return jsonify({"ok": True, "stem": stem, "path": str(path)}), 200

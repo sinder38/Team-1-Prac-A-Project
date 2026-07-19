@@ -36,10 +36,49 @@ function StageIcon({ status, locked }) {
 
 const LLM_STAGE_INDEX = 2
 
-function ModelSelector({ availableModels, selectedModels, toggleModel, disabled }) {
-  if (!availableModels.length) return null
+function ProviderModeSelector({ providerMode, setProviderMode, disabled }) {
   return (
     <div className="mt-2 pl-9 flex flex-wrap gap-x-4 gap-y-1.5">
+      {[
+        { value: 'ollama', label: 'Local (Ollama)' },
+        { value: 'openrouter', label: 'Real API (OpenRouter)' },
+      ].map(({ value, label }) => (
+        <label
+          key={value}
+          className={`flex items-center gap-1.5 text-xs ${disabled ? 'text-gray-400' : 'text-gray-600'}`}
+        >
+          <input
+            type="radio"
+            name="llm-provider-mode"
+            value={value}
+            checked={providerMode === value}
+            onChange={() => setProviderMode(value)}
+            disabled={disabled}
+            className="border-gray-300"
+          />
+          {label}
+        </label>
+      ))}
+    </div>
+  )
+}
+
+ProviderModeSelector.propTypes = {
+  providerMode: PropTypes.oneOf(['ollama', 'openrouter']).isRequired,
+  setProviderMode: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+}
+
+function ModelSelector({ availableModels, selectedModels, toggleModel, disabled }) {
+  if (!availableModels.length) {
+    return (
+      <p className="mt-1.5 pl-9 text-xs text-gray-400">
+        No models for this provider in server.toml
+      </p>
+    )
+  }
+  return (
+    <div className="mt-1.5 pl-9 flex flex-wrap gap-x-4 gap-y-1.5">
       {availableModels.map(({ key, name }) => (
         <label
           key={key}
@@ -79,6 +118,8 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
     resetRun,
     availableModels = [],
     selectedModels = [],
+    providerMode = 'ollama',
+    setProviderMode,
     toggleModel,
   } = controls
   const stages = pipeline.stages
@@ -176,14 +217,26 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
                   <StatusBadge label={label} tone={tone} />
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5 truncate">{stage.description}</p>
-                {i === LLM_STAGE_INDEX && (
-                  <ModelSelector
-                    availableModels={availableModels}
-                    selectedModels={selectedModels}
-                    toggleModel={toggleModel}
-                    disabled={locked || isRunning || stage.status === 'success'}
-                  />
-                )}
+                {i === LLM_STAGE_INDEX && (() => {
+                  // Allow picking provider/models before Stage 3 unlocks; only lock
+                  // while running or after this stage already succeeded.
+                  const modelsDisabled = isRunning || stage.status === 'success'
+                  return (
+                    <>
+                      <ProviderModeSelector
+                        providerMode={providerMode}
+                        setProviderMode={setProviderMode}
+                        disabled={modelsDisabled || !setProviderMode}
+                      />
+                      <ModelSelector
+                        availableModels={availableModels}
+                        selectedModels={selectedModels}
+                        toggleModel={toggleModel}
+                        disabled={modelsDisabled}
+                      />
+                    </>
+                  )
+                })()}
               </div>
 
               <div className="shrink-0">
@@ -257,6 +310,8 @@ PipelineController.propTypes = {
     resetRun: PropTypes.func,
     availableModels: PropTypes.array,
     selectedModels: PropTypes.array,
+    providerMode: PropTypes.oneOf(['ollama', 'openrouter']),
+    setProviderMode: PropTypes.func,
     toggleModel: PropTypes.func,
   }).isRequired,
   weekPicker: PropTypes.object,

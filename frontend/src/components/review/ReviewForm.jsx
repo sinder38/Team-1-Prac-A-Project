@@ -1,9 +1,8 @@
 /**
  * Human Score report — a finished-report layout with blanks to fill in.
- * Modelled on data/human/human_score_W*.md. Submitting completes the final
- * pipeline stage.
- *
- * TODO (backend task): submitHumanScore() → POST /api/validation/human-score
+ * Modelled on data/human/human_score_W*.md. Submitting writes
+ * data/human/human_score_WXX.md via POST /artifacts/human-score and
+ * completes the final pipeline stage.
  */
 import { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
@@ -17,7 +16,12 @@ import {
   CONFIDENCE_LEVELS,
   EVIDENCE_SOURCES,
 } from '../../lib/constants'
-import { aiSaidFor, buildHumanScoreMarkdown, humanScoreTotal } from '../../lib/humanScore'
+import {
+  aiSaidFor,
+  buildHumanScoreMarkdown,
+  humanScoreTotal,
+  weekTitleLabel,
+} from '../../lib/humanScore'
 
 function Section({ title, children }) {
   return (
@@ -50,9 +54,22 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
     setForm(prev => ({ ...prev, evidence: { ...prev.evidence, [key]: !prev.evidence[key] } }))
   }
 
+  function reportMarkdown() {
+    return buildHumanScoreMarkdown(form, {
+      week,
+      consensus,
+      aiSaid,
+      total,
+      llmComparison: outputs.llmComparison,
+    })
+  }
+
   async function submit() {
     try {
-      await submitHumanScore(form, HUMAN_SCORE_DECISION.SUBMITTED)
+      await submitHumanScore(
+        { week, markdown: reportMarkdown() },
+        HUMAN_SCORE_DECISION.SUBMITTED,
+      )
       onComplete?.(form)
     } catch {
       setStatus('fail')
@@ -61,9 +78,8 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
   }
 
   async function copyMarkdown() {
-    const md = buildHumanScoreMarkdown(form, { week, consensus, aiSaid, total })
     try {
-      await navigator.clipboard.writeText(md)
+      await navigator.clipboard.writeText(reportMarkdown())
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     } catch {
@@ -78,7 +94,9 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
       <div className="bg-white border border-gray-200 rounded-lg shadow-md">
         {/* Report header */}
         <div className="px-6 py-5 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">Human Score Report — {week}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Human Score Analyst Output — {weekTitleLabel(week)}
+          </h3>
           <p className="text-sm text-gray-500 mt-1">
             AI Consensus: <span className="font-medium text-gray-700">{consensus}</span>
           </p>

@@ -38,6 +38,8 @@ export default function App() {
     runId: pipeline.runId,
     availableModels: pipeline.availableModels,
     selectedModels: pipeline.selectedModels,
+    providerMode: pipeline.providerMode,
+    setProviderMode: pipeline.setProviderMode,
     toggleModel: pipeline.toggleModel,
   }
 
