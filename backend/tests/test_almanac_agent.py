@@ -496,12 +496,4 @@ def test_almanac_integration_week_5_early_july(setup_integration):
             "New-month and second-half inflows can support index performance.",
             "The midterm-year Weak Spot still argues against overconfidence.",
         ],
-        almanac_source={
-            "citation": "WEEKLY_PATTERNS[(7,1)]; STA 2026 p.97, p.99, p.76",
-            "phrases": [
-                "Early July is often one of the more constructive parts of the summer calendar.",
-                "New-month and second-half inflows can support index performance.",
-                "The midterm-year Weak Spot still argues against overconfidence.",
-            ],
-        },
     )
