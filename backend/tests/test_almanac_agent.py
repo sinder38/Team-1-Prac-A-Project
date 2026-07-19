@@ -414,7 +414,7 @@ def test_almanac_integration_week_4_late_june(setup_integration):
       Monthly: June is #12 (dead last) in midterm cycle. p.87.
 
     No hand-authored data/almanac/almanac_agent_W26.md yet —
-    encoded for W25-W29 increment from WEEKLY_PATTERNS[(6, 4)] bullets.
+    encoded from WEEKLY_PATTERNS[(6, 4)] bullets.
     """
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 24)
@@ -445,7 +445,7 @@ def test_almanac_integration_week_4_late_june(setup_integration):
             "Summer trading volume may start to thin, which can exaggerate moves.",
         ],
         almanac_source={
-            "citation": "almanac_data.py WEEKLY_PATTERNS[(6,4)] bullets; STA 2026 p.89, p.81, p.87",
+            "citation": "WEEKLY_PATTERNS[(6,4)]; STA 2026 p.89, p.81, p.87",
             "phrases": [
                 "Late June can see quarter-end positioning and rebalancing flows.",
                 "Midterm-year June remains weak even if short-term bounces appear.",
@@ -497,7 +497,7 @@ def test_almanac_integration_week_5_early_july(setup_integration):
             "The midterm-year Weak Spot still argues against overconfidence.",
         ],
         almanac_source={
-            "citation": "almanac_data.py WEEKLY_PATTERNS[(7,1)]; STA 2026 p.97, p.99, p.76",
+            "citation": "WEEKLY_PATTERNS[(7,1)]; STA 2026 p.97, p.99, p.76",
             "phrases": [
                 "Early July is often one of the more constructive parts of the summer calendar.",
                 "New-month and second-half inflows can support index performance.",
