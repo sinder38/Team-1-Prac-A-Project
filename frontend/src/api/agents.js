@@ -160,10 +160,10 @@ export async function getAgentOutputs({
 
   let llmComparison = null
   if (includeLlm) {
-    const configured = await getLlmModels()
+    const modelList = await getLlmModels()
     const models = []
     await Promise.all(
-      configured.map(async ({ key, name }) => {
+      modelList.map(async ({ key, name }) => {
         try {
           const data = await getJson(`/artifacts/llm?${qs}&model=${key}`)
           models.push({ name, data })

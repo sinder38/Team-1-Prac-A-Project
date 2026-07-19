@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   getAgentOutputs,
   getAvailableWeeks,
+  getLlmModels,
   getStageLogs,
   runStage as apiRunStage,
   DEFAULT_HORIZON_DAYS,
@@ -83,6 +84,8 @@ export function usePipeline() {
   const [savedWeeks, setSavedWeeks] = useState([])
   const [humanScoreReports, setHumanScoreReports] = useState(readStoredReports)
   const [error, setError] = useState(null)
+  const [availableModels, setAvailableModels] = useState([])
+  const [selectedModels, setSelectedModels] = useState(null)
 
   // Keep Logs "Run ID" in sync for live runs (pipeline.id === API runId).
   // Archive weeks set pipeline.id to archive-WXX separately without changing API runId.
@@ -135,6 +138,22 @@ export function usePipeline() {
 
   useEffect(() => { fetchWeeks() }, [fetchWeeks])
 
+  useEffect(() => {
+    getLlmModels()
+      .then(models => {
+        setAvailableModels(models)
+        setSelectedModels(models.map(m => m.key)) // default is all models enabled
+      })
+      .catch(err => setError(errorMessage(err, 'Could not load LLM model list')))
+  }, [])
+
+  function toggleModel(key) {
+    setSelectedModels(prev => {
+      const current = prev ?? availableModels.map(m => m.key)
+      return current.includes(key) ? current.filter(k => k !== key) : [...current, key]
+    })
+  }
+
   function resetRun() {
     setError(null)
     const nextId = makeRunId()
@@ -156,6 +175,10 @@ export function usePipeline() {
   // Run one AI stage (index 0-3). Only the next pending stage can be run.
   async function runStage(index) {
     if (isRunning || index !== doneCount || index >= AI_STAGES) return
+    if (index === 2 && selectedModels && selectedModels.length === 0) {
+      setError('Select at least one LLM model before running this stage.')
+      return
+    }
 
     setError(null)
     const stageLog = getStageLogs(index)
@@ -170,7 +193,12 @@ export function usePipeline() {
     setLogs(prev => [...prev, ...stageLog.start])
 
     try {
-      const stageResult = await apiRunStage(index, { predictionDate, runId, horizonDays: DEFAULT_HORIZON_DAYS })
+      const stageResult = await apiRunStage(index, {
+        predictionDate,
+        runId,
+        horizonDays: DEFAULT_HORIZON_DAYS,
+        models: selectedModels,
+      })
 
       // Reveal outputs progressively: agents after stage 2, LLM after stage 3.
       if (index === 1 || index === 2) {
@@ -338,6 +366,9 @@ export function usePipeline() {
     aiComplete,
     totalStages: TOTAL_STAGES,
     aiStages: AI_STAGES,
+    availableModels,
+    selectedModels: selectedModels ?? availableModels.map(m => m.key),
+    toggleModel,
     onDateChange,
     onWeekSelect,
     runStage,

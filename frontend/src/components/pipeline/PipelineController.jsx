@@ -34,8 +34,53 @@ function StageIcon({ status, locked }) {
   return <span className="text-xs font-medium text-gray-400">—</span>
 }
 
+const LLM_STAGE_INDEX = 2
+
+function ModelSelector({ availableModels, selectedModels, toggleModel, disabled }) {
+  if (!availableModels.length) return null
+  return (
+    <div className="mt-2 pl-9 flex flex-wrap gap-x-4 gap-y-1.5">
+      {availableModels.map(({ key, name }) => (
+        <label
+          key={key}
+          className={`flex items-center gap-1.5 text-xs ${disabled ? 'text-gray-400' : 'text-gray-600'}`}
+        >
+          <input
+            type="checkbox"
+            checked={selectedModels.includes(key)}
+            onChange={() => toggleModel(key)}
+            disabled={disabled}
+            className="rounded border-gray-300"
+          />
+          {name}
+        </label>
+      ))}
+    </div>
+  )
+}
+
+ModelSelector.propTypes = {
+  availableModels: PropTypes.array.isRequired,
+  selectedModels: PropTypes.array.isRequired,
+  toggleModel: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+}
+
 export default function PipelineController({ pipeline, controls, weekPicker, onNavigate }) {
-  const { doneCount, isRunning, allDone, aiStages, error, clearError, runStage, runNext, resetRun } = controls
+  const {
+    doneCount,
+    isRunning,
+    allDone,
+    aiStages,
+    error,
+    clearError,
+    runStage,
+    runNext,
+    resetRun,
+    availableModels = [],
+    selectedModels = [],
+    toggleModel,
+  } = controls
   const stages = pipeline.stages
 
   const statusLabel = isRunning ? 'Running' : allDone ? 'Complete' : doneCount > 0 ? 'In progress' : 'Idle'
@@ -65,20 +110,24 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
               <RotateCcw className="w-4 h-4" />
               Reset
             </button>
-            {doneCount < aiStages && (
-              <button
-                onClick={runNext}
-                disabled={isRunning}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium ${
-                  isRunning
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
-                }`}
-              >
-                <Play className="w-4 h-4" />
-                {isRunning ? 'Running…' : `Run stage ${doneCount + 1}`}
-              </button>
-            )}
+            {doneCount < aiStages && (() => {
+              const blockedByModels = doneCount === LLM_STAGE_INDEX && selectedModels.length === 0
+              return (
+                <button
+                  onClick={runNext}
+                  disabled={isRunning || blockedByModels}
+                  title={blockedByModels ? 'Select at least one LLM model to run this stage' : undefined}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium ${
+                    isRunning || blockedByModels
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                  }`}
+                >
+                  <Play className="w-4 h-4" />
+                  {isRunning ? 'Running…' : `Run stage ${doneCount + 1}`}
+                </button>
+              )
+            })()}
           </div>
         </div>
 
@@ -127,6 +176,14 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
                   <StatusBadge label={label} tone={tone} />
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5 truncate">{stage.description}</p>
+                {i === LLM_STAGE_INDEX && (
+                  <ModelSelector
+                    availableModels={availableModels}
+                    selectedModels={selectedModels}
+                    toggleModel={toggleModel}
+                    disabled={locked || isRunning || stage.status === 'success'}
+                  />
+                )}
               </div>
 
               <div className="shrink-0">
@@ -135,9 +192,9 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
                 ) : isHumanStage ? null : (
                   <button
                     onClick={() => runStage(i)}
-                    disabled={!isNext}
+                    disabled={!isNext || (i === LLM_STAGE_INDEX && selectedModels.length === 0)}
                     className={`px-3 py-1.5 text-xs font-medium rounded-md ${
-                      isNext
+                      isNext && !(i === LLM_STAGE_INDEX && selectedModels.length === 0)
                         ? 'bg-gray-900 text-white hover:bg-gray-800'
                         : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     }`}
@@ -188,7 +245,20 @@ PipelineController.propTypes = {
     stages: PropTypes.array.isRequired,
     accuracy: PropTypes.number,
   }).isRequired,
-  controls: PropTypes.object.isRequired,
+  controls: PropTypes.shape({
+    doneCount: PropTypes.number,
+    isRunning: PropTypes.bool,
+    allDone: PropTypes.bool,
+    aiStages: PropTypes.number,
+    error: PropTypes.string,
+    clearError: PropTypes.func,
+    runStage: PropTypes.func,
+    runNext: PropTypes.func,
+    resetRun: PropTypes.func,
+    availableModels: PropTypes.array,
+    selectedModels: PropTypes.array,
+    toggleModel: PropTypes.func,
+  }).isRequired,
   weekPicker: PropTypes.object,
   onNavigate: PropTypes.func,
 }

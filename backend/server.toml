@@ -11,6 +11,7 @@ models = [
     # {slug = "nemotron", id = "nvidia/nemotron-3-super-120b-a12b:free"},
     # {slug = "gptoss",   id = "openai/gpt-oss-120b:free"},
     # {slug = "gemma",    id = "google/gemma-4-31b-it:free"},
+    # {slug = "gemm26",   id = "gemma-4-26b-a4b-it:free"},
     # {slug = "laguna",   id = "poolside/laguna-m.1:free"},
 
     # For local testing without OpenRouter (requires `ollama serve` + `ollama pull llama3.2:1b`).

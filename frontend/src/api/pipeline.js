@@ -14,13 +14,15 @@ import { stageLogs } from '../lib/exampleData'
 
 export const DEFAULT_HORIZON_DAYS = 7
 
-/** Models enabled on the server (server.toml). Prefer this over a hardcoded list. */
+let _llmModelsCache = null
+
+// Get model registry from the backend
 export async function getLlmModels() {
-  const data = await getJson('/stages/models')
-  return (data.models || []).map(m => ({
-    key: m.key,
-    name: m.name || m.key,
-  }))
+  if (!_llmModelsCache) {
+    const data = await getJson('/config/models')
+    _llmModelsCache = data.models || []
+  }
+  return _llmModelsCache
 }
 
 export function getStageLogs(index) {
@@ -46,7 +48,11 @@ export async function runStage(index, run) {
         prediction_date: run.predictionDate,
         run_id: run.runId,
       })
-      const models = await getLlmModels()
+      const allModels = await getLlmModels()
+      const models = run.models
+        ? allModels.filter(m => run.models.includes(m.key))
+        : allModels
+
       if (!models.length) {
         throw new Error('No LLM models configured on the server (check server.toml).')
       }
