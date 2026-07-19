@@ -23,6 +23,7 @@ import sys
 from pathlib import Path
 
 # Allow running from the repo root without installing the package
+# Keeping this one, its fine.
 sys.path.insert(0, str(Path(__file__).parent))
 
 from rules import REGISTRY

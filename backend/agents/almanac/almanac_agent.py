@@ -13,19 +13,13 @@ Basic flow:
 
 import sys
 from datetime import date, timedelta
-from pathlib import Path
-
-# This lets the file run directly from the command line without installing the
-# backend package first. It points Python at the backend/ folder.
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from agents.almanac.almanac_data import MONTHLY_STATS, SECTOR_WINDOWS, SOURCE_NOTE
 from agents.almanac.almanac_data import WEEKLY_PATTERNS
 from agents.base import BaseAgent
 from agents.io import FileSaver, week_stem
+from agents.paths import DATA_DIR, OUTPUTS_DIR
 from agents.schemas import AlmanacOutput, Bias, Confidence, SectorSignal
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # Keep these as escaped characters so the code file stays plain ASCII while
 # the generated Markdown still matches the teacher's required template.
@@ -238,10 +232,10 @@ if __name__ == "__main__":
     )
     agent = AlmanacAgent()
     output = agent.run(prediction_date)
-    json_saver = FileSaver(REPO_ROOT / "data" / "outputs" / agent.agent_type)
+    json_saver = FileSaver(OUTPUTS_DIR / agent.agent_type)
     json_saver.save(agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}.json")
 
-    md_dir = REPO_ROOT / "data" / "almanac"
+    md_dir = DATA_DIR / "almanac"
     md_saver = FileSaver(md_dir)
     md_saver.save(agent.render_md(output, prediction_date), f"almanac_agent_{week_stem(prediction_date)}.md")
     print("Saved to data/outputs/almanac/ and data/almanac/")
