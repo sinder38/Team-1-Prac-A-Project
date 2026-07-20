@@ -1,0 +1,17 @@
+# LLM Agent Output — Hy3 — Week of 2026-07-19
+
+1. Weekly Regime: Uncertain
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - Technical agent shows SPX and IWM neutral with low confidence, NDX bearish with high confidence and last close below both EMA-8 and EMA-21.
+   - Almanac agent shows Technology (XLK) bullish seasonal LONG window supporting Nasdaq, but Materials, Energy, Gold seasonal bearish windows.
+   - Macro agent shows WTI oil up 15.52% and VIX up 24.88% with hawkish Fed shift, creating binary-risk backdrop for week of 2026-07-19.
+4. Key Contradictions:
+   - NDX technical bias is bearish with high confidence, but almanac XLK sector bias is bullish seasonal LONG window supporting Nasdaq.
+   - Prior week evidence shows Technology down 5.48% as worst sector, conflicting with almanac bullish XLK seasonal window for March-July.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
+6. Predicted % move — SPX: -1.5% to 1.5%
+   Predicted % move — NDX: -3.0% to 1.0%
+   Predicted % move — IWM: -1.0% to 1.5%
+7. Plain-English brief: For the week of July 19 2026, large-cap SPX and small-cap IWM look range-bound near neutral with low technical confidence, while Nasdaq 100 shows bearish technicals but faces a bullish tech seasonal tailwind creating mixed signals. Oil spike and rising fear gauge add macro uncertainty. Expected moves are small for SPX and IWM, with NDX able to fall further or bounce mildly.
+8. Disclaimer: This is not financial advice.
