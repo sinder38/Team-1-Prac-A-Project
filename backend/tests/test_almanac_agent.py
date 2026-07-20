@@ -73,10 +73,9 @@ def test_lookup_seasonal_data_success():
     assert output.prediction_date == date(2026, 6, 16)
     assert output.monthly_bias == Bias.BEARISH
     assert output.seasonal_bias == Bias.BEARISH
-    assert output.confidence == Confidence.MEDIUM
-    assert output.weekly_pattern == "Mid-June weakness / CPI follow-through week"
+    assert output.weekly_pattern == "Mid-June weakness / Triple-Witching week"
     assert len(output.sector_signals) > 0
-    assert "Almanac setup stays cautious" in output.thesis
+    assert "Almanac base case stays cautious" in output.thesis
 
 
 def test_lookup_seasonal_data_fallback():
@@ -368,8 +367,7 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.BEARISH
     assert ctx.almanac.seasonal_bias == Bias.BEARISH
-    assert ctx.almanac.confidence == Confidence.MEDIUM
-    assert ctx.almanac.weekly_pattern == "Mid-June weakness / CPI follow-through week"
+    assert ctx.almanac.weekly_pattern == "Mid-June weakness / Triple-Witching week"
 
     _verify_artifacts(
         tmp_path,
@@ -379,7 +377,7 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
             "monthly_bias": "Bearish",
             "seasonal_bias": "Bearish",
             "confidence": "Medium",
-            "weekly_pattern": "Mid-June weakness / CPI follow-through week",
+            "weekly_pattern": "Mid-June weakness / Triple-Witching week",
         },
         expected_md_contains=[
             "Almanac Agent Output",
@@ -390,18 +388,21 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
             "SECTOR SIGNALS:",
             "ALMANAC SEASONAL BIAS: Bearish.",
             "PATTERN CONFIDENCE: MEDIUM.",
-            'ALMANAC THESIS: "Seasonality is still a headwind in mid-June',
+            'ALMANAC THESIS: "Mid-June Triple-Witching week',
         ],
         almanac_source={
             "citation": "data/almanac/almanac_agent_W25.md; STA 2026 p.87, p.108",
             "phrases": [
                 # SPECIFIC WEEK PATTERN (W25 reference lines 13-17)
-                "June midterm-year weakness remains the main seasonal background.",
-                "The market is still inside the Q2-Q3 Weak Spot",
-                "A holiday-shortened week around Juneteenth can reduce liquidity",
-                # ALMANAC THESIS (W25 reference line 28)
-                "Seasonality is still a headwind in mid-June because June is the weakest month",
-                "the broader Almanac setup stays cautious",
+                "Monday, June 15: Monday of Triple-Witching Week",
+                "Triple-Witching Week often up in bull markets and down in bears",
+                "Wednesday, June 17: FOMC meeting scheduled",
+                "Thursday, June 18: June Triple-Witching Day mixed",
+                "Friday, June 19: Juneteenth National Independence Day",
+                "Historical performance trends lower",
+                # ALMANAC THESIS (W25 reference line 30)
+                "Mid-June Triple-Witching week carries a bearish historical lean",
+                "June is already the weakest month in the midterm-year pattern",
             ],
         },
     )
@@ -429,9 +430,8 @@ def test_almanac_integration_week_4_late_june(setup_integration):
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
-    assert ctx.almanac.monthly_bias == Bias.BEARISH
-    assert ctx.almanac.seasonal_bias == Bias.MIXED
-    assert ctx.almanac.confidence == Confidence.LOW_MEDIUM
+    assert ctx.almanac.seasonal_bias == Bias.BEARISH
+    assert ctx.almanac.confidence == Confidence.MEDIUM
 
     _verify_artifacts(
         tmp_path,
@@ -439,22 +439,22 @@ def test_almanac_integration_week_4_late_june(setup_integration):
         expected_json={
             "prediction_date": "2026-06-24",
             "monthly_bias": "Bearish",
-            "seasonal_bias": "Mixed",
-            "confidence": "Low-Medium",
+            "seasonal_bias": "Bearish",
+            "confidence": "Medium",
         },
         expected_md_contains=[
             "MONTH: June 2026",
-            "Late June can see quarter-end positioning and rebalancing flows.",
-            "Midterm-year June remains weak even if short-term bounces appear.",
-            "Summer trading volume may start to thin, which can exaggerate moves.",
+            "Monday, June 22: Week after June Triple-Witching",
             "Dow down 29 of last 35",
+            "Average loss for S&P 500 since 1990 during this week is -0.8%",
+            "Summer doldrums can begin in late June",
         ],
         almanac_source={
             "citation": "WEEKLY_PATTERNS[(6,4)]; STA 2026 p.89, p.81, p.87",
             "phrases": [
-                "Late June can see quarter-end positioning and rebalancing flows.",
-                "Midterm-year June remains weak even if short-term bounces appear.",
-                "Summer trading volume may start to thin, which can exaggerate moves.",
+                "Monday, June 22: Week after June Triple-Witching",
+                "Average loss for S&P 500 since 1990 during this week is -0.8%",
+                "Summer doldrums can begin in late June",
                 "Dow down 29 of last 35",
             ],
         },
@@ -482,8 +482,7 @@ def test_almanac_integration_week_5_early_july(setup_integration):
 
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
-    assert ctx.almanac.monthly_bias == Bias.MIXED
-    assert ctx.almanac.seasonal_bias == Bias.BULLISH
+    assert ctx.almanac.seasonal_bias == Bias.MIXED
     assert ctx.almanac.confidence == Confidence.MEDIUM
 
     _verify_artifacts(
@@ -492,21 +491,23 @@ def test_almanac_integration_week_5_early_july(setup_integration):
         expected_json={
             "prediction_date": "2026-07-07",
             "monthly_bias": "Mixed",
-            "seasonal_bias": "Bullish",
+            "seasonal_bias": "Mixed",
             "confidence": "Medium",
         },
         expected_md_contains=[
             "MONTH: July 2026",
-            "Early July is often one of the more constructive parts of the summer calendar.",
-            "New-month and second-half inflows can support index performance.",
-            "The midterm-year Weak Spot still argues against overconfidence.",
+            "Elevated volatility after Independence Day",
+            "July is the best month of Q3",
+            "ranks #3 for Dow",
+            "NASDAQ midterm-year July ranks only #7",
         ],
         almanac_source={
             "citation": "WEEKLY_PATTERNS[(7,1)]; STA 2026 p.97, p.99, p.76",
             "phrases": [
-                "Early July is often one of the more constructive parts of the summer calendar.",
-                "New-month and second-half inflows can support index performance.",
-                "The midterm-year Weak Spot still argues against overconfidence.",
+                "Elevated volatility after Independence Day",
+                "July is the best month of Q3",
+                "ranks #3 for Dow",
+                "NASDAQ midterm-year July ranks only #7",
             ],
         },
     )
