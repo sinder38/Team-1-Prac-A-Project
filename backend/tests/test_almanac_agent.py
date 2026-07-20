@@ -447,6 +447,7 @@ def test_almanac_integration_week_4_late_june(setup_integration):
             "Late June can see quarter-end positioning and rebalancing flows.",
             "Midterm-year June remains weak even if short-term bounces appear.",
             "Summer trading volume may start to thin, which can exaggerate moves.",
+            "Dow down 29 of last 35",
         ],
         almanac_source={
             "citation": "WEEKLY_PATTERNS[(6,4)]; STA 2026 p.89, p.81, p.87",
@@ -454,6 +455,7 @@ def test_almanac_integration_week_4_late_june(setup_integration):
                 "Late June can see quarter-end positioning and rebalancing flows.",
                 "Midterm-year June remains weak even if short-term bounces appear.",
                 "Summer trading volume may start to thin, which can exaggerate moves.",
+                "Dow down 29 of last 35",
             ],
         },
     )
@@ -462,15 +464,14 @@ def test_almanac_integration_week_4_late_june(setup_integration):
 def test_almanac_integration_week_5_early_july(setup_integration):
     """Week 5 of 5: Early July Week (July Week 1 — 2026-07-07, ISO W28).
 
+    Almanac source: data/almanac/almanac_agent_W28.md
+
     Stock Trader's Almanac 2026, p.97 & p.99 (July 6-10):
       July is the best month of Q3. Midterm years: ranks #3 for Dow (+1.6%),
       #3 for S&P 500 (+1.3%). NASDAQ drops to #7 (-0.8%).
       Mon 7/6: "Market subject to elevated volatility after July 4th."
       Wed 7/8: "Beware the Summer Rally hype — historically the weakest
       rally of all seasons" (p.76).
-
-    No hand-authored data/almanac/almanac_agent_W28.md yet —
-    encoded from WEEKLY_PATTERNS[(7, 1)].
     """
     tmp_path = setup_integration
     prediction_date = date(2026, 7, 7)
@@ -500,4 +501,12 @@ def test_almanac_integration_week_5_early_july(setup_integration):
             "New-month and second-half inflows can support index performance.",
             "The midterm-year Weak Spot still argues against overconfidence.",
         ],
+        almanac_source={
+            "citation": "WEEKLY_PATTERNS[(7,1)]; STA 2026 p.97, p.99, p.76",
+            "phrases": [
+                "Early July is often one of the more constructive parts of the summer calendar.",
+                "New-month and second-half inflows can support index performance.",
+                "The midterm-year Weak Spot still argues against overconfidence.",
+            ],
+        },
     )
