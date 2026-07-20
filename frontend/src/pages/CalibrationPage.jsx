@@ -1,15 +1,12 @@
-/**
- * Shows how accurate our predictions are over time.
- * TODO (backend task): load live scores via getCalibrationScores() → GET /api/calibration/accuracy-tracker
- */
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { BarChart3, RefreshCw, Target, TrendingUp, TrendingDown } from 'lucide-react'
+import { BarChart3, RefreshCw, Target } from 'lucide-react'
+
 import { getCalibrationScores } from '../api'
-import { defaultCalibration } from '../lib/defaults'
-import { AGENTS, AGENT_BAR_COLORS } from '../lib/constants'
-import { formatDateTime } from '../lib/date'
 import { ErrorBanner } from '../components/common'
+import { AGENT_BAR_COLORS, AGENTS } from '../lib/constants'
+import { formatDateTime } from '../lib/date'
+import { defaultCalibration } from '../lib/defaults'
 
 export default function CalibrationPage({ pipeline }) {
   const [scores, setScores] = useState(defaultCalibration)
@@ -30,18 +27,15 @@ export default function CalibrationPage({ pipeline }) {
   useEffect(() => { load() }, [pipeline.lastRun])
 
   const trend = Array.isArray(scores.weeklyTrend) ? scores.weeklyTrend : []
-  const agentAccuracies = scores.agentAccuracies || {}
-  const targetAccuracy = scores.targetAccuracy || 0
-  const delta = trend.length >= 2 ? scores.currentAccuracy - trend[0] : 0
-  const progress = targetAccuracy ? Math.min(100, (scores.currentAccuracy / targetAccuracy) * 100) : 0
-  const maxBar = Math.max(...trend, targetAccuracy, 1)
+  const suggestedWeights = scores.suggestedWeights || {}
+  const maxBar = Math.max(...trend.map(item => item.directionAccuracy || 0), 100)
 
   return (
     <div className="flex-1 overflow-auto p-4 md:p-6 space-y-4">
       <div className="flex justify-between items-start gap-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Calibration Tracker</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Agent alignment vs LLM consensus</p>
+          <p className="text-sm text-gray-500 mt-0.5">Locked predictions compared with completed actuals</p>
         </div>
         <button
           onClick={load}
@@ -56,91 +50,64 @@ export default function CalibrationPage({ pipeline }) {
       <ErrorBanner message={error} onRetry={load} onDismiss={() => setError(null)} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 bg-white border border-gray-200 rounded-md shadow-md p-5">
-          <div className="flex justify-between mb-4">
-            <div>
-              <p className="text-xs text-gray-500 uppercase">Overall Accuracy</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-4xl font-semibold">{scores.currentAccuracy}%</span>
-                <span className={`flex items-center gap-0.5 text-sm ${delta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {delta >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                  {delta >= 0 ? '+' : ''}{delta}%
-                </span>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500">Target</p>
-              <p className="text-lg font-semibold flex items-center gap-1 justify-end">
-                <Target className="w-4 h-4 text-gray-400" />
-                {scores.targetAccuracy}%
-              </p>
-            </div>
-          </div>
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gray-700 rounded-full" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="text-xs text-gray-400 mt-2">
-            Updated {formatDateTime(scores.lastCalculated)}
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-md shadow-md p-5">
-          <p className="text-xs text-gray-500 uppercase mb-3">Latest Run</p>
-          <p className="text-3xl font-semibold">
-            {pipeline.accuracy ? `${pipeline.accuracy}%` : '—'}
-          </p>
-          {pipeline.lastRun && (
-            <p className="text-xs text-gray-500 mt-2">
-              {new Date(pipeline.lastRun).toLocaleDateString()}
-            </p>
-          )}
-        </div>
+        <MetricCard
+          label="Cumulative Direction Accuracy"
+          value={`${scores.currentAccuracy}%`}
+          detail={`Latest: ${scores.latestDirectionAccuracy}%`}
+        />
+        <MetricCard
+          label="Cumulative Range Accuracy"
+          value={`${scores.rangeAccuracy}%`}
+          detail={`Latest: ${scores.latestRangeAccuracy}%`}
+        />
+        <MetricCard
+          label="Sector Coverage"
+          value={`${scores.sectorCoverage} / ${scores.sectorTotal}`}
+          detail={scores.latestWeek || 'No scored week'}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white border border-gray-200 rounded-md shadow-md p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="w-4 h-4 text-gray-500" />
-            <p className="text-sm font-medium">Weekly Trend</p>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-gray-500" />
+              <p className="text-sm font-medium">Weekly Direction Accuracy</p>
+            </div>
+            <p className="text-xs text-gray-400">Updated {formatDateTime(scores.lastCalculated)}</p>
           </div>
-          <div className="flex items-end gap-2 h-40">
-            {trend.map((v, i) => (
-              <div key={`week-${i}`} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-xs font-medium">{v}%</span>
-                <div className="w-full bg-gray-200 rounded-t-md relative" style={{ height: 120 }}>
+          <div className="flex items-end gap-3 h-44">
+            {trend.map(item => (
+              <div key={item.week} className="flex-1 min-w-0 flex flex-col items-center gap-1">
+                <span className="text-xs font-medium">{item.directionAccuracy}%</span>
+                <div className="w-full bg-gray-100 rounded-t-md relative" style={{ height: 120 }}>
                   <div
-                    className={`absolute bottom-0 w-full rounded-t-md ${i === trend.length - 1 ? 'bg-gray-800' : 'bg-gray-400'}`}
-                    style={{ height: `${(v / maxBar) * 100}%` }}
+                    className="absolute bottom-0 w-full bg-gray-700 rounded-t-md"
+                    style={{ height: `${(item.directionAccuracy / maxBar) * 100}%` }}
                   />
                 </div>
+                <span className="text-xs text-gray-500 truncate w-full text-center">{item.week}</span>
               </div>
             ))}
-            <div className="flex-1 flex flex-col items-center gap-1">
-              <span className="text-xs font-medium text-green-700">{targetAccuracy}%</span>
-              <div className="w-full bg-gray-200 rounded-t-md relative" style={{ height: 120 }}>
-                <div
-                  className="absolute bottom-0 w-full bg-green-500 rounded-t-md opacity-60"
-                  style={{ height: `${(targetAccuracy / maxBar) * 100}%` }}
-                />
-              </div>
-              <span className="text-xs text-gray-400">Target</span>
-            </div>
           </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-md shadow-md p-5">
-          <p className="text-sm font-medium mb-4">Per Agent</p>
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="w-4 h-4 text-gray-500" />
+            <p className="text-sm font-medium">Suggested Weights</p>
+          </div>
           <div className="space-y-4">
-            {Object.entries(agentAccuracies).map(([id, pct]) => (
+            {Object.entries(suggestedWeights).map(([id, percentage]) => (
               <div key={id}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-700">{AGENTS[id]?.label || id}</span>
-                  <span className="font-semibold">{pct}%</span>
+                  <span className="font-semibold">{percentage}%</span>
                 </div>
                 <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${AGENT_BAR_COLORS[id] || 'bg-gray-500'}`}
-                    style={{ width: `${pct}%` }}
+                    style={{ width: `${percentage}%` }}
                   />
                 </div>
               </div>
@@ -148,13 +115,35 @@ export default function CalibrationPage({ pipeline }) {
           </div>
         </div>
       </div>
+
+      {scores.prescription && (
+        <section className="border-t border-gray-200 pt-4">
+          <h3 className="text-sm font-medium text-gray-900">Next Sprint Prescription</h3>
+          <p className="text-sm text-gray-600 mt-2 leading-6">{scores.prescription}</p>
+        </section>
+      )}
     </div>
   )
+}
+
+function MetricCard({ label, value, detail }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-md shadow-md p-5">
+      <p className="text-xs text-gray-500 uppercase">{label}</p>
+      <p className="text-3xl font-semibold mt-2">{value}</p>
+      <p className="text-xs text-gray-500 mt-2">{detail}</p>
+    </div>
+  )
+}
+
+MetricCard.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  detail: PropTypes.string.isRequired,
 }
 
 CalibrationPage.propTypes = {
   pipeline: PropTypes.shape({
     lastRun: PropTypes.string,
-    accuracy: PropTypes.number,
   }).isRequired,
 }

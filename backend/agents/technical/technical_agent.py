@@ -10,13 +10,10 @@ from __future__ import annotations
 
 import sys
 from datetime import date, timedelta
-from pathlib import Path
 from typing import Final, Literal, NamedTuple, TypeAlias, cast
 
 import pandas as pd
 import yfinance as yf
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from agents.base import BaseAgent
 from agents.schemas import Bias, Confidence, InstrumentTechnical, TechnicalOutput
@@ -262,6 +259,7 @@ class TechnicalAgent(BaseAgent):
 
 if __name__ == "__main__":
     from agents.io import FileSaver, week_stem
+    from agents.paths import DATA_DIR
 
     prediction_date = (
         date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
@@ -273,8 +271,8 @@ if __name__ == "__main__":
         agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}.json"
     )
 
-    md_dir = Path(__file__).resolve().parents[3] / "data" / "technical"
+    md_dir = DATA_DIR / "technical"
     md_dir.mkdir(parents=True, exist_ok=True)
     md_path = md_dir / TechnicalAgent._week_md_filename(prediction_date)
     md_path.write_text(agent.render_md(output, prediction_date), encoding="utf-8")
-    print(f"Saved JSON to backend/data/outputs/technical/ and MD to {md_path}")
+    print(f"Saved JSON to data/outputs/technical/ and MD to {md_path}")
