@@ -120,8 +120,8 @@ REFERENCE_ALMANAC_DIR = REPO_ROOT / "data" / "almanac"
 
 @pytest.fixture
 def setup_integration(tmp_path, monkeypatch):
-    """Fixture to patch output directories to tmp_path so tests do not touch actual outputs."""
     monkeypatch.setattr("agents.pipeline.stages.REPO_ROOT", tmp_path)
+    monkeypatch.setattr("agents.pipeline.stages.DATA_DIR", tmp_path / "data")
     monkeypatch.setattr("agents.io.DATA_ROOT", tmp_path / "outputs")
     return tmp_path
 
