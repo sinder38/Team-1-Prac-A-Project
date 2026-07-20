@@ -383,6 +383,17 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
             "PATTERN CONFIDENCE: MEDIUM.",
             'ALMANAC THESIS: "Mid-June Triple-Witching week',
         ],
+        almanac_source={
+            "citation": "WEEKLY_PATTERNS[(6,3)]; STA 2026 p.87, p.108",
+            "phrases": [
+                "Monday, June 15: Monday of Triple-Witching Week",
+                "Triple-Witching Week often up in bull markets and down in bears",
+                "Wednesday, June 17: FOMC meeting scheduled",
+                "Thursday, June 18: June Triple-Witching Day mixed, but down 8 of last 10",
+                "Friday, June 19: Juneteenth National Independence Day",
+                "Net: bearish / mixed",
+            ],
+        },
     )
 
 
@@ -477,4 +488,14 @@ def test_almanac_integration_week_5_early_july(setup_integration):
             "ranks #3 for Dow",
             "NASDAQ midterm-year July ranks only #7",
         ],
+        almanac_source={
+            "citation": "WEEKLY_PATTERNS[(7,1)]; STA 2026 p.97, p.99, p.76",
+            "phrases": [
+                "Elevated volatility after Independence Day",
+                "July is the best month of Q3",
+                "ranks #3 for Dow",
+                "NASDAQ midterm-year July ranks only #7",
+                "Net: mixed",
+            ],
+        },
     )
