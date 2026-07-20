@@ -415,44 +415,53 @@ WEEKLY_PATTERNS = {
       },
     (6, 3): {
         "label": "Mid-June Week, 15-19 June",
-        "name": "Mid-June weakness / CPI follow-through week",
-        "tendency": "Bearish-neutral",
+        "name": "Mid-June weakness / Triple-Witching week",
+        "tendency": "Bearish / mixed",
         "strength": "Moderate",
         "bullets": [
-            "Pattern tendency: bearish-neutral. Pattern strength: moderate.",
-            "June midterm-year weakness remains the main seasonal background.",
-            "The market is still inside the Q2-Q3 Weak Spot, so rallies should be treated carefully.",
-            "A holiday-shortened week around Juneteenth can reduce liquidity and make moves less reliable.",
-            "Net: bearish-neutral lean unless macro data forces a clear risk-on reversal.",
+            "Monday, June 15: Monday of Triple-Witching Week — Dow down 15 of last 28.",
+            "Triple-Witching Week often up in bull markets and down in bears (Almanac p.108).",
+            "Wednesday, June 17: FOMC meeting scheduled — policy announcement can swing risk.",
+            "Thursday, June 18: June Triple-Witching Day mixed, but down 8 of last 10.",
+            "Friday, June 19: Juneteenth National Independence Day — market closed.",
+            "Historical performance trends lower, driven heavily by seasonal options-week behaviour.",
+            "Net: bearish / mixed. Triple-Witching tends negative, but FOMC can shift sentiment quickly.",
         ],
         "seasonal_bias": "Bearish",
         "confidence": "Medium",
         "thesis": (
-            "Seasonality is still a headwind in mid-June because June is the weakest "
-            "month in the midterm-year pattern. Technology seasonality is the main "
-            "positive offset, but the broader Almanac setup stays cautious."
+            "Mid-June Triple-Witching week carries a bearish historical lean, with "
+            "the Dow down 15 of last 28 on Monday and triple-witching Friday down 8 "
+            "of last 10. June is already the weakest month in the midterm-year "
+            "pattern. The FOMC meeting on Wednesday is the wildcard — a dovish "
+            "surprise could offset the seasonal drag, but the Almanac base case "
+            "stays cautious heading into a holiday-shortened Friday."
         ),
+        "source": "Stock Trader's Almanac 2026 p.87, p.108",
     },
     (6, 4): {
         "label": "Late June Week, 22-26 June",
-        "name": "Late-June / quarter-end positioning",
-        "tendency": "Mixed",
-        "strength": "Low-Medium",
+        "name": "Week after June Triple-Witching",
+        "tendency": "Bearish",
+        "strength": "Moderate",
         "bullets": [
-            "Pattern tendency: mixed. Pattern strength: low-medium.",
-            "Late June can see quarter-end positioning and rebalancing flows.",
-            "Midterm-year June remains weak even if short-term bounces appear.",
-            "Summer trading volume may start to thin, which can exaggerate moves.",
-            "Net: mixed, with bearish seasonal context but possible quarter-end support.",
+            "Monday, June 22: Week after June Triple-Witching — Dow down 29 of last 35.",
+            "Average loss for S&P 500 since 1990 during this week is -0.8%.",
+            "Summer doldrums can begin in late June as institutional activity slows (p.81).",
+            "Midterm-year June is dead last among all months for S&P 500 (avg -2.1%).",
+            "Net: bearish. Strong historical headwind with no offsetting holiday pattern this week.",
         ],
-        "seasonal_bias": "Mixed",
-        "confidence": "Low-Medium",
+        "seasonal_bias": "Bearish",
+        "confidence": "Medium",
         "thesis": (
-            "Late June has mixed signals. The midterm-year June backdrop is still "
-            "negative, but quarter-end positioning can create short-term support. "
-            "The Almanac signal should be used as a caution flag rather than a high "
-            "confidence directional call."
+            "The week after June Triple-Witching has one of the most consistent "
+            "bearish records in the Almanac — the Dow has fallen 29 of the last 35 "
+            "post-witching weeks. Combined with June ranking #12 (dead last) in the "
+            "midterm-year pattern, the seasonal signal is clearly negative. "
+            "Quarter-end positioning may provide some late-week support, but the "
+            "historical Almanac base case is bearish heading into late June."
         ),
+        "source": "Stock Trader's Almanac 2026 p.89, p.81",
     },
     (6, 5): {
         "label": "Turn-of-Month Week, 29 June-3 July",
@@ -476,23 +485,29 @@ WEEKLY_PATTERNS = {
     },
     (7, 1): {
         "label": "Early July Week, 6-10 July",
-        "name": "Early-July strength",
-        "tendency": "Bullish",
+        "name": "Early-July holiday week / post-Independence Day",
+        "tendency": "Mixed / slightly bullish",
         "strength": "Moderate",
         "bullets": [
-            "Pattern tendency: bullish. Pattern strength: moderate.",
-            "Early July is often one of the more constructive parts of the summer calendar.",
-            "New-month and second-half inflows can support index performance.",
-            "The midterm-year Weak Spot still argues against overconfidence.",
-            "Net: modest bullish lean, but confidence should stay moderate.",
+            "Monday, July 6: Elevated volatility after Independence Day is common; thin holiday liquidity.",
+            "July is the best month of Q3: ranks #3 for Dow (+1.6%) and #3 for S&P 500 (+1.3%) in midterm years.",
+            "NASDAQ midterm-year July ranks only #7 with average return -0.8% — tech is a relative drag.",
+            "Beware the 'Summer Rally' hype — historically the weakest rally of all seasons (Almanac p.76).",
+            "New-month and second-half inflows support large-cap indexes, but tech divergence is notable.",
+            "Net: mixed. Strong macro month, but this specific week sees post-holiday volatility and NASDAQ midterm weakness.",
         ],
-        "seasonal_bias": "Bullish",
+        "seasonal_bias": "Mixed",
         "confidence": "Medium",
         "thesis": (
-            "Early July is the best seasonal window in this covered period. The "
-            "Almanac lean turns more constructive, but the midterm-year Weak Spot "
-            "means the team should avoid treating it as a guaranteed rally."
+            "July is historically the best month of Q3, ranking #3 for the Dow "
+            "and S&P 500 in midterm years, so the macro Almanac backdrop is "
+            "constructive. However, this particular week carries post-Independence "
+            "Day volatility risk, and NASDAQ midterm-year July performance is "
+            "actually weak (ranked #7, avg -0.8%). The signal is mixed — the "
+            "month is bullishly positioned, but the week itself lacks a clean "
+            "directional edge."
         ),
+        "source": "Stock Trader's Almanac 2026 p.97, p.99, p.76",
     },
     (7, 2): {
         "label": "Second July Week, 13-17 July",
