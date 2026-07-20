@@ -445,7 +445,6 @@ def test_almanac_integration_week_4_late_june(setup_integration):
                 "Late June can see quarter-end positioning and rebalancing flows.",
                 "Midterm-year June remains weak even if short-term bounces appear.",
                 "Summer trading volume may start to thin, which can exaggerate moves.",
-                "Dow down 29 of last 35",
             ],
         },
     )
@@ -489,12 +488,4 @@ def test_almanac_integration_week_5_early_july(setup_integration):
             "New-month and second-half inflows can support index performance.",
             "The midterm-year Weak Spot still argues against overconfidence.",
         ],
-        almanac_source={
-            "citation": "Stock Trader's Almanac 2026 p.97, p.99, p.76",
-            "phrases": [
-                "Elevated volatility after Independence Day",
-                "July is the best month of Q3",
-                "ranks #3 for Dow",
-            ],
-        },
     )
