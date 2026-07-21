@@ -10,11 +10,13 @@ MONTHLY STATS:
 - Russell 2000: ranks #9 of 12 months. Avg +0.8% normally.
 
 SPECIFIC WEEK PATTERN (Mid-June Week, 15-19 June):
-- Pattern tendency: bearish-neutral. Pattern strength: moderate.
-- June midterm-year weakness remains the main seasonal background.
-- The market is still inside the Q2-Q3 Weak Spot, so rallies should be treated carefully.
-- A holiday-shortened week around Juneteenth can reduce liquidity and make moves less reliable.
-- Net: bearish-neutral lean unless macro data forces a clear risk-on reversal.
+- Monday, June 15: Monday of Triple-Witching Week — Dow down 15 of last 28.
+- Triple-Witching Week often up in bull markets and down in bears (Almanac p.108).
+- Wednesday, June 17: FOMC meeting scheduled — policy announcement can swing risk.
+- Thursday, June 18: June Triple-Witching Day mixed, but down 8 of last 10.
+- Friday, June 19: Juneteenth National Independence Day — market closed.
+- Historical performance trends lower, driven heavily by seasonal options-week behaviour.
+- Net: bearish / mixed. Triple-Witching tends negative, but FOMC can shift sentiment quickly.
 
 SECTOR SIGNALS:
 - Technology (XLK): seasonal LONG window (March-July). Supports Nasdaq. Bias: Bullish.
@@ -25,7 +27,7 @@ SECTOR SIGNALS:
 
 ALMANAC SEASONAL BIAS: Bearish.
 PATTERN CONFIDENCE: MEDIUM. Data is useful as a background signal, but macro events and technical levels can override seasonality.
-ALMANAC THESIS: "Seasonality is still a headwind in mid-June because June is the weakest month in the midterm-year pattern. Technology seasonality is the main positive offset, but the broader Almanac setup stays cautious."
+ALMANAC THESIS: "Mid-June Triple-Witching week carries a bearish historical lean, with the Dow down 15 of last 28 on Monday and triple-witching Friday down 8 of last 10. June is already the weakest month in the midterm-year pattern. The FOMC meeting on Wednesday is the wildcard — a dovish surprise could offset the seasonal drag, but the Almanac base case stays cautious heading into a holiday-shortened Friday."
 INVALIDATION: A major macro surprise or technical breakout against the seasonal bias would reduce the value of this Almanac signal for the week.
 
 Source: Stock Trader's Almanac 2026 team notes from W22/W23, plus public Stock Trader's Almanac June/July seasonal summaries. W25-W29 entries are encoded for the first software increment. Jan-Dec monthly records are structured for data encoder follow-up where exact page figures are not yet verified.
