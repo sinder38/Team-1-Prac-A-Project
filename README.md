@@ -312,45 +312,24 @@ weight changes for the next sprint.
 
 ```mermaid
 flowchart TD
-    P["Locked prediction<br/>vWn"]
-    A["Completed actuals<br/>Wn + 1"]
-    AUTO["Pipeline or API trigger"]
-    MANUAL["CLI with completed actuals"]
-    F{"Automated run:<br/>Friday market closed?"}
-    V{"Correct week pair?"}
-    N["Parse and normalise<br/>asset, direction, range, confidence"]
-    S["Score each matching asset"]
-    D["Direction score<br/>correct or incorrect"]
-    R["Range score<br/>hit, miss and error"]
-    H["Add earlier valid week pairs"]
     C["Calculate current and<br/>cumulative accuracy"]
-    W{"Accuracy below 60%?"}
-    K["Keep reviewed weights"]
-    T["Suggest a small 0.05<br/>trial weight transfer"]
+    WD{"Direction accuracy<br/>below 60%?"}
+    WR{"Range accuracy<br/>below 60%?"}
+    DKEEP["Keep LLM and Human Score weights"]
+    DSHIFT["Suggest 0.05 transfer<br/>LLM → Human Score"]
+    RKEEP["Keep Almanac and Technical weights"]
+    RSHIFT["Suggest 0.05 transfer<br/>Almanac → Technical"]
     X["Write next-sprint prescription"]
-    O["Delta outputs<br/>Markdown report + JSON artifact"]
-    E["Stop with a clear error"]
 
-    AUTO --> F
-    F -->|No| E
-    F -->|Yes| V
-    MANUAL --> V
-    P --> V
-    A --> V
-    V -->|No| E
-    V -->|Yes| N
-    N --> S
-    S --> D
-    S --> R
-    D --> H
-    R --> H
-    H --> C
-    C --> W
-    W -->|No| K
-    W -->|Yes| T
-    K --> X
-    T --> X
-    X --> O
+    C --> WD
+    WD -->|No| DKEEP
+    WD -->|Yes| DSHIFT
+    DKEEP --> WR
+    DSHIFT --> WR
+    WR -->|No| RKEEP
+    WR -->|Yes| RSHIFT
+    RKEEP --> X
+    RSHIFT --> X
 ```
 
 The automated pipeline and API enforce the Friday-close check. The CLI is a
