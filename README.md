@@ -274,7 +274,9 @@ data/final prediction/prediction_YYYY-WXX.md
 
 ## Delta Engine and Calibration
 
-The Delta Engine closes the weekly feedback loop by comparing a **locked prediction** with the **actual market result**.
+The Delta Engine evaluates each locked prediction against the immediately following completed market week. It measures direction and range accuracy, builds a cumulative history from valid prediction–actuals pairs, and produces small, reviewable weight suggestions for the next sprint.
+
+Pipeline and API runs only proceed after the relevant Friday market close. The manual CLI assumes that the user has supplied completed actuals. Delta never invents missing historical data, and its suggested weights do not automatically replace the team’s final judgement.
 
 It is designed to calculate:
 
