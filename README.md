@@ -9,7 +9,7 @@
 <br>
 
 ![Status](https://img.shields.io/badge/status-active_development-3fb950?style=flat-square&labelColor=161b22)
-![Progress](https://img.shields.io/badge/progress-Week_6-58a6ff?style=flat-square&labelColor=161b22)
+![Progress](https://img.shields.io/badge/progress-Week_8-58a6ff?style=flat-square&labelColor=161b22)
 ![Assets](https://img.shields.io/badge/tracked_assets-9-d29922?style=flat-square&labelColor=161b22)
 ![LLMs](https://img.shields.io/badge/LLM_comparison-4-bc8cff?style=flat-square&labelColor=161b22)
 ![Backend](https://img.shields.io/badge/backend-Python_%7C_Flask-3776ab?style=flat-square&labelColor=161b22)
@@ -34,23 +34,24 @@ By Week 10, the repository should contain a transparent history of weekly predic
 
 ## Current Development Status
 
-> **Snapshot: 18 July 2026**  
-> Done Implemented or usable &nbsp;·&nbsp; On-going Active integration or review &nbsp;·&nbsp; TO-DO Planned
+> **Snapshot: Week 8 · 22 July 2026**  
+> **Done** — implemented or usable &nbsp;·&nbsp; **Ongoing** — active integration or review &nbsp;·&nbsp; **Planned** — not yet implemented
 
 | Component | Status | Current State |
 |---|:---:|---|
 | Structured weekly prediction workflow | Done | The team produces SPX, NDX, and IWM direction, percentage range, confidence, reasoning, and invalidation conditions. |
-| Automated agent pipeline | Done | Almanac, Technical, Macro, and Evidence stages can run from the Python pipeline. |
-| Macro Agent automation | Done | News and macro inputs no longer require regular manual entry. Free APIs and transformed HTML data replace several paid sources. |
-| Evidence Agent and generated charts | Done | The pipeline can fetch actual market data, create evidence artefacts, and generate chart images. |
-| Multi-LLM synthesis | Done | Four models receive the same evidence and prompt so their conclusions can be compared consistently. |
-| Flask backend API | Done | Stage execution and saved-artifact access are exposed through backend server routes. |
-| React dashboard | Done | The dashboard is usable end-to-end in demo mode and includes pipeline, agents, charts, logs, calibration, and review screens. |
-| Live frontend–backend connection | On-going | Integration work has started and server endpoints exist. Some frontend API adapters still use bundled example data and require final replacement. |
-| Delta Engine | On-going | Core comparison logic, tests, and pipeline integration have been developed. Full merge, API exposure, and dashboard integration remain active work. |
-| Human Score pipeline integration | On-going | The Human Score format exists and is used manually. Automated persistence and pipeline integration are still being completed. |
-| Historical views and richer graphs | On-going | The frontend supports saved-week and chart concepts. Further historical-data integration and visual refinement are in progress. |
-| Local LLM test provider | On-going | Local Ollama support has been added for more reliable development and testing without depending entirely on external API availability. |
+| Automated agent pipeline | Done | Almanac, Technical, Macro, and Evidence stages run through the Python pipeline. |
+| Macro Agent automation | Done | News and macro inputs are collected automatically from the configured free data sources and transformed web data. |
+| Evidence Agent and generated charts | Done | The pipeline fetches actual market data, creates evidence artefacts, and generates chart images. |
+| Multi-LLM synthesis | Done | The automated CI pipeline compares Nemotron 3 Super, Tencent HY3, Gemma 4 26B A4B, and Laguna M.1 using identical evidence and synthesis prompts. |
+| Flask backend API | Done | Stage execution, saved artefacts, market data, calibration data, Delta execution, and model configuration are exposed through backend routes. |
+| React dashboard | Done | The dashboard provides pipeline controls, agent outputs, charts, LLM comparison, saved artefacts, market history, calibration, and review screens. |
+| Live frontend–backend features | Done | Agent execution, Evidence, LLM synthesis, Delta evaluation, saved weeks, artefacts, market history, calibration results, and the server model registry use the Flask backend. |
+| Demo-only or incomplete frontend features | Ongoing | Stage log descriptions are still generated locally, while Human Score submission and persistence remain under development. |
+| Delta Engine | Done | Core prediction-versus-actual comparison, direction and range accuracy, error calculations, automated tests, backend execution, and dashboard access are available. |
+| Human Score pipeline integration | Ongoing | The Human Score format and review screen exist, but automated submission, persistence, and full pipeline integration are still being completed. |
+| Historical views and richer graphs | Ongoing | Saved-week and market-history features are available; further historical visualisation and interface refinement remain in progress. |
+| Local LLM test provider | Done | `pipeline.toml` uses Ollama with `llama3.2:1b` for lightweight local development and testing without consuming OpenRouter limits. |
 | CI, type checks, and tests | Done | GitHub Actions, Pyright, pytest, frontend build checks, and pull-request review are part of the development workflow. |
 
 ---
@@ -62,7 +63,7 @@ Each sprint follows the same evidence-to-learning cycle:
 1. **Select the prediction window** after the US market closes.
 2. **Fetch market and economic data** for three target indices and six supporting assets.
 3. **Run the analysis stages** for Almanac, Macro, Technical, and Evidence.
-4. **Query four LLMs** with an identical synthesis prompt.
+4. **Query the configured LLMs** — four OpenRouter models in automated CI runs, or the local Ollama model during lightweight development testing.
 5. **Compare model outputs** to identify agreement, disagreement, missing evidence, and uncertainty.
 6. **Apply human judgement** through the Human Score review.
 7. **Lock the prediction** for SPX, NDX, and IWM.
@@ -167,22 +168,22 @@ After the analysis artefacts are prepared, the same synthesis prompt is sent to 
 <td width="25%" align="center" valign="top">
 
 **Nemotron 3 Super**
-<br><sub>NVIDIA</sub>
+<br><sub>NVIDIA · 120B A12B</sub>
 
 <br><sub><code>synthesis_nemotron_WXX.txt</code></sub>
 
 </td>
 <td width="25%" align="center" valign="top">
 
-**gpt-oss-120b**
-<br><sub>OpenAI</sub>
+**HY3**
+<br><sub>Tencent</sub>
 
-<br><sub><code>synthesis_gptoss_WXX.txt</code></sub>
+<br><sub><code>synthesis_hy3_WXX.txt</code></sub>
 
 </td>
 <td width="25%" align="center" valign="top">
 
-**Gemma 4 31B**
+**Gemma 4 26B A4B**
 <br><sub>Google</sub>
 
 <br><sub><code>synthesis_gemma_WXX.txt</code></sub>
@@ -199,7 +200,30 @@ After the analysis artefacts are prepared, the same synthesis prompt is sent to 
 </tr>
 </table>
 
-The model roster is configurable in `backend/pipeline.toml`. A local Ollama provider is also being used as an optional development and testing path.
+The project uses separate model configurations for local development and automated CI runs:
+
+| Configuration | Purpose | Active Models |
+|---|---|---|
+| `backend/pipeline.toml` | Lightweight local development and pipeline testing | Ollama `llama3.2:1b` |
+| `backend/pipeline.ci.toml` | Full automated GitHub Actions run and four-model comparison | Nemotron 3 Super, Tencent HY3, Gemma 4 26B A4B, and Laguna M.1 |
+| `backend/server.toml` | Flask server model registry and server-stage settings | Models exposed through the backend and frontend environment |
+
+The four OpenRouter models used by `pipeline.ci.toml` are:
+
+```toml
+nvidia/nemotron-3-super-120b-a12b:free
+tencent/hy3:free
+google/gemma-4-26b-a4b-it:free
+poolside/laguna-m.1:free
+```
+
+The local `pipeline.toml` configuration currently activates:
+
+```toml
+{id = "llama3.2:1b", slug = "llama3.2-1b", provider = "ollama"}
+```
+
+The OpenRouter entries in `pipeline.toml` are commented out, so local runs use the smaller Ollama model by default. `gpt-oss-120b` and `gemma-4-31b-it` are also commented out and are not part of the active CI comparison.
 
 The comparison stage records:
 
@@ -375,39 +399,58 @@ uv sync
 
 Fill in the required values in `backend/.env`. Never commit real API keys.
 
-### Run
+### Run locally with Ollama
+
+The default development configuration in `pipeline.toml` uses the local `llama3.2:1b` Ollama model:
 
 ```bash
 uv run python run_pipeline.py
 ```
 
-Run with the CI configuration:
+Make sure Ollama is installed and the configured model is available before running the local LLM stage.
+
+### Run the full four-model configuration
+
+The CI configuration enables the full automated workflow, including the four OpenRouter models and the Delta stage:
 
 ```bash
-uv run python run_server.py
 uv run python run_pipeline.py --config pipeline.ci.toml
 ```
 
-Configure the prediction date, enabled stages, LLM models, retry behaviour, and output formats in:
+GitHub Actions uses this configuration with the required API key stored in repository secrets.
+
+### Start the backend server
+
+```bash
+uv run python run_server.py
+```
+
+The configuration files have separate purposes:
 
 ```text
-backend/pipeline.toml
-backend/pipeline.ci.toml
-backend/server.toml
+backend/pipeline.toml       # Local development pipeline; Ollama llama3.2:1b is active
+backend/pipeline.ci.toml    # Full automated CI pipeline; four OpenRouter models are active
+backend/server.toml         # Flask server model registry and server-stage settings
 ```
 
 ---
 
 ## Running the Backend API
 
-The Flask application factory is located in `backend/server/`.
+The Flask application factory and API routes are located in `backend/server/`. Start the API using the project entry point:
 
 ```bash
 cd backend
-uv run flask --app "server:create_app" run --debug
+uv run python run_server.py
 ```
 
-The server provides routes for pipeline-stage execution and saved artefacts. Endpoint coverage will continue to expand as the Delta Engine and Human Score are integrated.
+`run_server.py` starts the Flask server, while `server.toml` controls the server-side model registry and related stage settings. The API supports agent execution, Evidence and LLM stages, Delta evaluation, saved artefacts, market history, calibration results, and model configuration.
+
+The Flask CLI can also be used during development:
+
+```bash
+uv run flask --app "server:create_app" run --debug
+```
 
 ---
 
@@ -443,7 +486,9 @@ The dashboard currently includes:
 - saved-week selection; and
 - a Human Score review form.
 
-The bundled demo data provides the most reliable standalone demonstration. The Flask API exists, but some frontend API modules still need to replace their example-data responses with live requests.
+The dashboard is already connected to the Flask backend for agent execution, Evidence generation, LLM synthesis, Delta evaluation, saved weeks and artefacts, market-price history, calibration data, and server model configuration.
+
+The remaining demo-only or incomplete areas are limited: stage log descriptions are generated locally, and Human Score submission and persistence are still under development.
 
 ---
 
@@ -511,10 +556,11 @@ team1-prac-a-project/
 │   ├── tests/                         # pytest test suite
 │   ├── .env.example
 │   ├── Makefile
-│   ├── pipeline.toml
-│   ├── server.toml
-│   ├── pipeline.ci.toml
-│   └── run_pipeline.py
+│   ├── pipeline.toml                   # Local pipeline; Ollama llama3.2:1b
+│   ├── pipeline.ci.toml                # CI pipeline; four OpenRouter models
+│   ├── server.toml                     # Flask server model registry and stage settings
+│   ├── run_pipeline.py                 # Automated pipeline entry point
+│   └── run_server.py                   # Flask API entry point
 ├── frontend/
 │   ├── src/
 │   │   ├── api/                       # Frontend API boundary
@@ -557,33 +603,35 @@ team1-prac-a-project/
 
 - Added shared Python schemas, agent interfaces, file handling, and pipeline orchestration.
 - Automated Almanac, Macro, Technical, and Evidence stages.
-- Added OpenRouter-based multi-LLM synthesis.
+- Added environment-specific LLM execution: local Ollama testing through `pipeline.toml` and four-model OpenRouter synthesis through `pipeline.ci.toml`.
 - Added scheduled and CI pipeline configurations.
 - Added generated market charts and evidence outputs.
 
 ### Application Increment
 
-- Added a Flask backend server for stage execution and artefact access.
-- Added a React and Vite dashboard with pipeline, chart, log, calibration, and review screens.
-- Added a browser-only demo mode so the UI can be reviewed without Python or API keys.
-- Started live backend–frontend integration.
+- Added a Flask backend server for agent execution, artefact access, market data, calibration, Delta evaluation, and model configuration.
+- Added a React and Vite dashboard with pipeline, chart, log, calibration, historical-data, and review screens.
+- Connected the dashboard to the Flask backend for the main pipeline and data workflows.
+- Retained local demonstration behaviour only for stage log descriptions; Human Score submission and persistence remain active work.
 
 ### Calibration Increment
 
 - Developed the Delta Engine for prediction-versus-actual comparison.
 - Added direction, range, and error calculations.
 - Added tests and Pyright validation.
-- Started pipeline integration and planned API, dashboard, and Human Score connections.
+- Added pipeline, Flask API, and dashboard access.
+- Human Score submission, persistence, and full feedback-loop integration remain in progress.
 
 ---
 
 ## Known Limitations and Active Risks
 
+- Local and CI runs use different LLM configurations, so output quality and response format may differ between Ollama testing and the four-model OpenRouter comparison.
 - External LLM and data-provider rate limits can cause a pipeline stage to fail.
 - The automated Macro Agent depends on free APIs and transformed web data, which may change without notice.
 - Delta reports require both a locked prediction and complete actual-results artefacts.
-- Some frontend API adapters still return bundled example data.
-- Human Score persistence and automatic pipeline integration are not complete.
+- Stage log descriptions are still generated locally rather than returned by the backend.
+- Human Score submission, persistence, and automatic pipeline integration are not complete.
 - Historical views, richer graphs, and final frontend polish remain active development tasks.
 - The repository structure and output paths may change while branches are merged and refactored.
 
