@@ -13,9 +13,9 @@ from pathlib import Path
 from pydantic import ValidationError
 
 
-from agents.pipeline.config import load_config
-from agents.pipeline.context import PipelineContext
-from agents.pipeline.stages import (
+from pipeline.config import load_config
+from pipeline.context import PipelineContext
+from pipeline.stages import (
     run_almanac,
     run_delta,
     run_evidence,
@@ -91,8 +91,8 @@ def main() -> None:
 
     # Write comparison table if any LLMs ran
     if rows_by_slug and config.artifacts.save_md:
-        from agents.io import FileSaver, week_stem
-        from agents.llm.multi_model_runner import build_comparison_md
+        from core.io import FileSaver, week_stem
+        from llm.comparison import build_comparison_md
 
         tag = week_stem(prediction_date)
         comparison_md = build_comparison_md(rows_by_slug, config.llm.models, tag, prediction_date)

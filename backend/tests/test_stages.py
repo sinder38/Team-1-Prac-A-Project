@@ -2,8 +2,8 @@ from datetime import date
 
 import pandas as pd
 
-from agents.llm.base_llm import BaseLLMAgent
-from agents.pipeline.config import (
+from llm.base import BaseLLMAgent
+from pipeline.config import (
     ArtifactsConfig,
     LLMConfig,
     LLMModelEntry,
@@ -11,8 +11,8 @@ from agents.pipeline.config import (
     PipelineSection,
     StagesConfig,
 )
-from agents.pipeline.context import PipelineContext
-from agents.schemas import AlmanacOutput, Bias, Confidence, EvidenceOutput
+from pipeline.context import PipelineContext
+from core.schemas import AlmanacOutput, Bias, Confidence, EvidenceOutput
 
 
 def _no_artifacts_config() -> PipelineConfig:
@@ -63,7 +63,7 @@ def test_build_prompt_skips_none_agents():
     assert "No agent data available" in prompt
 
 
-from agents.pipeline.stages import run_evidence, run_almanac
+from pipeline.stages import run_evidence, run_almanac
 
 
 class _FakeEvidenceMarketDataProvider:
@@ -143,7 +143,7 @@ def test_run_evidence_creates_chart_png_files(tmp_path):
 
 
 def test_run_almanac_populates_context():
-    from agents.pipeline.stages import run_almanac
+    from pipeline.stages import run_almanac
 
     ctx = PipelineContext(prediction_date=date(2026, 6, 16))
     run_almanac(ctx, _no_artifacts_config())
