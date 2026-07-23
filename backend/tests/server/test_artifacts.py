@@ -227,19 +227,62 @@ def test_get_human_score_missing(client):
 
 def test_post_human_score_writes_file(client, tmp_path, monkeypatch):
     monkeypatch.setattr("server.archive.DATA_ROOT", tmp_path)
-    md = "# Human Score Analyst Output — Week 99\n\n## AI Consensus\n\n**Neutral**\n"
+    form = {
+        "scores": {
+            "macro": 0,
+            "technical": 1,
+            "almanac": 0,
+            "aiAgreement": 1,
+            "wildCard": -1,
+        },
+        "reasoning": {
+            "macro": "balanced",
+            "technical": "above EMAs",
+            "almanac": "mixed",
+            "aiAgreement": "majority agree",
+            "wildCard": "fed risk",
+        },
+        "humanCall": "Neutral",
+        "confidence": "Medium",
+        "overrideParagraph": "team view",
+        "wildCardInsight": "concentration risk",
+        "invalidation": "break support",
+        "evidence": {"almanac": True, "macro": True, "technical": False, "llm": True},
+    }
     resp = client.post(
         "/artifacts/human-score",
-        json={"stem": "W99", "markdown": md},
+        json={
+            "stem": "W99",
+            "week": "2026-W99",
+            "form": form,
+            "consensus": "Neutral",
+            "aiSaid": {
+                "macro": "mixed",
+                "technical": "bullish",
+                "almanac": "mixed",
+                "aiAgreement": "split",
+                "wildCard": "nothing specifically flagged",
+            },
+            "total": 1,
+        },
     )
     assert resp.status_code == 200
     data = json.loads(resp.data)
     assert data["ok"] is True
     assert data["stem"] == "W99"
-    path = tmp_path / "human" / "human_score_W99.md"
-    assert path.read_text(encoding="utf-8") == md
+
+    md_path = tmp_path / "human" / "human_score_W99.md"
+    json_path = tmp_path / "human" / "human_score_W99.json"
+    assert md_path.exists()
+    assert json_path.exists()
+    md = md_path.read_text(encoding="utf-8")
+    assert "Human Score Analyst Output" in md
+    assert "**Neutral**" in md
+    saved = json.loads(json_path.read_text(encoding="utf-8"))
+    assert saved["form"]["humanCall"] == "Neutral"
+    assert saved["total"] == 1
 
 
-def test_post_human_score_requires_markdown(client):
+def test_post_human_score_requires_form(client):
     resp = client.post("/artifacts/human-score", json={"stem": "W99"})
     assert resp.status_code == 400

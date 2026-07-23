@@ -87,18 +87,8 @@ describe('weekTitleLabel', () => {
 })
 
 describe('formatConsensusHeading', () => {
-  it('adds model agreement counts when available', () => {
-    const llm = {
-      finalConsensus: 'Neutral-Bullish',
-      models: [
-        { consensus: 'Neutral-Bullish' },
-        { consensus: 'Neutral-Bullish' },
-        { consensus: 'Neutral' },
-      ],
-    }
-    expect(formatConsensusHeading('Neutral-Bullish', llm)).toBe(
-      '**Neutral-Bullish (2 of 3 models)**',
-    )
+  it('wraps consensus in bold', () => {
+    expect(formatConsensusHeading('Neutral-Bullish')).toBe('**Neutral-Bullish**')
   })
 })
 

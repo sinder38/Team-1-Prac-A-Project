@@ -1,10 +1,9 @@
 /**
  * Human Score report — a finished-report layout with blanks to fill in.
- * Modelled on data/human/human_score_W*.md. Submitting writes
- * data/human/human_score_WXX.md via POST /artifacts/human-score and
- * completes the final pipeline stage.
+ * Modelled on data/human/human_score_W*.md. Submitting posts form JSON to
+ * POST /artifacts/human-score; the backend stores JSON and builds the MD.
  */
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { AlertCircle, Send, Copy, Check } from 'lucide-react'
 import { submitHumanScore, HUMAN_SCORE_DECISION } from '../../api'
@@ -32,10 +31,32 @@ function Section({ title, children }) {
   )
 }
 
-export default function ReviewForm({ outputs = {}, week = '—', aiComplete = false, onComplete }) {
-  const [form, setForm] = useState(defaultReviewForm)
+function mergeForm(initial) {
+  if (!initial) return { ...defaultReviewForm }
+  return {
+    ...defaultReviewForm,
+    ...initial,
+    scores: { ...defaultReviewForm.scores, ...(initial.scores || {}) },
+    reasoning: { ...defaultReviewForm.reasoning, ...(initial.reasoning || {}) },
+    evidence: { ...defaultReviewForm.evidence, ...(initial.evidence || {}) },
+  }
+}
+
+export default function ReviewForm({
+  outputs = {},
+  week = '—',
+  aiComplete = false,
+  initialForm = null,
+  onComplete,
+  onCancel,
+}) {
+  const [form, setForm] = useState(() => mergeForm(initialForm))
   const [status, setStatus] = useState(null)
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    setForm(mergeForm(initialForm))
+  }, [initialForm, week])
 
   const aiSaid = useMemo(() => aiSaidFor(outputs), [outputs])
   const consensus = outputs.llmComparison?.finalConsensus || 'Pending — run the pipeline'
@@ -60,14 +81,19 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
       consensus,
       aiSaid,
       total,
-      llmComparison: outputs.llmComparison,
     })
   }
 
   async function submit() {
     try {
       await submitHumanScore(
-        { week, markdown: reportMarkdown() },
+        {
+          week,
+          form,
+          consensus,
+          aiSaid,
+          total,
+        },
         HUMAN_SCORE_DECISION.SUBMITTED,
       )
       onComplete?.(form)
@@ -234,6 +260,15 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
             {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
             {copied ? 'Copied' : 'Copy as Markdown'}
           </button>
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          )}
         </div>
       </div>
 
@@ -255,5 +290,7 @@ ReviewForm.propTypes = {
   outputs: PropTypes.object,
   week: PropTypes.string,
   aiComplete: PropTypes.bool,
+  initialForm: PropTypes.object,
   onComplete: PropTypes.func,
+  onCancel: PropTypes.func,
 }

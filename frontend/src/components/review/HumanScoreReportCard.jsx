@@ -25,16 +25,16 @@ MetricRow.propTypes = {
   sub: PropTypes.string,
 }
 
-export default function HumanScoreReportCard({ report }) {
+export default function HumanScoreReportCard({ report, onEdit }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   if (!report?.form) return null
 
-  const { form, week, consensus, aiSaid, total, llmComparison } = report
+  const { form, week, consensus, aiSaid, total } = report
   const totalLabel = total > 0 ? `+${total}` : `${total}`
   const callTone = classifyBias(form.humanCall)
   const evidence = EVIDENCE_SOURCES.filter(s => form.evidence?.[s.key]).map(s => s.label)
-  const mdCtx = { week, consensus, aiSaid, total, llmComparison }
+  const mdCtx = { week, consensus, aiSaid, total }
 
   async function copyMarkdown() {
     const md = report.rawMarkdown || buildHumanScoreMarkdown(form, mdCtx)
@@ -133,14 +133,25 @@ export default function HumanScoreReportCard({ report }) {
           {open ? 'Hide full report' : 'View full report'}
           <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
-        <button
-          type="button"
-          onClick={copyMarkdown}
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium border border-gray-200 text-gray-700 hover:bg-white"
-        >
-          {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-          {copied ? 'Copied' : 'Copy as Markdown'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium border border-gray-200 text-gray-700 hover:bg-white"
+            >
+              Edit
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={copyMarkdown}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium border border-gray-200 text-gray-700 hover:bg-white"
+          >
+            {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+            {copied ? 'Copied' : 'Copy as Markdown'}
+          </button>
+        </div>
       </div>
 
       {open && (
@@ -164,4 +175,5 @@ HumanScoreReportCard.propTypes = {
     llmComparison: PropTypes.object,
     rawMarkdown: PropTypes.string,
   }),
+  onEdit: PropTypes.func,
 }

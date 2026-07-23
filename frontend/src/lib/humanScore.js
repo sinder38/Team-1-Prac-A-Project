@@ -5,7 +5,7 @@
  */
 import { HUMAN_DIMENSIONS, EVIDENCE_SOURCES } from './constants'
 import { prepareAgentCard } from './agentDisplay'
-import { classifyBias, summarizeModelAgreement } from './bias'
+import { summarizeModelAgreement } from './bias'
 
 export const PLACEHOLDER = '________'
 
@@ -48,16 +48,9 @@ export function weekTitleLabel(week) {
   return m ? `Week ${Number(m[1])}` : week || '—'
 }
 
-/** Build the bold AI Consensus line, matching W28 style when model counts are known. */
-export function formatConsensusHeading(consensus, llm) {
-  const base = (consensus || '—').trim()
-  const models = Array.isArray(llm?.models) ? llm.models : []
-  if (!models.length || /\(\d+\s+of\s+\d+/i.test(base)) {
-    return `**${base}**`
-  }
-  const direction = classifyBias(llm?.finalConsensus || base)
-  const matching = models.filter(m => classifyBias(m?.consensus) === direction).length
-  return `**${base} (${matching} of ${models.length} models)**`
+/** Bold consensus line — same shape as backend render_human_score_markdown. */
+export function formatConsensusHeading(consensus) {
+  return `**${(consensus || '—').trim()}**`
 }
 
 function scoreBreakdown(form) {
@@ -67,21 +60,20 @@ function scoreBreakdown(form) {
   }).join(' + ')
 }
 
-/** Render a submitted report as Markdown (Copy as Markdown / export). */
+/** Local markdown for Copy before/without rawMarkdown from the API. */
 export function buildHumanScoreMarkdown(form, ctx) {
   const {
     week = '—',
     consensus = '—',
     aiSaid = {},
     total = 0,
-    llmComparison = null,
   } = ctx || {}
   const lines = []
   const titleWeek = weekTitleLabel(week)
 
   lines.push(`# Human Score Analyst Output — ${titleWeek}`, '')
   lines.push('## AI Consensus', '')
-  lines.push(formatConsensusHeading(consensus, llmComparison), '')
+  lines.push(formatConsensusHeading(consensus), '')
   lines.push('---', '')
 
   lines.push('## Human Score Table', '')

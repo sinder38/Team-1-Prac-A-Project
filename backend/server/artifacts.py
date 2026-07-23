@@ -3,9 +3,11 @@ from collections.abc import Mapping
 
 from agents.io import week_stem
 from flask import Blueprint, jsonify, request
+from werkzeug.exceptions import BadRequest
 
 from server.archive import list_all_weeks, load_archive_week, load_human_score, save_human_score
-from server.utils import OUTPUTS_ROOT, artifact_path, err, load_artifact, parse_date
+from server.export_run import export_run_to_data
+from server.utils import OUTPUTS_ROOT, artifact_path, err, load_artifact, parse_date, require_fields
 
 artifacts_bp = Blueprint("artifacts", __name__, url_prefix="/artifacts")
 
@@ -109,6 +111,7 @@ def get_llm():
 
 @artifacts_bp.route("/runs", methods=["GET"])
 def get_runs():
+    """List run ids for a week. Read-only — does not rename files on disk."""
     raw_date = request.args.get("prediction_date")
     if not raw_date:
         return err("Missing required query param: prediction_date", 400)
@@ -120,22 +123,20 @@ def get_runs():
     stem = week_stem(prediction_date)
     if not OUTPUTS_ROOT.exists():
         return jsonify({"prediction_date": raw_date, "week": stem, "run_ids": []}), 200
-    run_ids: set[str] = set()
 
-    # Scan all agent folders for artifact names containing this week.
+    run_ids: set[str] = set()
     stem_escaped = re.escape(stem)
     standard_pattern = re.compile(
-        rf"^[a-z]+_{stem_escaped}_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$"
+        rf"^[a-z]+_{stem_escaped}_(.+?)(?:_\d+d)?\.json$"
     )
-    llm_pattern = re.compile(rf"^llm_[a-z0-9]+_{stem_escaped}_(.+?)_\d+d\.json$")
+    # Model keys may include dots/hyphens (e.g. llama3.2-3b).
+    llm_pattern = re.compile(rf"^llm_.+_{stem_escaped}_(.+?)_\d+d\.json$")
 
     for subdir in OUTPUTS_ROOT.iterdir():
         if not subdir.is_dir():
             continue
         for path in subdir.glob(f"*_{stem}_*.json"):
-            match = standard_pattern.match(path.name)
-            if not match:
-                match = llm_pattern.match(path.name)
+            match = standard_pattern.match(path.name) or llm_pattern.match(path.name)
             if match:
                 run_ids.add(match.group(1))
 
@@ -207,7 +208,7 @@ def get_human_score():
 
 @artifacts_bp.route("/human-score", methods=["POST"])
 def post_human_score():
-    """Save submitted HSR markdown to data/human/human_score_{stem}.md."""
+    """Save human score report JSON + rendered MD under data/human/."""
     body = request.get_json(silent=True) or {}
     raw_stem = body.get("stem") or body.get("week")
     stem, error = _normalize_week_stem(raw_stem)
@@ -216,15 +217,61 @@ def post_human_score():
     if stem is None:
         return err("Missing required field: stem (e.g. W25)", 400)
 
-    markdown = body.get("markdown")
-    if not isinstance(markdown, str) or not markdown.strip():
-        return err("Missing required field: markdown", 400)
+    form = body.get("form")
+    if not isinstance(form, dict):
+        return err("Missing required field: form", 400)
+
+    report = {
+        "form": form,
+        "week": body.get("week") or stem,
+        "consensus": body.get("consensus") or "—",
+        "aiSaid": body.get("aiSaid") if isinstance(body.get("aiSaid"), dict) else {},
+        "total": body.get("total"),
+    }
 
     try:
-        path = save_human_score(stem, markdown)
+        path = save_human_score(stem, report)
     except ValueError as exc:
         return err(str(exc), 400)
     except OSError as exc:
         return err(f"Could not write human score: {exc}", 500)
 
     return jsonify({"ok": True, "stem": stem, "path": str(path)}), 200
+
+
+@artifacts_bp.route("/export", methods=["POST"])
+def post_export():
+    """Render selected run JSON from data/outputs into data/{agent} markdown."""
+    body = request.get_json(force=True) or {}
+    try:
+        require_fields(body, "prediction_date", "run_id", "horizon_days")
+        prediction_date = parse_date(body["prediction_date"])
+        run_id = str(body["run_id"])
+        horizon_days = int(body["horizon_days"])
+        if horizon_days <= 0:
+            raise ValueError("horizon_days must be a positive integer")
+        if run_id.startswith("archive-"):
+            raise ValueError("Cannot export an archive display id; pick a live run_id.")
+    except BadRequest as exc:
+        return err(str(exc), 400)
+    except (ValueError, TypeError) as exc:
+        return err(str(exc), 400)
+
+    try:
+        written = export_run_to_data(prediction_date, run_id, horizon_days)
+    except ValueError as exc:
+        return err(str(exc), 400)
+    except OSError as exc:
+        return err(f"Could not export run: {exc}", 500)
+
+    return (
+        jsonify(
+            {
+                "ok": True,
+                "prediction_date": prediction_date.isoformat(),
+                "run_id": run_id,
+                "written": written,
+            }
+        ),
+        200,
+    )
