@@ -5,14 +5,16 @@ It saves the markdown as data/evidence/actuals_WXX.md.
 
 from __future__ import annotations
 
+import sys
 from datetime import date, timedelta
 from pathlib import Path
 from typing import cast
-import sys
 
 import pandas as pd
 
-from agents.base import BaseAgent
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from core.base import BaseAgent
 from agents.evidence.data_sources import (
     EvidenceMarketDataProvider,
     FredYieldProvider,
@@ -39,9 +41,10 @@ from agents.evidence.evidence_images import (
     EvidenceChartCapturer,
     screenshot_filenames,
 )
-from agents.io import FileSaver, week_stem
-from agents.paths import DATA_DIR
-from agents.schemas import EvidenceOutput
+from core.io import FileSaver, week_stem
+from core.schemas import EvidenceOutput
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class EvidenceAgent(BaseAgent[EvidenceOutput]):
@@ -55,7 +58,7 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
         chart_provider: ChartProvider | None = None,
         require_charts: bool = True,
     ):
-        self._data_root = data_root or DATA_DIR
+        self._data_root = data_root or REPO_ROOT / "data"
         self._market_data = market_data_provider or YahooFinanceEvidenceProvider()
         self._yield_data = yield_data_provider or FredYieldProvider()
         self._report_renderer = EvidenceReportRenderer()
@@ -147,20 +150,6 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
 
     def render_md(self, output: EvidenceOutput, prediction_date: date) -> str:
         return output.content
-
-    @classmethod
-    def parse_md(cls, text: str, prediction_date: date | None = None) -> EvidenceOutput:
-        """The evidence report *is* its content. It carries no canonical date
-        format, so ``prediction_date`` must be supplied; week is derived from it."""
-        if prediction_date is None:
-            raise ValueError("evidence: prediction_date is required")
-        from agents.io import week_stem
-
-        return EvidenceOutput(
-            prediction_date=prediction_date,
-            week=week_stem(prediction_date),
-            content=text,
-        )
 
     def render_report(self, snapshot: EvidenceSnapshot) -> str:
         return self._report_renderer.render(snapshot)
@@ -295,7 +284,7 @@ if __name__ == "__main__":
     FileSaver.for_agent(agent.agent_type).save(
         agent.render_json(output, prediction_date), f"{week_stem(prediction_date)}.json"
     )
-    FileSaver(DATA_DIR / agent.agent_type).save(
+    FileSaver(REPO_ROOT / "data" / agent.agent_type).save(
         agent.render_md(output, prediction_date),
         f"actuals_{week_stem(prediction_date)}.md",
     )

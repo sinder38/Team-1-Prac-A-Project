@@ -2,17 +2,17 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from datetime import date
+from pathlib import Path
 from typing import TYPE_CHECKING
 import json
 import re
 import sys
 
-from agents.base import BaseAgent
-from agents.paths import OUTPUTS_DIR
-from agents.schemas import LLMOutput, PredictedRange, Regime, Confidence
+from core.base import BaseAgent
+from core.schemas import LLMOutput, PredictedRange, Regime, Confidence
 
 if TYPE_CHECKING:
-    from agents.pipeline.context import PipelineContext
+    from pipeline.context import PipelineContext
 
 
 class BaseLLMAgent(BaseAgent):
@@ -31,7 +31,7 @@ class BaseLLMAgent(BaseAgent):
         (preserves compatibility with multi_model_runner.__main__ standalone mode).
         """
         from dataclasses import asdict
-        from agents.pipeline.context import PipelineContext as _PC
+        from pipeline.context import PipelineContext as _PC
 
         context_blocks = []
 
@@ -42,7 +42,6 @@ class BaseLLMAgent(BaseAgent):
                 ("almanac", ctx.almanac),
                 ("macro", ctx.macro),
                 ("evidence", ctx.evidence),
-                ("delta", ctx.delta),
             ]:
                 if output is None:
                     continue
@@ -55,7 +54,7 @@ class BaseLLMAgent(BaseAgent):
                     )
         else:
             # Standalone / legacy path: read JSON from data/outputs/
-            outputs_dir = OUTPUTS_DIR
+            outputs_dir = Path(__file__).resolve().parents[2] / "data" / "outputs"
             week = prediction_date.isocalendar()
             week_key = f"{week.year}-W{week.week:02d}.json"
 
@@ -73,8 +72,9 @@ class BaseLLMAgent(BaseAgent):
             if not context_blocks:
                 week = prediction_date.isocalendar()
                 week_key = f"{week.year}-W{week.week:02d}.json"
+                outputs_dir = Path(__file__).resolve().parents[2] / "data" / "outputs"
                 raise ValueError(
-                    f"No agent inputs found for {week_key} under {OUTPUTS_DIR}. "
+                    f"No agent inputs found for {week_key} under {outputs_dir}. "
                     "Run the Technical/Almanac/Macro agents first."
                 )
 
