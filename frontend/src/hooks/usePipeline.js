@@ -17,6 +17,7 @@ import {
 import { todayIso, dateToWeekLabel } from '../lib/date'
 import { buildHumanScoreReport } from '../lib/humanScore'
 import { emptyAgentOutputs } from '../lib/defaults'
+import { inferProviderMode } from '../lib/llmProvider'
 import {
   DEMO_FINAL_ACCURACY,
   exampleHumanScoreFormForWeek,
@@ -29,6 +30,15 @@ import {
 const TOTAL_STAGES = 5
 const AI_STAGES = 4 // stages 1-4 run automatically per click; stage 5 is the human report
 const HSR_STORAGE_KEY = 'humanScoreReports'
+const DEFAULT_PROVIDER_MODE = 'ollama'
+
+function modelsForProvider(models, provider) {
+  return models.filter(m => (m.provider || 'openrouter') === provider)
+}
+
+function keysForProvider(models, provider) {
+  return modelsForProvider(models, provider).map(m => m.key)
+}
 
 function makeRunId() {
   return `run-${Date.now().toString(36)}`
@@ -86,6 +96,7 @@ export function usePipeline() {
   const [error, setError] = useState(null)
   const [availableModels, setAvailableModels] = useState([])
   const [selectedModels, setSelectedModels] = useState(null)
+  const [providerMode, setProviderModeState] = useState(DEFAULT_PROVIDER_MODE)
 
   // Keep Logs "Run ID" in sync for live runs (pipeline.id === API runId).
   // Archive weeks set pipeline.id to archive-WXX separately without changing API runId.
@@ -142,14 +153,24 @@ export function usePipeline() {
     getLlmModels()
       .then(models => {
         setAvailableModels(models)
-        setSelectedModels(models.map(m => m.key)) // default is all models enabled
+        setSelectedModels(keysForProvider(models, DEFAULT_PROVIDER_MODE))
       })
       .catch(err => setError(errorMessage(err, 'Could not load LLM model list')))
   }, [])
 
+  const modelsForMode = useMemo(
+    () => modelsForProvider(availableModels, providerMode),
+    [availableModels, providerMode],
+  )
+
+  function setProviderMode(mode) {
+    setProviderModeState(mode)
+    setSelectedModels(keysForProvider(availableModels, mode))
+  }
+
   function toggleModel(key) {
     setSelectedModels(prev => {
-      const current = prev ?? availableModels.map(m => m.key)
+      const current = prev ?? keysForProvider(availableModels, providerMode)
       return current.includes(key) ? current.filter(k => k !== key) : [...current, key]
     })
   }
@@ -303,7 +324,8 @@ export function usePipeline() {
     setPipeline(exampleIdlePipeline(week, date, nextId))
   }
 
-  // Selecting a saved week shows its stored (already-complete) outputs.
+  // Selecting a saved week loads outputs. Only mark stages finished that have
+  // real artifacts — calibration (4) and human score (5) stay pending until run.
   async function onWeekSelect(entry) {
     setError(null)
     setSelectedWeek(entry.week)
@@ -318,7 +340,7 @@ export function usePipeline() {
     if (!entry.runId && !stem) {
       setOutputs(emptyAgentOutputs)
       setRunId(apiRunId)
-      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId))
+      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId, { doneCount: 0 }))
       clearHumanScoreForWeek(entry.week)
       return
     }
@@ -332,8 +354,34 @@ export function usePipeline() {
         stem,
         source: isArchive ? 'archive' : 'run',
       })
-      setOutputs(pickAgentOutputs(data))
-      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId))
+      const outputsForWeek = pickAgentOutputs(data)
+      setOutputs(outputsForWeek)
+
+      const hasAgents = Boolean(
+        outputsForWeek.almanac || outputsForWeek.macro || outputsForWeek.technical,
+      )
+      const hasLlm = Boolean(outputsForWeek.llmComparison)
+      const hasHsr = Boolean(data.humanScoreReport)
+      // Stages: 0 data, 1 agents, 2 LLM, 3 calibration, 4 human score
+      let doneCount = 0
+      if (hasAgents) doneCount = 2
+      if (hasLlm) doneCount = 3
+      if (hasHsr) doneCount = TOTAL_STAGES
+
+      // Stage 3 radio should match the loaded consensus (OpenRouter vs Ollama).
+      if (hasLlm) {
+        const models = availableModels.length ? availableModels : await getLlmModels()
+        if (!availableModels.length) setAvailableModels(models)
+        const mode = inferProviderMode(outputsForWeek.llmComparison, models)
+        if (mode) {
+          setProviderModeState(mode)
+          setSelectedModels(keysForProvider(models, mode))
+        }
+      }
+
+      setPipeline(
+        exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId, { doneCount }),
+      )
       setHumanScoreReports(prev => {
         const next = { ...prev }
         if (data.humanScoreReport) {
@@ -366,8 +414,10 @@ export function usePipeline() {
     aiComplete,
     totalStages: TOTAL_STAGES,
     aiStages: AI_STAGES,
-    availableModels,
-    selectedModels: selectedModels ?? availableModels.map(m => m.key),
+    availableModels: modelsForMode,
+    selectedModels: selectedModels ?? keysForProvider(availableModels, providerMode),
+    providerMode,
+    setProviderMode,
     toggleModel,
     onDateChange,
     onWeekSelect,
