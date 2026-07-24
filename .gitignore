@@ -13,3 +13,6 @@ __pycache__
 
 # API Key file
 .env
+
+# Outputs are runtime only
+data/outputs
