@@ -74,9 +74,9 @@ def test_lookup_seasonal_data_success():
     assert output.monthly_bias == Bias.BEARISH
     assert output.seasonal_bias == Bias.BEARISH
     assert output.confidence == Confidence.MEDIUM
-    assert output.weekly_pattern == "Mid-June weakness / CPI follow-through week"
+    assert output.weekly_pattern == "Mid-June weakness / Triple-Witching week"
     assert len(output.sector_signals) > 0
-    assert "Almanac setup stays cautious" in output.thesis
+    assert "Almanac base case stays cautious" in output.thesis
 
 
 def test_lookup_seasonal_data_fallback():
@@ -221,7 +221,7 @@ def test_almanac_integration_fallback(setup_integration):
 
 
 def test_almanac_integration_week_1_memorial_day(setup_integration):
-    """Week 1 of 5: Memorial Day Week (May Week 4 — 2026-05-27, ISO W22).
+    """Week 1 of 5: Memorial Day Week (May Week 4 - 2026-05-27, ISO W22).
 
     Almanac source: data/almanac/almanac_agent_W22.md
     Stock Trader's Almanac 2026, pp. 65-66 (May Vital Statistics), p. 94 (Sector Seasonality),
@@ -266,16 +266,13 @@ def test_almanac_integration_week_1_memorial_day(setup_integration):
         almanac_source={
             "citation": "data/almanac/almanac_agent_W22.md; STA 2026 pp. 65-66, p. 94, pp. 10-11",
             "phrases": [
-                # SPECIFIC WEEK PATTERN — Memorial Day week (W22 reference lines 13-16)
                 "Memorial Day week: Dow down 17 of last 29",
                 "Dow down 8 of last 10",
                 "S&P up 30 of 45",
-                # MONTHLY STATS — May vital statistics (W22 reference lines 7-10)
                 "ranks #8 of 12 months",
                 "61% of the time",
                 "Avg +0.3% normally",
                 "Midterm year May",
-                # SECTOR SIGNALS — sector seasonality table (W22 reference lines 19-22)
                 "seasonal LONG",
                 "seasonal SHORT",
             ],
@@ -284,7 +281,7 @@ def test_almanac_integration_week_1_memorial_day(setup_integration):
 
 
 def test_almanac_integration_week_2_early_june(setup_integration):
-    """Week 2 of 5: Early June Week (June Week 1 — 2026-06-03, ISO W23).
+    """Week 2 of 5: Early June Week (June Week 1 - 2026-06-03, ISO W23).
 
     Almanac source: data/almanac/almanac_agent_W23.md
     Encoded from W22 next-week context (June ranks #12 midterm, S&P -2.1%) and
@@ -326,16 +323,12 @@ def test_almanac_integration_week_2_early_june(setup_integration):
         almanac_source={
             "citation": "data/almanac/almanac_agent_W23.md; W22 next-week context lines 28-32",
             "phrases": [
-                # MONTHLY STATS — June midterm-year context (W23 reference lines 7-10)
                 "Dead last in the midterm-year pattern for S&P 500",
                 "Avg -2.1% for S&P 500",
-                # SPECIFIC WEEK PATTERN (W23 reference lines 13-17)
                 "No specific holiday pattern is active this week.",
                 "Early June is transitional as summer doldrums begin.",
                 "NFP on Friday 5 June is the dominant market event this week.",
-                # ALMANAC THESIS (W23 reference line 28)
                 "June 2026 is the worst month of the year in a midterm cycle",
-                # SECTOR — new Oil/Energy short from W22 next-week context line 31
                 "seasonal SHORT begins in early June",
             ],
         },
@@ -343,19 +336,17 @@ def test_almanac_integration_week_2_early_june(setup_integration):
 
 
 def test_almanac_integration_week_3_mid_june(setup_integration):
-    """Week 3 of 5: Mid-June Week (June Week 3 — 2026-06-16, ISO W25).
-
-    Almanac source: data/almanac/almanac_agent_W25.md
+    """Week 3 of 5: Mid-June Week (June Week 3 - 2026-06-16, ISO W25).
 
     Stock Trader's Almanac 2026, p.87 (June 15-19):
       June is the weakest month of the year during a midterm election cycle
       (Ranked #12 across DJIA, S&P 500, NASDAQ). Midterm avg: -1.9% DJIA,
       -2.1% S&P 500.
-      Mon 6/15: Monday of Triple-Witching Week — Dow down 15 of last 28.
+      Mon 6/15: Monday of Triple-Witching Week - Dow down 15 of last 28.
       Tue 6/16: Triple-Witching Week often up in bull markets / down in bears (p.108).
       Wed 6/17: FOMC Meeting scheduled.
       Thu 6/18: June Triple-Witching Day mixed, but down 8 of last 10.
-      Fri 6/19: Juneteenth — Markets CLOSED.
+      Fri 6/19: Juneteenth - Markets CLOSED.
     """
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 16)
@@ -369,7 +360,7 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
     assert ctx.almanac.monthly_bias == Bias.BEARISH
     assert ctx.almanac.seasonal_bias == Bias.BEARISH
     assert ctx.almanac.confidence == Confidence.MEDIUM
-    assert ctx.almanac.weekly_pattern == "Mid-June weakness / CPI follow-through week"
+    assert ctx.almanac.weekly_pattern == "Mid-June weakness / Triple-Witching week"
 
     _verify_artifacts(
         tmp_path,
@@ -379,7 +370,7 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
             "monthly_bias": "Bearish",
             "seasonal_bias": "Bearish",
             "confidence": "Medium",
-            "weekly_pattern": "Mid-June weakness / CPI follow-through week",
+            "weekly_pattern": "Mid-June weakness / Triple-Witching week",
         },
         expected_md_contains=[
             "Almanac Agent Output",
@@ -390,25 +381,24 @@ def test_almanac_integration_week_3_mid_june(setup_integration):
             "SECTOR SIGNALS:",
             "ALMANAC SEASONAL BIAS: Bearish.",
             "PATTERN CONFIDENCE: MEDIUM.",
-            'ALMANAC THESIS: "Seasonality is still a headwind in mid-June',
+            'ALMANAC THESIS: "Mid-June Triple-Witching week',
         ],
         almanac_source={
-            "citation": "data/almanac/almanac_agent_W25.md; STA 2026 p.87, p.108",
+            "citation": "WEEKLY_PATTERNS[(6,3)]; STA 2026 p.87, p.108",
             "phrases": [
-                # SPECIFIC WEEK PATTERN (W25 reference lines 13-17)
-                "June midterm-year weakness remains the main seasonal background.",
-                "The market is still inside the Q2-Q3 Weak Spot",
-                "A holiday-shortened week around Juneteenth can reduce liquidity",
-                # ALMANAC THESIS (W25 reference line 28)
-                "Seasonality is still a headwind in mid-June because June is the weakest month",
-                "the broader Almanac setup stays cautious",
+                "Monday, June 15: Monday of Triple-Witching Week",
+                "Triple-Witching Week often up in bull markets and down in bears",
+                "Wednesday, June 17: FOMC meeting scheduled",
+                "Thursday, June 18: June Triple-Witching Day mixed, but down 8 of last 10",
+                "Friday, June 19: Juneteenth National Independence Day",
+                "Net: bearish / mixed",
             ],
         },
     )
 
 
 def test_almanac_integration_week_4_late_june(setup_integration):
-    """Week 4 of 5: Late June Week (June Week 4 — 2026-06-24, ISO W26).
+    """Week 4 of 5: Late June Week (June Week 4 - 2026-06-24, ISO W26).
 
     Stock Trader's Almanac 2026, p.89 (June 22-26):
       "Week After June Triple-Witching, Dow down 29 of last 35.
@@ -416,9 +406,6 @@ def test_almanac_integration_week_4_late_june(setup_integration):
       June 23-26: No specific daily stats, but p.81 warns
       "Summer doldrums can begin in late June."
       Monthly: June is #12 (dead last) in midterm cycle. p.87.
-
-    No hand-authored data/almanac/almanac_agent_W26.md yet —
-    encoded from WEEKLY_PATTERNS[(6, 4)] bullets.
     """
     tmp_path = setup_integration
     prediction_date = date(2026, 6, 24)
@@ -430,8 +417,8 @@ def test_almanac_integration_week_4_late_june(setup_integration):
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.BEARISH
-    assert ctx.almanac.seasonal_bias == Bias.MIXED
-    assert ctx.almanac.confidence == Confidence.LOW_MEDIUM
+    assert ctx.almanac.seasonal_bias == Bias.BEARISH
+    assert ctx.almanac.confidence == Confidence.MEDIUM
 
     _verify_artifacts(
         tmp_path,
@@ -439,38 +426,38 @@ def test_almanac_integration_week_4_late_june(setup_integration):
         expected_json={
             "prediction_date": "2026-06-24",
             "monthly_bias": "Bearish",
-            "seasonal_bias": "Mixed",
-            "confidence": "Low-Medium",
+            "seasonal_bias": "Bearish",
+            "confidence": "Medium",
         },
         expected_md_contains=[
             "MONTH: June 2026",
-            "Late June can see quarter-end positioning and rebalancing flows.",
-            "Midterm-year June remains weak even if short-term bounces appear.",
-            "Summer trading volume may start to thin, which can exaggerate moves.",
+            "Monday, June 22: Week after June Triple-Witching",
+            "Dow down 29 of last 35",
+            "Average loss for S&P 500 since 1990 during this week is -0.8%",
+            "Summer doldrums can begin in late June",
         ],
         almanac_source={
             "citation": "WEEKLY_PATTERNS[(6,4)]; STA 2026 p.89, p.81, p.87",
             "phrases": [
-                "Late June can see quarter-end positioning and rebalancing flows.",
-                "Midterm-year June remains weak even if short-term bounces appear.",
-                "Summer trading volume may start to thin, which can exaggerate moves.",
+                "Monday, June 22: Week after June Triple-Witching",
+                "Dow down 29 of last 35",
+                "Average loss for S&P 500 since 1990 during this week is -0.8%",
+                "Summer doldrums can begin in late June",
+                "Net: bearish",
             ],
         },
     )
 
 
 def test_almanac_integration_week_5_early_july(setup_integration):
-    """Week 5 of 5: Early July Week (July Week 1 — 2026-07-07, ISO W28).
+    """Week 5 of 5: Early July Week (July Week 1 - 2026-07-07, ISO W28).
 
     Stock Trader's Almanac 2026, p.97 & p.99 (July 6-10):
       July is the best month of Q3. Midterm years: ranks #3 for Dow (+1.6%),
       #3 for S&P 500 (+1.3%). NASDAQ drops to #7 (-0.8%).
       Mon 7/6: "Market subject to elevated volatility after July 4th."
-      Wed 7/8: "Beware the Summer Rally hype — historically the weakest
+      Wed 7/8: "Beware the Summer Rally hype - historically the weakest
       rally of all seasons" (p.76).
-
-    No hand-authored data/almanac/almanac_agent_W28.md yet —
-    encoded from WEEKLY_PATTERNS[(7, 1)].
     """
     tmp_path = setup_integration
     prediction_date = date(2026, 7, 7)
@@ -482,7 +469,7 @@ def test_almanac_integration_week_5_early_july(setup_integration):
     assert ctx.almanac is not None
     assert ctx.almanac.prediction_date == prediction_date
     assert ctx.almanac.monthly_bias == Bias.MIXED
-    assert ctx.almanac.seasonal_bias == Bias.BULLISH
+    assert ctx.almanac.seasonal_bias == Bias.MIXED
     assert ctx.almanac.confidence == Confidence.MEDIUM
 
     _verify_artifacts(
@@ -491,13 +478,24 @@ def test_almanac_integration_week_5_early_july(setup_integration):
         expected_json={
             "prediction_date": "2026-07-07",
             "monthly_bias": "Mixed",
-            "seasonal_bias": "Bullish",
+            "seasonal_bias": "Mixed",
             "confidence": "Medium",
         },
         expected_md_contains=[
             "MONTH: July 2026",
-            "Early July is often one of the more constructive parts of the summer calendar.",
-            "New-month and second-half inflows can support index performance.",
-            "The midterm-year Weak Spot still argues against overconfidence.",
+            "Elevated volatility after Independence Day",
+            "July is the best month of Q3",
+            "ranks #3 for Dow",
+            "NASDAQ midterm-year July ranks only #7",
         ],
+        almanac_source={
+            "citation": "WEEKLY_PATTERNS[(7,1)]; STA 2026 p.97, p.99, p.76",
+            "phrases": [
+                "Elevated volatility after Independence Day",
+                "July is the best month of Q3",
+                "ranks #3 for Dow",
+                "NASDAQ midterm-year July ranks only #7",
+                "Net: mixed",
+            ],
+        },
     )

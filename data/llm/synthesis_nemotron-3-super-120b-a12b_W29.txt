@@ -1,0 +1,17 @@
+# LLM Agent Output — Nemotron 3 Super 120B A12B — Week of 2026-07-19
+
+1. Weekly Regime: Bearish
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - All three major indexes closed lower for the week, with SPX down 1.55%, NDX down 4.13%, and IWM down 0.66%.
+   - Fear gauge VIX rose 24.88% while oil surged 15.52% and gold fell 2.23% over the same period.
+   - Sector performance showed Technology down 5.48% (worst) and Energy up 4.72% (best), highlighting divergent momentum.
+4. Key Contradictions:
+   - Technical agent flags NDX as bearish, but Almanac agent notes a seasonal bullish bias for Technology (XLK) which supports Nasdaq.
+   - Technical agent shows SPX trend bias Neutral with low confidence, while Macro agent describes a binary-risk environment driven by Fed hold expectations, creating mixed directional signals.
+5. Invalidation Conditions: A materially more dovish-than-expected Fed decision or press conference that drives Treasury yields lower and increases expectations for Fed rate cuts would reverse the current cautious stance and support risk assets.
+6. Predicted % move — SPX: -2.2% to 1.7%
+   Predicted % move — NDX: -1.3% to 7.2%
+   Predicted % move — IWM: -1.1% to 3.0%
+7. Plain-English brief: The week ahead is likely to see modest downside pressure on the S&P 500, limited upside for the Nasdaq 100 despite potential for a stronger bounce if resistance breaks, and the Russell 2000 expected to trade in a narrow range. Mixed signals from technical, seasonal, and macro sources suggest caution, with any shift toward a more dovish Fed outlook capable of quickly changing the bias.
+8. Disclaimer: This is not financial advice.
