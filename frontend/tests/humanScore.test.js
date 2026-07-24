@@ -4,10 +4,17 @@
  * This logic was moved out of the ReviewForm component so it can be tested:
  *  - aiSaidFor: the "AI said" summary per dimension (derived from agent output).
  *  - humanScoreTotal: sum of the five team scores, safe against missing fields.
- *  - buildHumanScoreMarkdown: the copy-as-Markdown export, incl. +/- total sign.
+ *  - buildHumanScoreMarkdown: the copy-as-Markdown export (W28 format).
  */
 import { describe, it, expect } from 'vitest'
-import { aiSaidFor, buildHumanScoreMarkdown, buildHumanScoreReport, humanScoreTotal } from '../src/lib/humanScore'
+import {
+  aiSaidFor,
+  buildHumanScoreMarkdown,
+  buildHumanScoreReport,
+  formatConsensusHeading,
+  humanScoreTotal,
+  weekTitleLabel,
+} from '../src/lib/humanScore'
 import { exampleAgentOutputs, exampleHumanScoreFormForWeek } from '../src/lib/exampleData'
 import { defaultReviewForm } from '../src/lib/defaults'
 
@@ -56,6 +63,7 @@ describe('buildHumanScoreReport', () => {
     expect(report.total).toBe(2)
     expect(report.consensus).toBe(outputs.llmComparison.finalConsensus)
     expect(report.aiSaid.almanac).toBe('Bearish')
+    expect(report.llmComparison).toBe(outputs.llmComparison)
   })
 
   it('returns null without a form', () => {
@@ -71,18 +79,34 @@ describe('exampleHumanScoreFormForWeek', () => {
   })
 })
 
+describe('weekTitleLabel', () => {
+  it('formats ISO week labels as Week N', () => {
+    expect(weekTitleLabel('2026-W28')).toBe('Week 28')
+    expect(weekTitleLabel('W28')).toBe('Week 28')
+  })
+})
+
+describe('formatConsensusHeading', () => {
+  it('wraps consensus in bold', () => {
+    expect(formatConsensusHeading('Neutral-Bullish')).toBe('**Neutral-Bullish**')
+  })
+})
+
 describe('buildHumanScoreMarkdown', () => {
-  it('renders a report with header, total and evidence', () => {
+  it('renders the W28 analyst-output structure', () => {
     const md = buildHumanScoreMarkdown(defaultReviewForm, {
       week: '2026-W24',
       consensus: 'Neutral-Bearish',
       aiSaid: { macro: 'Binary-risk' },
       total: 3,
     })
-    expect(md).toContain('# Human Score Report — 2026-W24')
+    expect(md).toContain('# Human Score Analyst Output — Week 24')
     expect(md).toContain('**Neutral-Bearish**')
     expect(md).toContain('**+3**')
-    expect(md).toContain('| Dimension | AI Said | Team Score | Team Reasoning |')
+    expect(md).toContain('## Five-Dimension Judgement')
+    expect(md).toContain('### 1. Macro / News Weight — Score: 0')
+    expect(md).toContain('| **Macro / News Weight** |')
+    expect(md).toContain('(Macro 0 + Technical 0 + Almanac 0 + AI Agreement 0 + Wild Card 0)')
     expect(md).toContain('* R3 Almanac Agent Output')
   })
 

@@ -8,6 +8,11 @@ from datetime import date
 from pathlib import Path
 
 from agents.paths import DATA_DIR
+from server.human_score import (
+    load_human_score_json,
+    render_human_score_markdown,
+    save_human_score as _save_human_score_files,
+)
 from server.utils import OUTPUTS_ROOT, artifact_path, parse_date
 
 DATA_ROOT = DATA_DIR
@@ -274,11 +279,37 @@ def _comparison_model(
     return model
 
 
+_EMPTY_CELLS = frozenset({"", "—", "-", "–", "n/a", "na"})
+
+
+def _is_empty_cell(value: object) -> bool:
+    return str(value or "").strip().lower() in _EMPTY_CELLS
+
+
+def _model_has_output(model: dict) -> bool:
+    """True when a comparison column has real content (skip unused/failed models)."""
+    for key in (
+        "consensus",
+        "spx",
+        "ndx",
+        "iwm",
+        "evidence",
+        "contradiction",
+        "invalidation",
+        "plainEnglish",
+    ):
+        if not _is_empty_cell(model.get(key)):
+            return True
+    return False
+
+
 def _consensus_result(models: list[dict]) -> tuple[str, int]:
     """Return the most common regime and the disagreement percentage."""
     counts: dict[str, int] = {}
     for model in models:
         regime = model["consensus"]
+        if _is_empty_cell(regime):
+            continue
         counts[regime] = counts.get(regime, 0) + 1
 
     final_consensus = "Uncertain"
@@ -311,7 +342,11 @@ def _parse_llm_comparison(stem: str) -> dict | None:
     models: list[dict] = []
     for index, name in enumerate(header):
         model = _comparison_model(name, index, rows, summaries)
-        models.append(model)
+        if _model_has_output(model):
+            models.append(model)
+
+    if not models:
+        return None
 
     final_consensus, disagreement_ratio = _consensus_result(models)
 
@@ -358,21 +393,42 @@ def _clean_consensus_label(body: str) -> str:
 
 
 def load_human_score(stem: str) -> dict | None:
-    """Parse data/human/human_score_{stem}.md into the frontend report shape."""
+    """Parse data/human/human_score_{stem} into the frontend report shape."""
     return _human_score(_require_stem(stem))
+
+
+def save_human_score(stem: str, report: dict) -> Path:
+    """Persist report JSON + MD under DATA_ROOT/human/."""
+    return _save_human_score_files(_require_stem(stem), report, data_root=DATA_ROOT)
 
 
 def _human_score(stem: str, pred: date | None = None) -> dict | None:
     """Same as load_human_score. Callers that already know the prediction date
     (load_archive_week) pass it in to avoid re-scanning the data tree."""
+    data = load_human_score_json(stem, data_root=DATA_ROOT)
     path = DATA_ROOT / "human" / f"human_score_{stem}.md"
-    text = _read_text(path)
-    if not text:
+    text = None if data is not None else _read_text(path)
+    if data is None and not text:
         return None
 
     if pred is None:
         pred = discover_archive_stems().get(stem) or _prediction_date_for_stem(stem)
     week = _label_for_stem(stem, pred)
+
+    if data is not None:
+        md = _read_text(path) or render_human_score_markdown({**data, "week": week})
+        return {
+            "form": data["form"],
+            "week": data.get("week") or week,
+            "predictionDate": pred.isoformat(),
+            "consensus": data.get("consensus") or "—",
+            "aiSaid": data.get("aiSaid") or {},
+            "total": data.get("total", 0),
+            "rawMarkdown": md,
+            "source": "archive",
+        }
+
+    assert text is not None  # missing file already returned above
 
     scores: dict[str, int] = {}
     reasoning: dict[str, str] = {}

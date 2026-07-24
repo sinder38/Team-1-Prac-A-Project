@@ -279,14 +279,19 @@ export function exampleIdlePipeline(week = EXAMPLE_CURRENT_WEEK, date = EXAMPLE_
   }
 }
 
-/** A fully-complete pipeline, used when viewing a saved week. */
-export function exampleSavedWeekPipeline(week, date, id = null) {
+/**
+ * Pipeline for a saved/archive week.
+ * `doneCount` = how many stages are already finished (default: all).
+ * For archives without HSR, pass 3 so calibration + human score stay pending.
+ */
+export function exampleSavedWeekPipeline(week, date, id = null, { doneCount = STAGE_DEFS.length } = {}) {
+  const finished = Math.max(0, Math.min(STAGE_DEFS.length, doneCount))
   return {
     id: id || null,
     isRunning: false,
-    currentStage: STAGE_DEFS.length - 1,
-    stages: exampleStages(STAGE_DEFS.length, -1, null, { stamp: false }),
-    accuracy: DEMO_FINAL_ACCURACY,
+    currentStage: Math.max(0, finished - 1),
+    stages: exampleStages(finished, -1, null, { stamp: false }),
+    accuracy: finished >= STAGE_DEFS.length ? DEMO_FINAL_ACCURACY : 0,
     lastRun: null,
     week,
     predictionDate: date,

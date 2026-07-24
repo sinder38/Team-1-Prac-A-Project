@@ -191,6 +191,18 @@ def test_get_archive_week(client):
     assert data["llmComparison"]["models"][0]["evidence"]
 
 
+def test_archive_llm_skips_empty_model_columns(client):
+    """W28 markdown still lists gpt-oss, but that column is all dashes — omit it."""
+    resp = client.get("/artifacts/archive?stem=W28")
+    if resp.status_code == 404:
+        return  # archive file optional in some checkouts
+    data = json.loads(resp.data)
+    names = [m["name"] for m in data["llmComparison"]["models"]]
+    assert names
+    assert not any("gpt-oss" in n.lower() for n in names)
+    assert any("hy3" in n.lower() for n in names)
+
+
 def test_get_archive_missing(client):
     resp = client.get("/artifacts/archive?stem=W99")
     assert resp.status_code == 404
@@ -211,3 +223,66 @@ def test_get_human_score_w25(client):
 def test_get_human_score_missing(client):
     resp = client.get("/artifacts/human-score?stem=W99")
     assert resp.status_code == 404
+
+
+def test_post_human_score_writes_file(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("server.archive.DATA_ROOT", tmp_path)
+    form = {
+        "scores": {
+            "macro": 0,
+            "technical": 1,
+            "almanac": 0,
+            "aiAgreement": 1,
+            "wildCard": -1,
+        },
+        "reasoning": {
+            "macro": "balanced",
+            "technical": "above EMAs",
+            "almanac": "mixed",
+            "aiAgreement": "majority agree",
+            "wildCard": "fed risk",
+        },
+        "humanCall": "Neutral",
+        "confidence": "Medium",
+        "overrideParagraph": "team view",
+        "wildCardInsight": "concentration risk",
+        "invalidation": "break support",
+        "evidence": {"almanac": True, "macro": True, "technical": False, "llm": True},
+    }
+    resp = client.post(
+        "/artifacts/human-score",
+        json={
+            "stem": "W99",
+            "week": "2026-W99",
+            "form": form,
+            "consensus": "Neutral",
+            "aiSaid": {
+                "macro": "mixed",
+                "technical": "bullish",
+                "almanac": "mixed",
+                "aiAgreement": "split",
+                "wildCard": "nothing specifically flagged",
+            },
+            "total": 1,
+        },
+    )
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data["ok"] is True
+    assert data["stem"] == "W99"
+
+    md_path = tmp_path / "human" / "human_score_W99.md"
+    json_path = tmp_path / "human" / "human_score_W99.json"
+    assert md_path.exists()
+    assert json_path.exists()
+    md = md_path.read_text(encoding="utf-8")
+    assert "Human Score Analyst Output" in md
+    assert "**Neutral**" in md
+    saved = json.loads(json_path.read_text(encoding="utf-8"))
+    assert saved["form"]["humanCall"] == "Neutral"
+    assert saved["total"] == 1
+
+
+def test_post_human_score_requires_form(client):
+    resp = client.post("/artifacts/human-score", json={"stem": "W99"})
+    assert resp.status_code == 400
