@@ -488,12 +488,15 @@ def _run_entry(run) -> dict:
     from agents.io import week_stem
 
     stem = run.week_stem or week_stem(run.prediction_date)
+    created = run.created_at
     return {
         "week": _label_for_stem(stem, run.prediction_date),
         "stem": stem,
         "prediction_date": run.prediction_date.isoformat(),
         "run_id": run.run_id,
         "source": run.source,
+        # ISO timestamp so the UI can show a readable "when" instead of run-ms06533c.
+        "created_at": created.isoformat() if created is not None else None,
     }
 
 
@@ -506,24 +509,30 @@ def list_archive_weeks() -> list[dict]:
 
 
 def list_all_weeks() -> list[dict]:
-    """Runtime run weeks, plus archive markdown weeks for any gaps."""
+    """Every runtime run (multiple run_ids per week), plus archive gaps."""
     with db_session() as session:
         runs = repo.list_runs(session)
 
-    by_week: dict[str, dict] = {}
-    # Runtime runs first; keep the newest per week.
+    entries: list[dict] = []
+    weeks_with_runs: set[str] = set()
+
     runtime = sorted(
-        (r for r in runs if r.source == "run" and r.week_stem),
-        key=lambda r: r.created_at,
+        (r for r in runs if r.source == "run"),
+        key=lambda r: (r.prediction_date, r.created_at, r.run_id or ""),
     )
     for run in runtime:
         entry = _run_entry(run)
-        by_week[entry["week"]] = entry
+        entries.append(entry)
+        weeks_with_runs.add(entry["week"])
 
     for run in runs:
         if run.source != "archive":
             continue
         entry = _run_entry(run)
-        by_week.setdefault(entry["week"], entry)
+        if entry["week"] not in weeks_with_runs:
+            entries.append(entry)
 
-    return [by_week[week] for week in sorted(by_week)]
+    entries.sort(
+        key=lambda e: (_week_sort_value(e), e.get("created_at") or "", e.get("run_id") or "")
+    )
+    return entries

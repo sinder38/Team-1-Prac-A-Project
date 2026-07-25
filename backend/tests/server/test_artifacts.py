@@ -111,8 +111,11 @@ def test_list_weeks_across_stems(client, app):
     assert "2026-W29" in by_week
     assert by_week["2026-W28"]["run_id"] == "run-aaa"
     assert by_week["2026-W28"]["prediction_date"] == "2026-07-10"
-    assert by_week["2026-W29"]["run_id"] == "run-ccc"
     assert by_week["2026-W28"]["source"] == "run"
+    assert by_week["2026-W28"]["created_at"]
+    # Multiple pipeline runs per week are listed separately (not collapsed).
+    w29_runs = {w["run_id"] for w in weeks if w["week"] == "2026-W29"}
+    assert w29_runs == {"run-bbb", "run-ccc"}
 
 
 def test_list_weeks_empty(client):
@@ -163,3 +166,33 @@ def test_get_human_score_w25(archive_client):
 def test_get_human_score_missing(archive_client):
     resp = archive_client.get("/artifacts/human-score?stem=W99")
     assert resp.status_code == 404
+
+
+def test_runtime_human_score_roundtrip(client, app):
+    seed_runtime_run(app, run_id="run-hsr-1", prediction_date=date(2026, 7, 20))
+    report = {
+        "week": "2026-W30",
+        "predictionDate": "2026-07-20",
+        "total": 3,
+        "consensus": "Neutral",
+        "form": {
+            "humanCall": "Neutral-Bullish",
+            "confidence": "Medium",
+            "scores": {"technical": 1, "almanac": 1, "macro": 1, "aiAgreement": 0, "wildCard": 0},
+        },
+    }
+
+    missing = client.get("/artifacts/human-score?run_id=run-hsr-1")
+    assert missing.status_code == 404
+
+    saved = client.post(
+        "/artifacts/human-score",
+        json={"run_id": "run-hsr-1", "report": report},
+    )
+    assert saved.status_code == 200
+
+    loaded = client.get("/artifacts/human-score?run_id=run-hsr-1")
+    assert loaded.status_code == 200
+    data = json.loads(loaded.data)
+    assert data["form"]["humanCall"] == "Neutral-Bullish"
+    assert data["total"] == 3

@@ -284,6 +284,17 @@ def get_archive_human_score(session: Session, week_stem: str) -> HumanScore | No
     )
 
 
+def get_runtime_human_score(session: Session, run_id: str) -> HumanScore | None:
+    return session.scalar(
+        select(HumanScore)
+        .join(PredictionRun, HumanScore.run_id_fk == PredictionRun.id)
+        .where(
+            PredictionRun.run_id == run_id,
+            PredictionRun.source == SOURCE_RUN,
+        )
+    )
+
+
 def list_runs(session: Session, source: str | None = None) -> list[PredictionRun]:
     stmt = select(PredictionRun)
     if source is not None:

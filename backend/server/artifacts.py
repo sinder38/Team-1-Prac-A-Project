@@ -92,12 +92,21 @@ def get_archive():
 
 @artifacts_bp.route("/human-score", methods=["GET"])
 def get_human_score():
+    """Archive by ``stem``, or a runtime run by ``run_id``."""
+    run_id = request.args.get("run_id")
+    if run_id:
+        with db_session() as session:
+            row = repo.get_runtime_human_score(session, str(run_id))
+            if row is None:
+                return err(f"No human score for run_id={run_id!r}", 404)
+            return jsonify(row.payload), 200
+
     raw_stem = request.args.get("stem") or request.args.get("week")
     stem, error = _normalize_week_stem(raw_stem)
     if error:
         return error
     if stem is None:
-        return err("Missing required query param: stem (e.g. W25)", 400)
+        return err("Missing required query param: run_id or stem (e.g. W25)", 400)
     try:
         payload = load_human_score(stem)
     except ValueError as exc:
@@ -105,6 +114,34 @@ def get_human_score():
     if payload is None:
         return err(f"No human score archive for {stem}", 404)
     return jsonify(payload), 200
+
+
+@artifacts_bp.route("/human-score", methods=["POST"])
+def save_human_score():
+    """Persist a human-score report on a runtime run (keyed by run_id)."""
+    body = request.get_json(silent=True) or {}
+    run_id = body.get("run_id")
+    report = body.get("report")
+    if not run_id or not isinstance(report, Mapping):
+        return err("Body must include run_id and report", 400)
+
+    with db_session() as session:
+        run = repo.get_runtime_run(session, str(run_id))
+        if run is None:
+            return err(f"Unknown run_id={run_id!r}", 404)
+        payload = dict(report)
+        payload.pop("rawMarkdown", None)
+        form = payload.get("form") or {}
+        repo.upsert_human_score(
+            session,
+            run,
+            payload,
+            total=payload.get("total"),
+            consensus=payload.get("consensus"),
+            human_call=form.get("humanCall"),
+            confidence=form.get("confidence"),
+        )
+    return jsonify({"ok": True, "run_id": run_id}), 200
 
 def _stem_from_args() -> tuple[str, tuple | None]:
     """Extract week_stem from prediction_date query param.

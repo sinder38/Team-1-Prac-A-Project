@@ -1,14 +1,11 @@
 /**
  * Human Score report — a finished-report layout with blanks to fill in.
  * Modelled on data/human/human_score_W*.md. Submitting completes the final
- * pipeline stage.
- *
- * TODO (backend task): submitHumanScore() → POST /api/validation/human-score
+ * pipeline stage (persisted by run_id in onComplete).
  */
 import { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { AlertCircle, Send, Copy, Check } from 'lucide-react'
-import { submitHumanScore, HUMAN_SCORE_DECISION } from '../../api'
 import { defaultReviewForm } from '../../lib/defaults'
 import {
   HUMAN_DIMENSIONS,
@@ -52,8 +49,8 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
 
   async function submit() {
     try {
-      await submitHumanScore(form, HUMAN_SCORE_DECISION.SUBMITTED)
-      onComplete?.(form)
+      await onComplete?.(form)
+      setStatus('ok')
     } catch {
       setStatus('fail')
     }

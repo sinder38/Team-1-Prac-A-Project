@@ -119,6 +119,7 @@ export async function getAvailableWeeks() {
     runId: w.run_id || null,
     stem: w.stem,
     source: w.source || (w.run_id ? 'run' : 'archive'),
+    createdAt: w.created_at || null,
   }))
   return { weeks }
 }
@@ -134,7 +135,11 @@ export async function getArchiveOutputs(stem) {
   }
 }
 
-export async function getHumanScore(stem) {
+export async function getHumanScore({ stem, runId } = {}) {
+  if (runId) {
+    return getJson(`/artifacts/human-score?run_id=${encodeURIComponent(runId)}`)
+  }
+  if (!stem) throw new Error('stem or runId is required')
   return getJson(`/artifacts/human-score?stem=${encodeURIComponent(stem)}`)
 }
 
@@ -176,11 +181,11 @@ export async function getAgentOutputs({
   }
 
   let humanScoreReport = null
-  if (stem) {
+  if (runId) {
     try {
-      humanScoreReport = await getHumanScore(stem)
+      humanScoreReport = await getHumanScore({ runId })
     } catch {
-      // No archived human score for this week.
+      // No human score saved for this run yet.
     }
   }
 

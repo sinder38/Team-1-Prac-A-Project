@@ -19,6 +19,7 @@ export default function App() {
   const weekPicker = {
     predictionDate: pipeline.predictionDate,
     selectedWeek: pipeline.selectedWeek,
+    selectedRunId: pipeline.selectedRunId,
     savedWeeks: pipeline.savedWeeks,
     onDateChange: pipeline.onDateChange,
     onWeekSelect: pipeline.onWeekSelect,
