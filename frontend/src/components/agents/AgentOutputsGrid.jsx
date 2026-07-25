@@ -8,6 +8,18 @@ import LlmComparisonPanel from './LlmComparisonPanel'
 
 const AGENT_IDS = ['almanac', 'macro', 'technical']
 
+function LlmEmptyState() {
+  return (
+    <div className="rounded-xl border border-dashed border-gray-200 bg-white shadow-md px-4 py-8 text-center">
+      <p className="text-sm font-medium text-gray-900">LLM Responses</p>
+      <p className="text-sm text-gray-500 mt-1">No model outputs for this run yet</p>
+      <p className="text-xs text-gray-400 mt-1">
+        Run stage 3 (LLM API Calls), then the consensus table appears here
+      </p>
+    </div>
+  )
+}
+
 export default function AgentOutputsGrid({ outputs = {} }) {
   const [open, setOpen] = useState({ llm: true })
   const hasAny = AGENT_IDS.some(id => outputs[id])
@@ -42,11 +54,21 @@ export default function AgentOutputsGrid({ outputs = {} }) {
         </div>
       )}
 
-      <LlmComparisonPanel
-        comparison={outputs.llmComparison}
-        expanded={!!open.llm}
-        onToggle={() => setOpen(prev => ({ ...prev, llm: !prev.llm }))}
-      />
+      <div>
+        <div className="mb-2">
+          <h3 className="text-sm font-medium text-gray-900">LLM Responses</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Consensus and per-model comparison</p>
+        </div>
+        {outputs.llmComparison ? (
+          <LlmComparisonPanel
+            comparison={outputs.llmComparison}
+            expanded={!!open.llm}
+            onToggle={() => setOpen(prev => ({ ...prev, llm: !prev.llm }))}
+          />
+        ) : (
+          <LlmEmptyState />
+        )}
+      </div>
     </div>
   )
 }

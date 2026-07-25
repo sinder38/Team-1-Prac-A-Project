@@ -32,3 +32,29 @@ export const defaultReviewForm = {
   invalidation: '',
   evidence: { almanac: true, macro: true, technical: true, llm: true },
 }
+
+function emptyFinalAsset() {
+  return { direction: 'FLAT', rangeLow: '', rangeHigh: '', confidence: 'MEDIUM' }
+}
+
+export const defaultFinalPredictionForm = {
+  regime: '',
+  assets: {
+    spx: emptyFinalAsset(),
+    ndx: emptyFinalAsset(),
+    iwm: emptyFinalAsset(),
+    gold: emptyFinalAsset(),
+    wti: emptyFinalAsset(),
+    yield10y: emptyFinalAsset(),
+    vix: emptyFinalAsset(),
+    btc: emptyFinalAsset(),
+  },
+  leadingSector: '',
+  laggingSector: '',
+  evidence1: '',
+  evidence2: '',
+  evidence3: '',
+  contradiction: '',
+  wildCard: '',
+  invalidation: '',
+}

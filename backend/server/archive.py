@@ -341,6 +341,185 @@ def _section_body(text: str, title: str) -> str:
     return body
 
 
+# Labels in Team1 prediction tables → frontend asset keys.
+_FP_ASSET_KEYS = {
+    "s&p 500 (spx)": "spx",
+    "nasdaq 100 (ndx)": "ndx",
+    "russell 2000 (iwm)": "iwm",
+    "gold": "gold",
+    "wti crude oil": "wti",
+    "10-year yield": "yield10y",
+    "vix": "vix",
+    "bitcoin": "btc",
+}
+
+_FP_FILED_RE = re.compile(
+    r"FILED:\s*(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})",
+    re.I,
+)
+_MONTH_NUM = {
+    "jan": 1,
+    "feb": 2,
+    "mar": 3,
+    "apr": 4,
+    "may": 5,
+    "jun": 6,
+    "jul": 7,
+    "aug": 8,
+    "sep": 9,
+    "oct": 10,
+    "nov": 11,
+    "dec": 12,
+}
+
+
+def _final_prediction_path(stem: str, pred: date | None = None) -> Path | None:
+    """Resolve data/final prediction/prediction_*_{stem}_Team1.md (either separator)."""
+    stem = _require_stem(stem)
+    week = stem  # W29
+    pred_dir = DATA_ROOT / "final prediction"
+    years: list[int] = []
+    if pred is not None:
+        years.append(pred.year)
+    today_year = date.today().year
+    for year in (today_year, today_year - 1):
+        if year not in years:
+            years.append(year)
+
+    names: list[str] = []
+    for year in years:
+        names.append(f"prediction_{year}-{week}_Team1.md")
+        names.append(f"prediction_{year}_{week}_Team1.md")
+    names.append(f"prediction_{week}_Team1.md")
+
+    for name in names:
+        path = pred_dir / name
+        if path.exists():
+            return path
+    return None
+
+
+def _strip_md_cell(cell: str) -> str:
+    return re.sub(r"[*_]", "", cell).strip()
+
+
+def _parse_fp_assets(text: str) -> dict[str, dict]:
+    assets: dict[str, dict] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        if re.match(r"^\|\s*:?-{3,}", stripped):
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if len(cells) < 4:
+            continue
+        label = _strip_md_cell(cells[0]).lower()
+        if label in ("asset", ""):
+            continue
+        key = _FP_ASSET_KEYS.get(label)
+        if not key:
+            continue
+        assets[key] = {
+            "direction": _strip_md_cell(cells[1]) or "FLAT",
+            "range": cells[2].strip() or "",
+            "confidence": _strip_md_cell(cells[3]) or "MEDIUM",
+        }
+    return assets
+
+
+def _parse_fp_evidence(body: str) -> tuple[str, str, str]:
+    items = re.findall(r"(?m)^\s*\d+\.\s+(.*?)(?=^\s*\d+\.\s+|\Z)", body, re.S)
+    cleaned = [re.sub(r"\s+", " ", item).strip() for item in items]
+    while len(cleaned) < 3:
+        cleaned.append("")
+    return cleaned[0], cleaned[1], cleaned[2]
+
+
+def _filed_iso_from_header(text: str, fallback: date | None) -> str | None:
+    first = text.splitlines()[0] if text else ""
+    m = _FP_FILED_RE.search(first)
+    if not m:
+        return fallback.isoformat() if fallback else None
+    day, mon, year = int(m.group(1)), m.group(2).lower()[:3], int(m.group(3))
+    month = _MONTH_NUM.get(mon)
+    if not month:
+        return fallback.isoformat() if fallback else None
+    try:
+        return date(year, month, day).isoformat()
+    except ValueError:
+        return fallback.isoformat() if fallback else None
+
+
+def _strip_md_tables(body: str) -> str:
+    """Drop markdown tables that sit inside a section (e.g. asset table under REGIME)."""
+    lines: list[str] = []
+    for line in body.splitlines():
+        if line.strip().startswith("|"):
+            break
+        lines.append(line)
+    return "\n".join(lines).strip()
+
+
+def _unwrap_bold_paragraph(body: str) -> str:
+    """Turn `**Neutral-Bullish.** rest` into plain text for the report card."""
+    body = body.strip()
+    if not body.startswith("**"):
+        return body
+    # Unwrap a leading **...** span (may be only the first sentence).
+    m = re.match(r"^\*\*(.+?)\*\*\s*(.*)$", body, re.S)
+    if not m:
+        return body
+    head, rest = m.group(1).strip(), m.group(2).strip()
+    return f"{head} {rest}".strip() if rest else head
+
+
+def _parse_final_prediction(stem: str, pred: date | None = None) -> dict | None:
+    """Parse Team1 consensus brief markdown into the frontend report shape."""
+    if pred is None:
+        pred = discover_archive_stems().get(stem) or _prediction_date_for_stem(stem)
+    path = _final_prediction_path(stem, pred)
+    text = _read_text(path) if path else None
+    if not text:
+        return None
+
+    week = _label_for_stem(stem, pred)
+    filed = _filed_iso_from_header(text, pred)
+
+    evidence_body = _section_body(text, "KEY EVIDENCE (3 points)")
+    if not evidence_body:
+        evidence_body = _section_body(text, "KEY EVIDENCE")
+    e1, e2, e3 = _parse_fp_evidence(evidence_body)
+
+    contradiction = _section_body(
+        text, "KEY CONTRADICTION (Why Confidence Is MEDIUM, Not HIGH)"
+    ) or _section_body(text, "KEY CONTRADICTION")
+
+    regime = _unwrap_bold_paragraph(_strip_md_tables(_section_body(text, "REGIME")))
+
+    form = {
+        "regime": regime,
+        "assets": _parse_fp_assets(text),
+        "leadingSector": _unwrap_bold_paragraph(_section_body(text, "LEADING SECTOR")),
+        "laggingSector": _unwrap_bold_paragraph(_section_body(text, "LAGGING SECTOR")),
+        "evidence1": e1,
+        "evidence2": e2,
+        "evidence3": e3,
+        "contradiction": contradiction,
+        "wildCard": _section_body(text, "HUMAN OVERRIDE / WILD CARD"),
+        "invalidation": _section_body(text, "INVALIDATION CONDITIONS"),
+    }
+
+    return {
+        "form": form,
+        "week": week,
+        "predictionDate": filed,
+        "filedDate": filed,
+        "markdown": text,
+        "source": "archive",
+    }
+
+
 def _parse_score_cell(cell: str) -> int:
     cleaned = re.sub(r"[*_]", "", cell).strip()
     m = _SCORE_RE.search(cleaned)
@@ -465,6 +644,19 @@ def load_archive_week(stem: str) -> dict | None:
         human_row = repo.get_archive_human_score(session, stem)
         human = human_row.payload if human_row else None
 
+    # DB miss (e.g. data/llm was sparse-checkout excluded at ingest) → parse MD.
+    if comparison is None:
+        try:
+            comparison = _parse_llm_comparison(stem)
+        except Exception:  # noqa: BLE001 - keep archive load resilient
+            comparison = None
+
+    final_prediction = None
+    try:
+        final_prediction = _parse_final_prediction(stem, pred)
+    except Exception:  # noqa: BLE001 - keep archive load resilient
+        final_prediction = None
+
     return {
         "week": _label_for_stem(stem, pred),
         "stem": stem,
@@ -476,6 +668,7 @@ def load_archive_week(stem: str) -> dict | None:
         "evidence": _agent_card("evidence", "Evidence Agent", cards["evidence"]),
         "llmComparison": comparison,
         "humanScoreReport": human,
+        "finalPrediction": final_prediction,
     }
 
 

@@ -17,6 +17,7 @@ from server.db.models import (
     SOURCE_RUN,
     AgentOutput,
     DeltaReport,
+    FinalPrediction,
     HumanScore,
     LLMComparison,
     LLMOutput,
@@ -325,6 +326,48 @@ def get_runtime_human_score(session: Session, run_id: str) -> HumanScore | None:
             PredictionRun.run_id == run_id,
             PredictionRun.source == SOURCE_RUN,
         )
+    )
+
+
+def upsert_final_prediction(
+    session: Session,
+    run: PredictionRun,
+    payload: dict,
+) -> FinalPrediction:
+    row = session.scalar(
+        select(FinalPrediction).where(FinalPrediction.run_id_fk == run.id)
+    )
+    if row is None:
+        row = FinalPrediction(run_id_fk=run.id)
+        session.add(row)
+    row.payload = payload
+    session.flush()
+    return row
+
+
+def get_runtime_final_prediction(session: Session, run_id: str) -> FinalPrediction | None:
+    return session.scalar(
+        select(FinalPrediction)
+        .join(PredictionRun, FinalPrediction.run_id_fk == PredictionRun.id)
+        .where(
+            PredictionRun.run_id == run_id,
+            PredictionRun.source == SOURCE_RUN,
+        )
+    )
+
+
+def get_runtime_run_with_final_prediction_for_week(
+    session: Session, week_stem: str
+) -> PredictionRun | None:
+    """Any runtime run in this week that already has a locked final prediction."""
+    return session.scalar(
+        select(PredictionRun)
+        .join(FinalPrediction, FinalPrediction.run_id_fk == PredictionRun.id)
+        .where(
+            PredictionRun.week_stem == week_stem,
+            PredictionRun.source == SOURCE_RUN,
+        )
+        .limit(1)
     )
 
 

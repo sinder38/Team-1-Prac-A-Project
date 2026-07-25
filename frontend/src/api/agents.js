@@ -3,6 +3,7 @@
  */
 import { getJson } from './http'
 import { DEFAULT_HORIZON_DAYS, getLlmModels } from './pipeline'
+import { getFinalPrediction } from './finalPrediction'
 
 const CONFIDENCE_SCORE = { Low: 40, 'Low-Medium': 55, Medium: 65, High: 85 }
 
@@ -132,6 +133,7 @@ export async function getArchiveOutputs(stem) {
     macro: data.macro || null,
     llmComparison: data.llmComparison || null,
     humanScoreReport: data.humanScoreReport || null,
+    finalPrediction: data.finalPrediction || null,
   }
 }
 
@@ -164,28 +166,46 @@ export async function getAgentOutputs({
   ])
 
   let llmComparison = null
-  if (includeLlm) {
-    const modelList = await getLlmModels()
-    const models = []
-    await Promise.all(
-      modelList.map(async ({ key, name }) => {
-        try {
-          const data = await getJson(`/artifacts/llm?${qs}&model=${key}`)
-          models.push({ name, data })
-        } catch {
-          // Skip models that failed or were not run.
-        }
-      }),
-    )
-    if (models.length) llmComparison = buildLlmComparison(models)
+  if (includeLlm && runId) {
+    try {
+      const packed = await getJson(
+        `/artifacts/llm-comparison?run_id=${encodeURIComponent(runId)}`,
+      )
+      if (packed.comparison) {
+        llmComparison = packed.comparison
+      } else if (Array.isArray(packed.models) && packed.models.length) {
+        llmComparison = buildLlmComparison(packed.models)
+      }
+    } catch {
+      // Fall back to per-model fetches (older servers / partial runs).
+      const modelList = await getLlmModels()
+      const models = []
+      await Promise.all(
+        modelList.map(async ({ key, name }) => {
+          try {
+            const data = await getJson(`/artifacts/llm?${qs}&model=${key}`)
+            models.push({ name, data })
+          } catch {
+            // Skip models that failed or were not run.
+          }
+        }),
+      )
+      if (models.length) llmComparison = buildLlmComparison(models)
+    }
   }
 
   let humanScoreReport = null
+  let finalPrediction = null
   if (runId) {
     try {
       humanScoreReport = await getHumanScore({ runId })
     } catch {
       // No human score saved for this run yet.
+    }
+    try {
+      finalPrediction = await getFinalPrediction(runId)
+    } catch {
+      // No final prediction for this run yet.
     }
   }
 
@@ -195,5 +215,6 @@ export async function getAgentOutputs({
     macro: macroCard(macro),
     llmComparison,
     humanScoreReport,
+    finalPrediction,
   }
 }

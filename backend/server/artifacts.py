@@ -41,6 +41,38 @@ def get_llm():
     )
 
 
+@artifacts_bp.route("/llm-comparison", methods=["GET"])
+def get_llm_comparison():
+    """All LLM outputs for a runtime run (or a stored comparison payload)."""
+    run_id = request.args.get("run_id")
+    if not run_id:
+        return err("Missing required query param: run_id", 400)
+
+    with db_session() as session:
+        run = repo.get_runtime_run(session, str(run_id))
+        if run is None:
+            return err(f"Unknown run_id={run_id!r}", 404)
+
+        stored = repo.llm_comparison_for_run(session, run)
+        models = stored.get("models") if isinstance(stored, dict) else None
+        if isinstance(models, list) and models:
+            return jsonify({"comparison": stored, "source": "stored"}), 200
+
+        rows = repo.llm_outputs_for_run(session, run)
+        if not rows:
+            return err(f"No LLM outputs for run_id={run_id!r}", 404)
+
+        models = [
+            {
+                "slug": row.model_slug,
+                "name": (row.payload or {}).get("model_name") or row.model_slug,
+                "data": row.payload,
+            }
+            for row in rows
+        ]
+    return jsonify({"models": models, "source": "outputs"}), 200
+
+
 @artifacts_bp.route("/runs", methods=["GET"])
 def get_runs():
     raw_date = request.args.get("prediction_date")
@@ -142,6 +174,61 @@ def save_human_score():
             confidence=form.get("confidence"),
         )
     return jsonify({"ok": True, "run_id": run_id}), 200
+
+
+@artifacts_bp.route("/final-prediction", methods=["GET"])
+def get_final_prediction():
+    run_id = request.args.get("run_id")
+    if not run_id:
+        return err("Missing required query param: run_id", 400)
+    with db_session() as session:
+        row = repo.get_runtime_final_prediction(session, str(run_id))
+        if row is None:
+            return err(f"No final prediction for run_id={run_id!r}", 404)
+        return jsonify(row.payload), 200
+
+
+@artifacts_bp.route("/final-prediction", methods=["POST"])
+def save_final_prediction():
+    """Persist final prediction on a runtime run; also write Team1 markdown for delta."""
+    body = request.get_json(silent=True) or {}
+    run_id = body.get("run_id")
+    report = body.get("report")
+    if not run_id or not isinstance(report, Mapping):
+        return err("Body must include run_id and report", 400)
+
+    payload = dict(report)
+    markdown = payload.get("markdown")
+    week = payload.get("week")
+
+    with db_session() as session:
+        run = repo.get_runtime_run(session, str(run_id))
+        if run is None:
+            return err(f"Unknown run_id={run_id!r}", 404)
+        stem = run.week_stem or week_stem(run.prediction_date)
+        # One locked Team1 brief per week (delta reads a single file). Same run
+        # may re-submit; a different run for the same week is rejected.
+        owner = repo.get_runtime_run_with_final_prediction_for_week(session, stem)
+        if owner is not None and owner.run_id != run.run_id:
+            return err(
+                f"Week {stem} already has a final prediction "
+                f"from run_id={owner.run_id!r}",
+                409,
+            )
+        repo.upsert_final_prediction(session, run, payload)
+
+    written = None
+    if isinstance(markdown, str) and markdown.strip() and isinstance(week, str) and week:
+        from agents.paths import DATA_DIR
+
+        out_dir = DATA_DIR / "final prediction"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        path = out_dir / f"prediction_{week}_Team1.md"
+        path.write_text(markdown, encoding="utf-8")
+        written = str(path)
+
+    return jsonify({"ok": True, "run_id": run_id, "path": written}), 200
+
 
 def _stem_from_args() -> tuple[str, tuple | None]:
     """Extract week_stem from prediction_date query param.

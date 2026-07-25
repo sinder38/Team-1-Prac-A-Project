@@ -59,8 +59,10 @@ export default function App() {
         controls={controls}
         onNavigate={setPage}
         onCompleteReview={pipeline.completeReview}
+        onCompleteFinalPrediction={pipeline.completeFinalPrediction}
         weekPicker={weekPicker}
         humanScoreReport={pipeline.humanScoreReport}
+        finalPrediction={pipeline.finalPrediction}
       />
     ),
     charts: <ChartsPage />,
