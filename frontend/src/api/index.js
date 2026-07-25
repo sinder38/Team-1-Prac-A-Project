@@ -2,7 +2,7 @@
  * Backend API layer. Pipeline stages, artifacts, calibration, and market data
  * use Flask. Human-score submission is still stored by the frontend.
  */
-export { getStageLogs, getLlmModels, runStage, DEFAULT_HORIZON_DAYS } from './pipeline'
+export { getStageLogs, getLlmModels, runStage, exportArtifacts, DEFAULT_HORIZON_DAYS } from './pipeline'
 
 export {
   getAvailableWeeks,

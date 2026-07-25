@@ -11,6 +11,7 @@ import {
   getLlmModels,
   getStageLogs,
   runStage as apiRunStage,
+  exportArtifacts as apiExportArtifacts,
   submitHumanScore,
   DEFAULT_HORIZON_DAYS,
 } from '../api'
@@ -128,13 +129,8 @@ export function usePipeline() {
   const [error, setError] = useState(null)
   const [availableModels, setAvailableModels] = useState([])
   const [selectedModels, setSelectedModels] = useState(null)
-  const [providerMode, setProviderModeState] = useState(DEFAULT_PROVIDER_MODE)
-  // 'new' = idle/live run; 'archive' = viewing a saved week/run
-  const [weekPickerMode, setWeekPickerMode] = useState('new')
-  // Calendar-chosen week kept in the selector after switching to a past run
-  // (even if that week has never been run yet).
-  const [newPredictionDate, setNewPredictionDate] = useState(todayIso)
-  const newWeek = dateToWeekLabel(newPredictionDate)
+  const [exporting, setExporting] = useState(false)
+  const [exportStatus, setExportStatus] = useState(null)
 
   // Keep Logs "Run ID" in sync for live runs (pipeline.id === API runId).
   // Archive weeks set pipeline.id to archive-WXX separately without changing API runId.
@@ -221,6 +217,7 @@ export function usePipeline() {
 
   function resetRun() {
     setError(null)
+    setExportStatus(null)
     const nextId = makeRunId()
     setRunId(nextId)
     setPipeline(prev => ({
@@ -324,9 +321,48 @@ export function usePipeline() {
     return runStage(doneCount)
   }
 
-  // Completing the human report marks the final stage done and persists by run_id.
+  // Export the current run's stored data to data/<agent>/*.md. Archive weeks are
+  // keyed by stem; live/saved runs by their real run id.
+  const canExport = doneCount > 0 && !isRunning && !exporting
+
+  async function exportArtifacts() {
+    if (!canExport) return
+    setExportStatus(null)
+    setExporting(true)
+    try {
+      const isArchive = pipeline.id?.startsWith('archive-')
+      const stem = isArchive ? currentWeek?.split('-').pop() : undefined
+      const data = await apiExportArtifacts({ runId, stem })
+      const written = data.written ?? []
+      setExportStatus(
+        written.length
+          ? { tone: 'success', message: `Exported ${written.length} file(s) to data/`, files: written }
+          : { tone: 'error', message: 'No artifacts found to export for this run.' },
+      )
+    } catch (err) {
+      setExportStatus({ tone: 'error', message: errorMessage(err, 'Export failed') })
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  // Completing the human report marks the final stage done. Persists the report
+  // to the backend DB first (so it can be exported as markdown); if that fails,
+  // the error propagates and the stage is not marked complete.
   async function completeReview(form) {
     if (!form) return
+    const report = buildHumanScoreReport(form, { week: currentWeek, outputs, predictionDate })
+
+    await submitHumanScore({
+      predictionDate,
+      runId,
+      horizonDays: DEFAULT_HORIZON_DAYS,
+      week: currentWeek,
+      form,
+      consensus: report?.consensus,
+      aiSaid: report?.aiSaid,
+      total: report?.total,
+    })
 
     const report = {
       ...buildHumanScoreReport(form, { week: currentWeek, outputs, predictionDate }),
@@ -357,7 +393,7 @@ export function usePipeline() {
     setSelectedRunId(runId)
     setWeekPickerMode('archive')
     setHumanScoreReports(prev => {
-      const next = { ...prev, [key]: report }
+      const next = { ...prev, [currentWeek]: report }
       writeStoredReports(next)
       return next
     })
@@ -372,9 +408,7 @@ export function usePipeline() {
 
   function onDateChange(date) {
     setError(null)
-    setWeekPickerMode('new')
-    setSelectedRunId(null)
-    setNewPredictionDate(date)
+    setExportStatus(null)
     setPredictionDate(date)
     const week = dateToWeekLabel(date)
     setSelectedWeek(week)
@@ -389,7 +423,7 @@ export function usePipeline() {
   // real artifacts — calibration (4) and human score (5) stay pending until run.
   async function onWeekSelect(entry) {
     setError(null)
-    setWeekPickerMode('archive')
+    setExportStatus(null)
     setSelectedWeek(entry.week)
     setSelectedRunId(entry.runId || null)
     setPredictionDate(entry.predictionDate)
@@ -498,5 +532,9 @@ export function usePipeline() {
     runNext,
     resetRun,
     completeReview,
+    exportArtifacts,
+    exporting,
+    exportStatus,
+    canExport,
   }
 }

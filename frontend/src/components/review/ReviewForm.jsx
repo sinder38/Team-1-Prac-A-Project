@@ -1,7 +1,8 @@
 /**
  * Human Score report — a finished-report layout with blanks to fill in.
  * Modelled on data/human/human_score_W*.md. Submitting completes the final
- * pipeline stage (persisted by run_id in onComplete).
+ * pipeline stage; onComplete (usePipeline.completeReview) persists the report
+ * to the backend via POST /stages/human.
  */
 import { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
@@ -49,8 +50,9 @@ export default function ReviewForm({ outputs = {}, week = '—', aiComplete = fa
 
   async function submit() {
     try {
+      // usePipeline.completeReview persists the report to the backend (POST
+      // /stages/human) and then marks the stage complete.
       await onComplete?.(form)
-      setStatus('ok')
     } catch {
       setStatus('fail')
     }
