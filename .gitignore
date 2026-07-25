@@ -16,3 +16,4 @@ __pycache__
 
 # Outputs are runtime only
 data/outputs
+data/predictions.db
