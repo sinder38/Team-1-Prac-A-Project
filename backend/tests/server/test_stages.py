@@ -186,3 +186,72 @@ def test_list_models(client):
     keys = {m["key"] for m in models}
     assert "llama3.2-1b" in keys
     assert "nemotron" not in keys
+
+
+# --- POST /stages/human ------------------------------------------------------
+
+_HUMAN_FORM = {
+    "scores": {"macro": 0, "technical": 1, "almanac": -1, "aiAgreement": 1, "wildCard": 1},
+    "reasoning": {
+        "macro": "Balanced macro.",
+        "technical": "Bullish across indices.",
+        "almanac": "June midterm weakness.",
+        "aiAgreement": "4 of 4 models agree.",
+        "wildCard": "Tech concentration risk.",
+    },
+    "humanCall": "Neutral-Bullish",
+    "confidence": "Medium",
+    "overrideParagraph": "We agree cautiously.",
+    "wildCardInsight": "Leadership concentrated in tech.",
+    "invalidation": "Break below key support.",
+    "evidence": {"almanac": True, "macro": True, "technical": True, "llm": True},
+}
+
+
+def test_post_human_persists_and_exports(client):
+    resp = client.post("/stages/human", json={
+        "prediction_date": "2026-06-21",
+        "run_id": "run-h",
+        "horizon_days": 7,
+        "week": "W25",
+        "form": _HUMAN_FORM,
+        "consensus": "Uncertain / Neutral",
+        "aiSaid": {"macro": "Binary-risk"},
+        "total": 2,
+    })
+    assert resp.status_code == 200
+    body = json.loads(resp.data)
+    assert body["ok"] is True
+    assert body["week"] == "W25"
+    assert body["total"] == 2
+
+    # The stored report is now exportable as human_score_W25.md.
+    export = client.post("/export", json={"run_id": "run-h", "write": False})
+    assert export.status_code == 200
+    arts = json.loads(export.data)["artifacts"]
+    hs = next(a for a in arts if a["agent_type"] == "human_score")
+    assert hs["filename"] == "human_score_W25.md"
+    md = hs["markdown"]
+    assert "# Human Score Analyst Output — Week 25" in md
+    assert "## Five-Dimension Judgement" in md
+    assert "**+2**" in md
+    assert "Neutral-Bullish" in md
+
+
+def test_post_human_computes_total_when_missing(client):
+    resp = client.post("/stages/human", json={
+        "prediction_date": "2026-06-21",
+        "run_id": "run-h2",
+        "form": _HUMAN_FORM,
+    })
+    assert resp.status_code == 200
+    # 0 + 1 - 1 + 1 + 1 = 2
+    assert json.loads(resp.data)["total"] == 2
+
+
+def test_post_human_requires_form(client):
+    resp = client.post("/stages/human", json={
+        "prediction_date": "2026-06-21",
+        "run_id": "run-h3",
+    })
+    assert resp.status_code == 400

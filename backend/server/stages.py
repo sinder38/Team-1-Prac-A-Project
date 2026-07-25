@@ -348,3 +348,74 @@ def post_llm():
         )
         repo.upsert_llm_output(session, run, model_key, _jsonable(output_dict))
     return jsonify(_jsonable(output_dict)), 200
+
+
+def _human_total(scores: dict) -> int:
+    keys = ("macro", "technical", "almanac", "aiAgreement", "wildCard")
+    return sum(int(scores.get(k) or 0) for k in keys)
+
+
+@stages_bp.route("/human", methods=["POST"])
+def post_human():
+    """Persist the team human-score report for a run into the DB.
+
+    Stage 5 (the human report) is submitted from the frontend. Storing it here
+    makes it real backend data — so it is served on archive reads and can be
+    exported to ``data/human/human_score_<stem>.md`` like every other artifact.
+    """
+    body = request.get_json(force=True) or {}
+    try:
+        require_fields(body, "prediction_date", "run_id", "form")
+        prediction_date = parse_date(body["prediction_date"])
+        run_id = str(body["run_id"])
+        form = body["form"]
+        if not isinstance(form, dict):
+            raise ValueError("form must be an object")
+        horizon_days = body.get("horizon_days")
+        if horizon_days is not None:
+            horizon_days = int(horizon_days)
+            if horizon_days <= 0:
+                raise ValueError("horizon_days must be a positive integer")
+    except (BadRequest, KeyError) as e:
+        return err(str(e), 400)
+    except (ValueError, TypeError) as e:
+        return err(str(e), 400)
+
+    stem = week_stem(prediction_date)
+    scores = form.get("scores") or {}
+    total = body.get("total")
+    if total is None:
+        total = _human_total(scores)
+    consensus = body.get("consensus") or "—"
+    ai_said = body.get("aiSaid") if isinstance(body.get("aiSaid"), dict) else {}
+
+    payload = _jsonable(
+        {
+            "form": form,
+            "week": body.get("week") or stem,
+            "predictionDate": prediction_date.isoformat(),
+            "consensus": consensus,
+            "aiSaid": ai_said,
+            "total": total,
+            "source": "run",
+        }
+    )
+
+    with db_session() as session:
+        run = repo.get_or_create_runtime_run(
+            session,
+            run_id=run_id,
+            prediction_date=prediction_date,
+            horizon_days=horizon_days,
+            week_stem=stem,
+        )
+        repo.upsert_human_score(
+            session,
+            run,
+            payload,
+            total=total,
+            consensus=consensus,
+            human_call=form.get("humanCall"),
+            confidence=form.get("confidence"),
+        )
+    return jsonify({"ok": True, "run_id": run_id, "week": stem, "total": total}), 200
