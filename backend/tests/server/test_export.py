@@ -1,0 +1,136 @@
+"""Export: regenerate markdown artifacts from the DB (never write to real /data)."""
+
+import json
+from datetime import date
+
+from tests.server.conftest import seed_agent_output, seed_llm_output
+
+
+def _llm_payload(model_name: str) -> dict:
+    return {
+        "prediction_date": "2026-06-21",
+        "model_name": model_name,
+        "weekly_regime": "Uncertain",
+        "confidence": "Medium",
+        "spx_range": {"low": -1.2, "high": 1.5},
+        "ndx_range": {"low": -0.5, "high": 2.0},
+        "iwm_range": {"low": -1.0, "high": 1.2},
+        "invalidation": "A dovish Fed reverses the cautious stance.",
+        "plain_english": "The market is in a tug-of-war.",
+        "supporting_evidence": ["Technicals bullish", "XLK seasonal strength"],
+        "contradictions": ["Bullish technicals vs bearish June seasonality"],
+        "agent_type": "llm",
+    }
+
+
+def test_post_export_stem_no_write(archive_client):
+    """An archive week exports agents + the comparison + the human score."""
+    resp = archive_client.post("/export", json={"stem": "W25", "write": False})
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data["week"] == "W25"
+    assert data["written"] == []  # write=False -> nothing written to disk
+    kinds = {a["agent_type"] for a in data["artifacts"]}
+    assert kinds == {
+        "almanac",
+        "macro",
+        "technical",
+        "evidence",
+        "llm_comparison",
+        "human_score",
+    }
+    for art in data["artifacts"]:
+        assert art["markdown"].strip()
+
+    # Archive weeks have no per-model LLM outputs stored, so no synthesis files.
+    files = {a["filename"] for a in data["artifacts"]}
+    assert f"llm_comparison_W25.md" in files
+    assert f"human_score_W25.md" in files
+    assert not any(f.startswith("synthesis_") for f in files)
+
+
+def test_post_export_missing_run(archive_client):
+    resp = archive_client.post("/export", json={"stem": "W99", "write": False})
+    assert resp.status_code == 404
+
+
+def test_post_export_requires_target(archive_client):
+    resp = archive_client.post("/export", json={})
+    assert resp.status_code == 400
+
+
+def test_post_export_runtime_run_synthesis_and_comparison(app):
+    """A live run with per-model LLM outputs exports synthesis + comparison."""
+    pred = date(2026, 6, 21)
+    seed_agent_output(
+        app,
+        run_id="run-x",
+        prediction_date=pred,
+        agent_type="almanac",
+        payload={
+            "prediction_date": "2026-06-21",
+            "monthly_bias": "Bearish",
+            "seasonal_bias": "Bearish",
+            "thesis": "June midterm weakness.",
+            "confidence": "Medium",
+            "sectors": [],
+            "agent_type": "almanac",
+        },
+    )
+    seed_llm_output(
+        app,
+        run_id="run-x",
+        prediction_date=pred,
+        model_slug="gemma",
+        payload=_llm_payload("Google Gemma 4 31B"),
+    )
+    seed_llm_output(
+        app,
+        run_id="run-x",
+        prediction_date=pred,
+        model_slug="laguna",
+        payload=_llm_payload("Poolside Laguna M.1"),
+    )
+
+    with app.test_client() as c:
+        resp = c.post("/export", json={"run_id": "run-x", "write": False})
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    files = {a["filename"] for a in data["artifacts"]}
+    assert "synthesis_gemma_W25.txt" in files
+    assert "synthesis_laguna_W25.txt" in files
+    assert "llm_comparison_W25.md" in files
+    # No human score was submitted for this live run.
+    assert not any(f.startswith("human_score_") for f in files)
+
+    synth = next(
+        a["markdown"] for a in data["artifacts"] if a["filename"] == "synthesis_gemma_W25.txt"
+    )
+    assert "LLM Agent Output — Google Gemma 4 31B" in synth
+    comparison = next(
+        a["markdown"] for a in data["artifacts"] if a["filename"] == "llm_comparison_W25.md"
+    )
+    assert "Google Gemma 4 31B" in comparison
+    assert "Poolside Laguna M.1" in comparison
+
+
+def test_write_artifacts_to_tmp(archive_app, tmp_path):
+    from server.db import export, repository as repo
+    from server.db.context import db_session
+
+    with archive_app.app_context():
+        with db_session() as session:
+            run = repo.get_archive_run(session, "W25")
+            assert run is not None
+            artifacts = export.build_run_artifacts(session, run)
+            written = export.write_artifacts(artifacts, data_dir=tmp_path)
+
+    names = {p.rsplit("/", 1)[-1] for p in written}
+    assert "almanac_agent_W25.md" in names
+    assert "macro_agent_W25.md" in names
+    assert "technical_agent_W25.md" in names
+    assert "actuals_W25.md" in names
+    assert "llm_comparison_W25.md" in names
+    assert "human_score_W25.md" in names
+    for subdir in ("almanac", "macro", "technical", "evidence", "llm", "human"):
+        assert (tmp_path / subdir).is_dir()

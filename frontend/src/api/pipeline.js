@@ -29,6 +29,16 @@ export function getStageLogs(index) {
   return stageLogs(index)
 }
 
+/**
+ * Regenerate the .md artifacts for a run (or archive week) from the DB and
+ * write them under data/<agent>/. Backs the "Export .md" button.
+ * Pass either { runId } (runtime run) or { stem } (archive week, e.g. "W25").
+ */
+export async function exportArtifacts({ runId, stem, write = true }) {
+  const body = stem ? { stem, write } : { run_id: runId, write }
+  return postJson('/export', body)
+}
+
 function stageBody({ predictionDate, runId, horizonDays = DEFAULT_HORIZON_DAYS }) {
   return { prediction_date: predictionDate, run_id: runId, horizon_days: horizonDays }
 }

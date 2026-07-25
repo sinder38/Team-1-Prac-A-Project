@@ -11,15 +11,40 @@ Basic flow:
 3. Save the result as JSON for the app and Markdown for the weekly report.
 """
 
+import re
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
+from agents import md_parsing as md
 from agents.almanac.almanac_data import MONTHLY_STATS, SECTOR_WINDOWS, SOURCE_NOTE
 from agents.almanac.almanac_data import WEEKLY_PATTERNS
 from agents.base import BaseAgent
 from agents.io import FileSaver, week_stem
 from agents.paths import DATA_DIR, OUTPUTS_DIR
 from agents.schemas import AlmanacOutput, Bias, Confidence, SectorSignal
+
+_SECTOR_RE = re.compile(
+    r"^-\s*(?P<sector>.+?):\s*(?P<window>.+?)\s*Bias:\s*(?P<bias>\w+)", re.M
+)
+
+
+def _sector_section(text: str) -> str:
+    m = re.search(r"SECTOR SIGNALS:\s*\n(.*?)(?:\n[A-Z][A-Z ]+:|\Z)", text, re.S)
+    return m.group(1) if m else ""
+
+
+def _date_from_md(text: str) -> date | None:
+    """Read the prediction date from the "Week of {day}[–{day}] {Month} {Year}"
+    header. Uses the first day of the range; cross-month ranges fall back."""
+    m = re.search(r"Week of (\d{1,2})(?:[–\-]\d{1,2})?\s+([A-Za-z]+)\s+(\d{4})", text)
+    if not m:
+        return None
+    try:
+        return datetime.strptime(
+            f"{m.group(1)} {m.group(2)} {m.group(3)}", "%d %B %Y"
+        ).date()
+    except ValueError:
+        return None
 
 # Keep these as escaped characters so the code file stays plain ASCII while
 # the generated Markdown still matches the teacher's required template.
@@ -117,6 +142,34 @@ INVALIDATION: A major macro surprise or technical breakout against the seasonal 
 
 Source: {SOURCE_NOTE}
 """
+
+    @classmethod
+    def parse_md(cls, text: str, prediction_date: date | None = None) -> AlmanacOutput:
+        """Inverse of ``render_md``. The archives carry no explicit monthly
+        bias, so it falls back to the seasonal bias."""
+        pred = _date_from_md(text) or prediction_date
+        if pred is None:
+            raise ValueError("almanac: could not determine prediction_date")
+        seasonal = Bias(md.norm_bias(md.first(r"ALMANAC SEASONAL BIAS:\s*(.+)", text) or ""))
+        sectors = [
+            SectorSignal(
+                sector=m.group("sector").strip(),
+                bias=Bias(md.norm_bias(m.group("bias"))),
+                window=m.group("window").strip().rstrip("."),
+            )
+            for m in _SECTOR_RE.finditer(_sector_section(text))
+        ]
+        return AlmanacOutput(
+            prediction_date=pred,
+            monthly_bias=seasonal,
+            seasonal_bias=seasonal,
+            confidence=Confidence(
+                md.norm_confidence(md.first(r"PATTERN CONFIDENCE:\s*([A-Za-z–—-]+)", text) or "")
+            ),
+            thesis=md.first(r'ALMANAC THESIS:\s*"?(.+?)"?\s*$', text) or "",
+            weekly_pattern=md.first(r"SPECIFIC WEEK PATTERN\s*\((.+?)\)", text) or "",
+            sector_signals=sectors,
+        )
 
     def _get_week_data(self, prediction_date: date) -> dict:
         """Find the weekly seasonal pattern for the given date.

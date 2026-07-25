@@ -148,6 +148,20 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
     def render_md(self, output: EvidenceOutput, prediction_date: date) -> str:
         return output.content
 
+    @classmethod
+    def parse_md(cls, text: str, prediction_date: date | None = None) -> EvidenceOutput:
+        """The evidence report *is* its content. It carries no canonical date
+        format, so ``prediction_date`` must be supplied; week is derived from it."""
+        if prediction_date is None:
+            raise ValueError("evidence: prediction_date is required")
+        from agents.io import week_stem
+
+        return EvidenceOutput(
+            prediction_date=prediction_date,
+            week=week_stem(prediction_date),
+            content=text,
+        )
+
     def render_report(self, snapshot: EvidenceSnapshot) -> str:
         return self._report_renderer.render(snapshot)
 

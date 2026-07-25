@@ -2,6 +2,10 @@
 save_json = false
 save_md   = false
 
+[database]
+# Ingest the /data markdown archives into SQLite on server startup.
+load_file_data = true
+
 [llm]
 max_retries = 3
 
@@ -18,4 +22,6 @@ models = [
     # llama3.2:1b is small enough to run at usable speed on CPU; llama3.1 (8B) takes
     # minutes per prompt without a GPU.
     {slug = "llama3.2-1b", id = "llama3.2:1b", provider = "ollama"},
+    {slug = "qwen2.5-0.5b", id = "qwen2.5:1.5b", provider = "ollama"},
+    {slug = "smollm2-1.7b", id = "smollm2:1.7b", provider = "ollama"},
 ]

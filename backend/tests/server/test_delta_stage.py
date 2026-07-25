@@ -1,20 +1,8 @@
-import json
 from datetime import date
-from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from agents.delta.models import DeltaReport, WeekAccuracy
-from server import create_app
-
-
-@pytest.fixture
-def client():
-    app = create_app()
-    app.config["TESTING"] = True
-    with app.test_client() as test_client:
-        yield test_client
+from tests.server.conftest import seed_agent_output
 
 
 def _report() -> DeltaReport:
@@ -42,16 +30,18 @@ def _report() -> DeltaReport:
     )
 
 
-def test_post_delta_runs_pipeline_stage(client, tmp_path):
-    evidence_path = tmp_path / "evidence.json"
-    evidence_path.write_text(
-        json.dumps(
-            {
-                "content": "# Completed actuals",
-                "generated_at": "2026-07-17T21:00:00+00:00",
-            }
-        ),
-        encoding="utf-8",
+def test_post_delta_runs_pipeline_stage(client, app):
+    # Delta reads the evidence artifact for the run from the DB.
+    seed_agent_output(
+        app,
+        run_id="run1",
+        prediction_date=date(2026, 7, 13),
+        agent_type="evidence",
+        payload={
+            "content": "# Completed actuals",
+            "generated_at": "2026-07-17T21:00:00+00:00",
+        },
+        horizon_days=None,
     )
 
     def set_delta(ctx, config, actuals_markdown, now):
@@ -60,10 +50,7 @@ def test_post_delta_runs_pipeline_stage(client, tmp_path):
         assert now.isoformat() == "2026-07-17T21:00:00+00:00"
         ctx.delta = _report()
 
-    with (
-        patch("server.stages.artifact_path", return_value=evidence_path),
-        patch("server.stages.run_delta", side_effect=set_delta) as run_delta,
-    ):
+    with patch("server.stages.run_delta", side_effect=set_delta) as run_delta:
         response = client.post(
             "/stages/delta",
             json={"prediction_date": "2026-07-13", "run_id": "run1"},
@@ -73,6 +60,11 @@ def test_post_delta_runs_pipeline_stage(client, tmp_path):
     assert response.get_json()["prediction_week"] == "vW28"
     assert run_delta.call_args.args[0].prediction_date == date(2026, 7, 13)
 
+    # The delta report was persisted and drives the calibration endpoint.
+    tracker = client.get("/calibration/accuracy-tracker")
+    assert tracker.status_code == 200
+    assert tracker.get_json()["latestWeek"] == "vW28"
+
 
 def test_post_delta_requires_prediction_date(client):
     response = client.post("/stages/delta", json={"run_id": "run1"})
@@ -81,15 +73,12 @@ def test_post_delta_requires_prediction_date(client):
     assert "prediction_date" in response.get_json()["error"]
 
 
-def test_post_delta_reports_missing_week_files(client):
-    with patch(
-        "server.stages.artifact_path",
-        return_value=Path("missing-evidence.json"),
-    ):
-        response = client.post(
-            "/stages/delta",
-            json={"prediction_date": "2026-07-13", "run_id": "run1"},
-        )
+def test_post_delta_reports_missing_evidence(client):
+    # No evidence artifact seeded for run1.
+    response = client.post(
+        "/stages/delta",
+        json={"prediction_date": "2026-07-13", "run_id": "run1"},
+    )
 
     assert response.status_code == 404
     assert "Evidence artifact not found" in response.get_json()["error"]

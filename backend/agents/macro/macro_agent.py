@@ -6,9 +6,10 @@ Usage:
     python backend/agents/macro/macro_agent.py 2026-06-16
 """
 import json
+import re
 import sys
 from csv import DictReader
-from datetime import date
+from datetime import date, datetime
 from dataclasses import asdict
 from io import StringIO
 from pathlib import Path
@@ -17,6 +18,7 @@ import pandas as pd
 import yfinance as yf
 from dotenv import load_dotenv
 
+from agents import md_parsing as md
 from agents.macro.macro_event_data import Event
 from agents.macro.macro_sources import (
     ConfirmedNewsSource,
@@ -35,6 +37,66 @@ from agents.schemas import (
 )
 
 load_dotenv()
+
+# The direction is captured with [ \t] (not \s) and \w* so an empty direction
+# does not spill across the newline into the next section's first word.
+_COMMODITY_RE = {
+    "wti_oil": r"WTI Crude Oil:\s*([\d,\.]+),\s*weekly change\s*([+-]?[\d.]+)%,\s*direction:[ \t]*(\w*)",
+    "gold": r"Gold:\s*([\d,\.]+),\s*weekly change\s*([+-]?[\d.]+)%,\s*direction:[ \t]*(\w*)",
+    "dxy": r"DXY \(Dollar\):\s*([\d,\.]+),\s*weekly change\s*([+-]?[\d.]+)%,\s*direction:[ \t]*(\w*)",
+}
+
+_CAL_RE = re.compile(
+    r"^-\s*(?P<date_label>.+?):\s*(?P<name>.+?)\s*—\s*Expected:\s*(?P<expected>.*?),"
+    r"\s*Previous:\s*(?P<previous>.*?)\s*—\s*(?:IMPORTANCE|Impact):\s*(?P<impact>[A-Za-z]+)",
+    re.M,
+)
+
+
+def _date_from_md(text: str) -> date | None:
+    """Read the prediction date from the "Sources accessed: <ISO>" footer."""
+    m = re.search(r"Sources accessed:\s*(\d{4}-\d{2}-\d{2})", text)
+    if not m:
+        return None
+    try:
+        return date.fromisoformat(m.group(1))
+    except ValueError:
+        return None
+
+
+def _strip_md_link(text: str) -> str:
+    """'[name](url)' -> 'name'; leaves plain text unchanged."""
+    return re.sub(r"^\[(.*?)\]\(.*?\)$", r"\1", text.strip())
+
+
+def _commodity(text: str, pattern: str) -> "CommodityData":
+    m = re.search(pattern, text)
+    if not m:
+        return CommodityData(price=0.0, weekly_change=0.0, direction="")
+    return CommodityData(
+        price=md.num(m.group(1)),
+        weekly_change=float(m.group(2)),
+        direction=m.group(3),
+    )
+
+
+def _bullets(text: str, header: str) -> list[str]:
+    """Collect '- ' bullet lines under a section header up to the next header."""
+    out: list[str] = []
+    capturing = False
+    for line in text.splitlines():
+        if header in line:
+            capturing = True
+            continue
+        if capturing:
+            stripped = line.strip()
+            if stripped.startswith("- "):
+                out.append(stripped)
+            elif stripped and stripped[0].isupper() and stripped.endswith(":"):
+                break
+            elif re.match(r"^[A-Z][A-Z &/]+", stripped) and ":" in stripped:
+                break
+    return out
 
 
 class MacroAgent(BaseAgent):
@@ -448,7 +510,7 @@ class MacroAgent(BaseAgent):
             (
                 f"- {event.date_label}: [{event.name}]({event.source_url}) — Expected: "
                 f"{event.expected}, Previous: {event.previous} — "
-                f"Impact: {event.impact} — Priority: {event.priority}/100"
+                f"IMPORTANCE: {event.impact} — Priority: {event.priority}/100"
             )
             for event in output.week_ahead_calendar
         )
@@ -506,6 +568,62 @@ INVALIDATION: {output.invalidation}
 
 Sources accessed: {prediction_date}
 """
+
+    @classmethod
+    def parse_md(cls, text: str, prediction_date: date | None = None) -> MacroOutput:
+        """Inverse of ``render_md``."""
+        pred = _date_from_md(text) or prediction_date
+        if pred is None:
+            raise ValueError("macro: could not determine prediction_date")
+        fomc_raw = md.first(r"Next FOMC date:\s*([A-Za-z]+ \d+, \d{4})", text)
+        next_fomc = None
+        if fomc_raw:
+            try:
+                next_fomc = datetime.strptime(fomc_raw, "%B %d, %Y").date()
+            except ValueError:
+                next_fomc = None
+
+        yields = re.search(
+            r"2-year yield:\s*([\d.]+)%\s*10-year yield:\s*([\d.]+)%\s*30-year yield:\s*([\d.]+)%",
+            text,
+        )
+
+        calendar = [
+            CalendarEvent(
+                date_label=m.group("date_label").strip(),
+                name=_strip_md_link(m.group("name")),
+                impact=m.group("impact").strip(),
+                expected=m.group("expected").strip() or "N/A",
+                previous=m.group("previous").strip() or "N/A",
+                priority=0,
+                source_url="",
+            )
+            for m in _CAL_RE.finditer(text)
+        ]
+
+        return MacroOutput(
+            prediction_date=pred,
+            fed_rate=md.first(r"Current Fed rate:\s*(.+)", text) or "",
+            yield_2y=float(yields.group(1)) if yields else 0.0,
+            yield_10y=float(yields.group(2)) if yields else 0.0,
+            yield_30y=float(yields.group(3)) if yields else 0.0,
+            dxy=_commodity(text, _COMMODITY_RE["dxy"]),
+            wti_oil=_commodity(text, _COMMODITY_RE["wti_oil"]),
+            gold=_commodity(text, _COMMODITY_RE["gold"]),
+            macro_bias=MacroBias(md.norm_macro_bias(md.first(r"MACRO BIAS:\s*(.+)", text) or "")),
+            primary_driver=(md.first(r"PRIMARY DRIVER THIS WEEK:\s*(.+)", text) or "").strip(),
+            confidence=Confidence(md.norm_confidence(md.first(r"^CONFIDENCE:\s*([A-Za-z–—-]+)", text) or "")),
+            invalidation=md.first(r"INVALIDATION:\s*(.+)", text) or "",
+            next_fomc_date=next_fomc,
+            hold_probability=float(md.first(r"Hold probability:\s*([\d.]+)%", text) or 0.0),
+            cut_probability=float(md.first(r"Cut probability:\s*([\d.]+)%", text) or 0.0),
+            fomc_direction=md.first(r"Direction vs last week:\s*(.+)", text) or "N/A",
+            yield_curve=md.first(r"Yield curve:\s*([A-Za-z]+)", text) or "N/A",
+            yield_10y_direction=md.first(r"10-year direction this week:\s*(\w+)", text) or "N/A",
+            week_ahead_calendar=calendar,
+            key_earnings=_bullets(text, "KEY EARNINGS"),
+            confirmed_news=_bullets(text, "CONFIRMED NEWS"),
+        )
 
     def save_md(self, output: MacroOutput, prediction_date: date) -> None:
         """Render MacroOutput to MD matching data/formats/macro_agent.md"""

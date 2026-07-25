@@ -8,15 +8,30 @@ Usage:
 
 from __future__ import annotations
 
+import re
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Final, Literal, NamedTuple, TypeAlias, cast
 
 import pandas as pd
 import yfinance as yf
 
+from agents import md_parsing as md
 from agents.base import BaseAgent
 from agents.schemas import Bias, Confidence, InstrumentTechnical, TechnicalOutput
+
+_TICKER_RE = re.compile(r"INSTRUMENT:.*?\(([A-Z]+)\)")
+
+
+def _date_from_md(text: str) -> date | None:
+    """Read the prediction date from the "Week of {day} {Month} {Year}" header."""
+    m = re.search(r"Week of (\d{1,2} [A-Za-z]+ \d{4})", text)
+    if not m:
+        return None
+    try:
+        return datetime.strptime(m.group(1), "%d %B %Y").date()
+    except ValueError:
+        return None
 
 Symbol: TypeAlias = Literal["SPX", "NDX", "IWM"]
 
@@ -264,6 +279,35 @@ class TechnicalAgent(BaseAgent):
             if i < len(symbols) - 1:
                 lines.extend(["", "---", ""])
         return "\n".join(lines)
+
+    @classmethod
+    def parse_md(cls, text: str, prediction_date: date | None = None) -> TechnicalOutput:
+        """Inverse of ``render_md``. Lossy: the schema stores only Support 1 /
+        Resistance 1, so Support 2 / Resistance 2 and the bar date are dropped."""
+        pred = _date_from_md(text) or prediction_date
+        if pred is None:
+            raise ValueError("technical: could not determine prediction_date")
+        instruments: dict[str, InstrumentTechnical] = {}
+        for block in re.split(r"(?=INSTRUMENT:)", text):
+            m = _TICKER_RE.search(block)
+            if not m:
+                continue
+            ticker = m.group(1)
+            try:
+                instruments[ticker] = InstrumentTechnical(
+                    last_close=md.num(md.first(rf"LAST CLOSE:\s*{md.NUM}", block) or ""),
+                    ema_8=md.num(md.first(rf"8 EMA (?:at|estimated at) ~{md.NUM}", block) or ""),
+                    ema_21=md.num(md.first(rf"21 EMA (?:at|estimated at) ~{md.NUM}", block) or ""),
+                    trend_bias=Bias(md.norm_bias(md.first(r"TECHNICAL BIAS:\s*([A-Za-z -]+)", block) or "")),
+                    key_support=md.num(md.first(rf"Support 1:\s*{md.NUM}", block) or ""),
+                    key_resistance=md.num(md.first(rf"Resistance 1:\s*{md.NUM}", block) or ""),
+                    confidence=Confidence(md.norm_confidence(md.first(r"CONFIDENCE:\s*([A-Za-z–—-]+)", block) or "")),
+                )
+            except ValueError as exc:
+                raise ValueError(f"technical: bad number for {ticker}: {exc}") from exc
+        if not instruments:
+            raise ValueError("technical: no instrument blocks parsed")
+        return TechnicalOutput(prediction_date=pred, instruments=instruments)
 
     @staticmethod
     def _week_md_filename(prediction_date: date) -> str:
