@@ -15,7 +15,8 @@ actuals_week = "auto"
 [llm]
 models = [
     {id = "nvidia/nemotron-3-super-120b-a12b:free"},
-    {id = "tencent/hy3:free"},
+    # {id = "tencent/hy3:free"}, # No longer is free
+{id = "inclusionai/ling-3.0-flash:free"},
     # {id = "openai/gpt-oss-120b:free"},
     # {id = "google/gemma-4-31b-it:free"},
     {id = "gemma-4-26b-a4b-it:free"},
