@@ -11,7 +11,7 @@ evidence  = true
 models = [
     # Production testing with OpenRouter
     # {id = "nvidia/nemotron-3-super-120b-a12b:free"},
-    # {id = "tencent/hy3:free"},
+    # {id = "tencent/hy3:free"}, # No longer is free
     # # {id = "openai/gpt-oss-120b:free"},
     # {id = "google/gemma-4-31b-it:free"},
     # {id = "poolside/laguna-m.1:free"},

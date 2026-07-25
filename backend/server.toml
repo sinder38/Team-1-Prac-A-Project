@@ -10,7 +10,8 @@ max_retries = 3
 models = [
     # Real API (OpenRouter) — needs OPENROUTER_API_KEY in .env
     {slug = "nemotron", id = "nvidia/nemotron-3-super-120b-a12b:free", provider = "openrouter"},
-    {slug = "hy3",      id = "tencent/hy3:free", provider = "openrouter"},
+    # {slug = "hy3",      id = "tencent/hy3:free", provider = "openrouter"},
+    {slug = "ling3", id = "inclusionai/ling-3.0-flash:free", provider = "openrouter"},
     {slug = "gemm26",   id = "gemma-4-26b-a4b-it:free", provider = "openrouter"},
     {slug = "laguna",   id = "poolside/laguna-m.1:free", provider = "openrouter"},
 
