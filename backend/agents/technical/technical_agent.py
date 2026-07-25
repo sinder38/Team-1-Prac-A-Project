@@ -312,9 +312,15 @@ class TechnicalAgent(BaseAgent):
             sup = mdp.num(mdp.first(r"Support 1:\s*" + mdp.NUM, block) or "0")
             res = mdp.num(mdp.first(r"Resistance 1:\s*" + mdp.NUM, block) or "0")
 
-            # Trend bias from EMA zone description
+            # Trend bias from multiple possible patterns
             zone_match = re.search(r"Zone \d+ \((\w+)\)", block)
             bias_raw = zone_match.group(1) if zone_match else ""
+            if not bias_raw:
+                ema_bias = mdp.first(r"EMA condition:\s*(\w+)", block)
+                bias_raw = ema_bias or ""
+            if not bias_raw:
+                tech_bias = mdp.first(r"TECHNICAL BIAS:\s*(\w+)", block)
+                bias_raw = tech_bias or ""
 
             # Confidence: explicit or from certitude level
             conf_raw = mdp.first(r"CONFIDENCE:\s*([A-Za-z–—-]+)", block)
