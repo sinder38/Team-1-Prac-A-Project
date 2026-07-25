@@ -184,8 +184,12 @@ def test_list_models(client):
     assert models
     assert all("key" in m and "name" in m and "provider" in m for m in models)
     keys = {m["key"] for m in models}
+    # server.toml exposes both Local (ollama) and Real API (openrouter).
     assert "llama3.2-1b" in keys
-    assert "nemotron" not in keys
+    assert "nemotron" in keys
+    by_key = {m["key"]: m["provider"] for m in models}
+    assert by_key["llama3.2-1b"] == "ollama"
+    assert by_key["nemotron"] == "openrouter"
 
 
 # --- POST /stages/human ------------------------------------------------------

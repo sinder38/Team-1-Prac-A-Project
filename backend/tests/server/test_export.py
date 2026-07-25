@@ -2,6 +2,7 @@
 
 import json
 from datetime import date
+from pathlib import Path
 
 from tests.server.conftest import seed_agent_output, seed_llm_output
 
@@ -125,7 +126,8 @@ def test_write_artifacts_to_tmp(archive_app, tmp_path):
             artifacts = export.build_run_artifacts(session, run)
             written = export.write_artifacts(artifacts, data_dir=tmp_path)
 
-    names = {p.rsplit("/", 1)[-1] for p in written}
+    # Paths may use / or \ depending on OS — compare basenames only.
+    names = {Path(p).name for p in written}
     assert "almanac_agent_W25.md" in names
     assert "macro_agent_W25.md" in names
     assert "technical_agent_W25.md" in names
