@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import date
+from typing import Any
 
 from core.schemas import (
     AlmanacOutput,
@@ -19,3 +20,4 @@ class PipelineContext:
     macro: MacroOutput | None = None
     evidence: EvidenceOutput | None = None
     llm_outputs: list[LLMOutput] = field(default_factory=list)
+    delta: Any = None
