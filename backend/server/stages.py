@@ -231,7 +231,7 @@ def post_delta():
     try:
         run_delta(  # type: ignore[reportArgumentType]
             ctx,
-            CONFIG,
+            CONFIG,  # type: ignore[reportArgumentType]
             actuals_markdown=actuals_markdown,
             now=generated_at,
         )
