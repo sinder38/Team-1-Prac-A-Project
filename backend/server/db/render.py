@@ -19,7 +19,7 @@ from agents.delta.models import DeltaReport
 from agents.delta.report import render_delta_markdown
 from agents.llm.base_llm import BaseLLMAgent
 from agents.macro.macro_agent import MacroAgent
-from agents.schemas import TechnicalOutput
+from core.schemas import TechnicalOutput
 from server.db import rehydrate
 
 _LABELS = {
