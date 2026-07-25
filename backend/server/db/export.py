@@ -20,11 +20,9 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from agents.delta.parsing import plain_week
-from agents.io import week_stem
+from core.io import week_stem
 from agents.paths import DATA_DIR
-from server.db import render
-from server.db import repository as repo
+from server.db import render, repository as repo
 from server.db.models import PredictionRun
 
 # agent_type -> (subdirectory under data/, filename template)
@@ -95,12 +93,11 @@ def build_run_artifacts(session: Session, run: PredictionRun) -> list[dict]:
 
     delta = repo.delta_report_for_run(session, run)
     if delta:
-        delta_stem = plain_week(delta.prediction_week or "")
         artifacts.append(
             _artifact(
                 "delta",
                 "qa",
-                f"delta_{delta_stem}.md",
+                f"delta_{stem}.md",
                 render.render_delta(delta.payload),
             )
         )
