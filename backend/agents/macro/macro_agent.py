@@ -446,7 +446,7 @@ class MacroAgent(BaseAgent):
             (
                 f"- {event.date_label}: [{event.name}]({event.source_url}) — Expected: "
                 f"{event.expected}, Previous: {event.previous} — "
-                f"Impact: {event.impact} — Priority: {event.priority}/100"
+                f"IMPORTANCE: {event.impact} — Priority: {event.priority}/100"
             )
             for event in output.week_ahead_calendar
         )
