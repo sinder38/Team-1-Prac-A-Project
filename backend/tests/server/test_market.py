@@ -4,16 +4,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
-from server import create_app
 from server.market_service import build_market_history
-
-
-@pytest.fixture
-def client():
-    app = create_app()
-    app.config["TESTING"] = True
-    with app.test_client() as c:
-        yield c
 
 
 def _sample_ohlcv(rows: int = 30) -> pd.DataFrame:

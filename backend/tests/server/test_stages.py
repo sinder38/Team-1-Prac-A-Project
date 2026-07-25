@@ -1,10 +1,7 @@
 import json
-import pytest
 from datetime import date
-from unittest.mock import patch, MagicMock
-from dataclasses import asdict
+from unittest.mock import patch
 
-from server import create_app
 from agents.schemas import (
     AlmanacOutput, Bias, Confidence,
     TechnicalOutput, InstrumentTechnical,
@@ -12,14 +9,6 @@ from agents.schemas import (
     EvidenceOutput,
     LLMOutput, Regime, PredictedRange,
 )
-
-
-@pytest.fixture
-def client():
-    app = create_app()
-    app.config["TESTING"] = True
-    with app.test_client() as c:
-        yield c
 
 
 ALMANAC_OUTPUT = AlmanacOutput(
@@ -70,9 +59,8 @@ LLM_OUT = LLMOutput(
 )
 
 
-def test_post_almanac_returns_output(client, tmp_path):
-    with patch("server.stages.run_almanac") as mock_run, \
-         patch("server.stages.artifact_path", return_value=tmp_path / "out.json"):
+def test_post_almanac_returns_output(client):
+    with patch("server.stages.run_almanac") as mock_run:
         mock_run.side_effect = lambda ctx, config: setattr(ctx, "almanac", ALMANAC_OUTPUT)
         resp = client.post("/stages/almanac", json={
             "prediction_date": "2026-06-18",
@@ -82,6 +70,49 @@ def test_post_almanac_returns_output(client, tmp_path):
     assert resp.status_code == 200
     data = json.loads(resp.data)
     assert data["monthly_bias"] == "Bullish"
+    assert data["horizon_days"] == 7
+
+    # Round-trip: the output was persisted and is readable via /artifacts.
+    got = client.get(
+        "/artifacts/almanac?run_id=run1&horizon_days=7&prediction_date=2026-06-18"
+    )
+    assert got.status_code == 200
+    assert json.loads(got.data)["monthly_bias"] == "Bullish"
+
+
+def test_post_technical_round_trip(client):
+    with patch("server.stages.run_technical") as mock_run:
+        mock_run.side_effect = lambda ctx, config: setattr(ctx, "technical", TECHNICAL_OUTPUT)
+        resp = client.post("/stages/technical", json={
+            "prediction_date": "2026-06-18",
+            "run_id": "run1",
+            "horizon_days": 7,
+        })
+    assert resp.status_code == 200
+
+    got = client.get(
+        "/artifacts/technical?run_id=run1&horizon_days=7&prediction_date=2026-06-18"
+    )
+    assert got.status_code == 200
+    assert json.loads(got.data)["instruments"]["SPX"]["last_close"] == 5400.0
+
+
+def test_post_almanac_conflicting_run_id(client):
+    """Reusing a run_id with a different prediction_date is a 409."""
+    with patch("server.stages.run_almanac") as mock_run:
+        mock_run.side_effect = lambda ctx, config: setattr(ctx, "almanac", ALMANAC_OUTPUT)
+        first = client.post("/stages/almanac", json={
+            "prediction_date": "2026-06-18",
+            "run_id": "run1",
+            "horizon_days": 7,
+        })
+        assert first.status_code == 200
+        conflict = client.post("/stages/almanac", json={
+            "prediction_date": "2026-06-25",  # same run_id, different date
+            "run_id": "run1",
+            "horizon_days": 7,
+        })
+    assert conflict.status_code == 409
 
 
 def test_post_almanac_missing_field(client):
@@ -103,23 +134,27 @@ def test_post_almanac_bad_date(client):
     assert resp.status_code == 400
 
 
-def test_post_evidence_no_horizon(client, tmp_path):
-    with patch("server.stages.run_evidence") as mock_run, \
-         patch("server.stages.artifact_path", return_value=tmp_path / "out.json"):
+def test_post_evidence_no_horizon(client):
+    with patch("server.stages.run_evidence") as mock_run:
         mock_run.side_effect = lambda ctx, config, **kw: setattr(ctx, "evidence", EVIDENCE_OUTPUT)
         resp = client.post("/stages/evidence", json={
             "prediction_date": "2026-06-18",
             "run_id": "run1",
         })
     assert resp.status_code == 200
-    assert json.loads(resp.data)["week"] == "W25"
+    body = json.loads(resp.data)
+    assert body["week"] == "W25"
+    assert "generated_at" in body
 
 
-def test_post_llm_missing_agent_artifacts(client, tmp_path):
+def test_post_llm_missing_agent_artifacts(client):
     from agents.pipeline.config import LLMModelEntry
 
-    with patch("server.stages.artifact_path", side_effect=lambda t, *a, **kw: tmp_path / f"{t}.json"), \
-         patch.dict("server.stages._MODEL_REGISTRY", {"example": LLMModelEntry(id="example/example:free")}):
+    # No agent artifacts seeded for this run_id, so the LLM stage should 404.
+    with patch.dict(
+        "server.stages._MODEL_REGISTRY",
+        {"example": LLMModelEntry(id="example/example:free")},
+    ):
         resp = client.post("/stages/llm", json={
             "prediction_date": "2026-06-18",
             "run_id": "run1",
