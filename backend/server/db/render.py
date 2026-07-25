@@ -15,9 +15,7 @@ from datetime import date
 from types import SimpleNamespace
 
 from agents.almanac.almanac_agent import AlmanacAgent
-from agents.delta.models import DeltaReport
-from agents.delta.report import render_delta_markdown
-from agents.llm.base_llm import BaseLLMAgent
+from llm.base import BaseLLMAgent
 from agents.macro.macro_agent import MacroAgent
 from core.schemas import TechnicalOutput
 from server.db import rehydrate
@@ -48,11 +46,6 @@ def render_markdown(agent_type: str, payload: dict) -> str:
     if agent_type == "technical":
         return _render_technical(rehydrate.technical_from_payload(payload), _pred_date(payload))
     raise ValueError(f"Cannot render markdown for agent_type={agent_type!r}")
-
-
-def render_delta(payload: dict) -> str:
-    """Render a Delta report restored from its SQLite JSON payload."""
-    return render_delta_markdown(DeltaReport.from_dict(payload))
 
 
 class _SynthesisRenderer(BaseLLMAgent):
@@ -101,7 +94,7 @@ def render_llm_comparison_from_outputs(
     own ``build_comparison_md`` / ``_row`` so live-run exports match the original
     generator exactly.
     """
-    from agents.llm.multi_model_runner import _row, build_comparison_md
+    from llm.openrouter import _row, build_comparison_md
 
     rows_by_slug: dict[str, dict] = {}
     models = []
@@ -121,7 +114,7 @@ def render_llm_comparison_from_payload(
     per-model outputs). Lossy relative to the original: only the fields the
     parser captured are reproduced.
     """
-    from agents.llm.multi_model_runner import build_comparison_md
+    from llm.openrouter import build_comparison_md
 
     rows_by_slug: dict[str, dict] = {}
     models = []
