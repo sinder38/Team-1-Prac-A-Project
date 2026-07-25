@@ -356,6 +356,16 @@ def get_runtime_final_prediction(session: Session, run_id: str) -> FinalPredicti
     )
 
 
+def final_prediction_for_run(
+    session: Session, run: PredictionRun
+) -> dict | None:
+    """The stored final-prediction payload for a run (either source)."""
+    row = session.scalar(
+        select(FinalPrediction).where(FinalPrediction.run_id_fk == run.id)
+    )
+    return row.payload if row else None
+
+
 def get_runtime_run_with_final_prediction_for_week(
     session: Session, week_stem: str
 ) -> PredictionRun | None:

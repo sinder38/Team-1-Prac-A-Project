@@ -78,6 +78,18 @@ def build_run_artifacts(session: Session, run: PredictionRun) -> list[dict]:
             )
         )
 
+    final = repo.final_prediction_for_run(session, run)
+    if final:
+        week = str(final.get("week") or stem)
+        artifacts.append(
+            _artifact(
+                "final_prediction",
+                "final prediction",
+                f"prediction_{week}_Team1.md",
+                render.render_final_prediction(final),
+            )
+        )
+
     return artifacts
 
 

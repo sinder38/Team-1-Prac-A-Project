@@ -292,11 +292,17 @@ def test_runtime_final_prediction_roundtrip(client, app, tmp_path, monkeypatch):
     assert saved.status_code == 200
     body = json.loads(saved.data)
     assert body["ok"] is True
-    assert body["path"] is not None
+    # Submission is DB-only: no markdown is written to disk here.
+    assert "path" not in body
+    assert not (data_dir / "final prediction").exists()
 
-    md_path = data_dir / "final prediction" / "prediction_2026-W30_Team1.md"
-    assert md_path.is_file()
-    assert "CONSENSUS BRIEF" in md_path.read_text(encoding="utf-8")
+    # The brief markdown is produced on demand by POST /export.
+    export = client.post("/export", json={"run_id": "run-fp-1", "write": False})
+    assert export.status_code == 200
+    arts = json.loads(export.data)["artifacts"]
+    fp = next(a for a in arts if a["agent_type"] == "final_prediction")
+    assert fp["filename"] == "prediction_2026-W30_Team1.md"
+    assert "CONSENSUS BRIEF" in fp["markdown"]
 
     loaded = client.get("/artifacts/final-prediction?run_id=run-fp-1")
     assert loaded.status_code == 200

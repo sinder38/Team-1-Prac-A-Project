@@ -190,7 +190,7 @@ def get_final_prediction():
 
 @artifacts_bp.route("/final-prediction", methods=["POST"])
 def save_final_prediction():
-    """Persist final prediction on a runtime run; also write Team1 markdown for delta."""
+    """Persist the final prediction on a runtime run (DB only"""
     body = request.get_json(silent=True) or {}
     run_id = body.get("run_id")
     report = body.get("report")
@@ -198,8 +198,6 @@ def save_final_prediction():
         return err("Body must include run_id and report", 400)
 
     payload = dict(report)
-    markdown = payload.get("markdown")
-    week = payload.get("week")
 
     with db_session() as session:
         run = repo.get_runtime_run(session, str(run_id))
@@ -217,17 +215,7 @@ def save_final_prediction():
             )
         repo.upsert_final_prediction(session, run, payload)
 
-    written = None
-    if isinstance(markdown, str) and markdown.strip() and isinstance(week, str) and week:
-        from agents.paths import DATA_DIR
-
-        out_dir = DATA_DIR / "final prediction"
-        out_dir.mkdir(parents=True, exist_ok=True)
-        path = out_dir / f"prediction_{week}_Team1.md"
-        path.write_text(markdown, encoding="utf-8")
-        written = str(path)
-
-    return jsonify({"ok": True, "run_id": run_id, "path": written}), 200
+    return jsonify({"ok": True, "run_id": run_id}), 200
 
 
 def _stem_from_args() -> tuple[str, tuple | None]:

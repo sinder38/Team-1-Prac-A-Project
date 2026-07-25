@@ -115,6 +115,34 @@ def test_post_export_runtime_run_synthesis_and_comparison(app):
     assert "Poolside Laguna M.1" in comparison
 
 
+def test_post_export_includes_final_prediction(app):
+    """A runtime run with a stored final prediction exports the Team1 brief."""
+    from datetime import date as _date
+
+    from server.db import repository as repo
+    from tests.server.conftest import app_session, seed_runtime_run
+
+    seed_runtime_run(app, run_id="run-fp", prediction_date=_date(2026, 6, 21))
+    report = {
+        "week": "2026-W25",
+        "form": {"regime": "Neutral-bullish."},
+        "markdown": "# TEAM 1 2026-W25 CONSENSUS BRIEF — FILED: 21 JUN 2026\n\n## REGIME\n\nNeutral-bullish.\n",
+    }
+    with app_session(app) as session:
+        run = repo.get_runtime_run(session, "run-fp")
+        assert run is not None
+        repo.upsert_final_prediction(session, run, report)
+
+    with app.test_client() as c:
+        resp = c.post("/export", json={"run_id": "run-fp", "write": False})
+    assert resp.status_code == 200
+    arts = json.loads(resp.data)["artifacts"]
+    fp = next(a for a in arts if a["agent_type"] == "final_prediction")
+    assert fp["filename"] == "prediction_2026-W25_Team1.md"
+    assert "CONSENSUS BRIEF" in fp["markdown"]
+    assert fp["markdown"].endswith("\n")
+
+
 def test_write_artifacts_to_tmp(archive_app, tmp_path):
     from server.db import export, repository as repo
     from server.db.context import db_session
