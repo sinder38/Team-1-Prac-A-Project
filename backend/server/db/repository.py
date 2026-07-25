@@ -280,6 +280,17 @@ def human_score_for_run(
     return row.payload if row else None
 
 
+def delta_report_for_run(
+    session: Session, run: PredictionRun
+) -> DeltaReport | None:
+    """Return the newest Delta report stored for a run."""
+    return session.scalar(
+        select(DeltaReport)
+        .where(DeltaReport.run_id_fk == run.id)
+        .order_by(DeltaReport.created_at.desc(), DeltaReport.id.desc())
+    )
+
+
 def get_archive_agent_payload(
     session: Session, week_stem: str, agent_type: str
 ) -> dict | None:
