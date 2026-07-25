@@ -38,14 +38,14 @@ COUNTRY_RELEVANCE = {
 }
 
 EVENT_TYPE_WEIGHTS = [
-    (("interest rate", "fomc", "fed press", "powell"), 20),
-    (("core pce", "pce price", "cpi", "inflation"), 19),
-    (("gdp", "growth rate"), 16),
-    (("pmi", "ism", "durable goods"), 15),
-    (("non farm", "payroll", "jobless", "claims", "unemployment"), 14),
-    (("consumer sentiment", "consumer confidence", "michigan"), 11),
+    (("interest rate", "fomc", "fed press", "powell"), 28),
+    (("core pce", "pce price", "cpi", "inflation"), 22),
+    (("gdp", "growth rate"), 18),
+    (("pmi", "ism", "durable goods"), 14),
+    (("non farm", "payroll", "jobless", "claims", "unemployment"), 17),
+    (("consumer sentiment", "consumer confidence", "michigan"), 10),
     (("crude oil", "gasoline", "eia", "api"), 9),
-    (("retail sales", "personal spending", "personal income"), 6),
+    (("retail sales", "personal spending", "personal income"), 8),
     (("auction", "bond", "bill"), -10),
 ]
 
@@ -381,7 +381,7 @@ class ConfirmedNewsSource:
             items.append(
                 NewsItem(
                     headline=title,
-                    source=f"NewsData.io / {source_name}",
+                    source=source_name,
                     section=section,
                     url=link,
                     score=score,
@@ -416,7 +416,7 @@ class ConfirmedNewsSource:
         published = f" — {item.published_label}" if item.published_label else ""
         return (
             f"- [{item.headline}]({item.url}) — Source: {item.source} "
-            f"({item.section}){published} — Impact: {item.impact.title()} "
+            f"({item.section}){published} — IMPORTANCE: {item.impact.title()} "
             f"— Score: {item.score}/100"
         )
 
@@ -501,7 +501,7 @@ class EarningsWhispersCalendar:
     def __init__(self, fetcher: SourceFetcher | None = None):
         self.fetcher = fetcher or SourceFetcher()
 
-    def get_key_events(self, prediction_date: date, limit: int = 5) -> list[EarningsEvent]:
+    def get_key_events(self, prediction_date: date, limit: int = 3) -> list[EarningsEvent]:
         """Prefer Earnings Whispers rows, then use TradingEconomics earnings."""
         events = self._fetch_earningswhispers_daily_events(prediction_date)
         if events:

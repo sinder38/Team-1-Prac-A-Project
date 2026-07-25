@@ -5,16 +5,16 @@ Quick note: The 8 EMA is a short-term average price line. The 21 EMA is a longer
 ---
 
 INSTRUMENT: S&P 500 (SPX)
-LAST CLOSE: 7,383.74 — down 2.64% on the day
+LAST CLOSE: 7,383.74 (down 2.64% on the day)
 
 8 EMA vs PRICE:
   - Price is BELOW the 8 EMA. The sharp sell-off on Friday pushed price under its short-term average — a warning sign.
   - 8 EMA estimated at ~7,445.30. Price is ~62 points below it.
 
 8 EMA vs 21 EMA:
-  - 8 EMA is still ABOVE 21 EMA, but the gap is narrowing quickly as price pulls back.
+  - 8 EMA is ABOVE 21 EMA, but the gap is narrowing quickly as price pulls back.
   - 21 EMA estimated at ~7,389.24. Gap between 8 and 21 EMA = ~56 pts (shrinking from last week's ~116 pts).
-  - EMA condition: Zone 1 weakening — uptrend under pressure.
+  - EMA condition: Zone 1 (weakening) — uptrend under pressure.
 
 TRENDLINE:
   - The uptrend line drawn from April's low remains intact on the chart (support roughly 6,700 area on the long-term line).
@@ -41,16 +41,16 @@ WATCH THIS WEEK: Can SPX reclaim the 8 EMA (~7,445) and 7,516 support-turned-res
 ---
 
 INSTRUMENT: Nasdaq 100 (NDX)
-LAST CLOSE: 28,957.60 — down 4.77% on the day
+LAST CLOSE: 28,957.60 (down 4.77% on the day)
 
 8 EMA vs PRICE:
   - Price is BELOW the 8 EMA. Tech sold off hard — the largest single-day drop of the three indexes reviewed. Price has fallen sharply back under its short-term average.
   - 8 EMA estimated at ~29,427.32. Price is ~470 points below it.
 
 8 EMA vs 21 EMA:
-  - 8 EMA is still ABOVE 21 EMA, but the gap compressed significantly in one session.
+  - 8 EMA is ABOVE 21 EMA, but the gap compressed significantly in one session.
   - 21 EMA estimated at ~28,982.86. Gap between 8 and 21 EMA = ~444 pts (down from ~828 pts last week).
-  - EMA condition: Zone 1 weakening — the wide spread that signalled strength has narrowed quickly.
+  - EMA condition: Zone 1 (weakening) — the wide spread that signalled strength has narrowed quickly.
 
 TRENDLINE:
   - The long-term uptrend line from spring lows is still far below current price (~22,000–24,000 area on the chart).
@@ -78,16 +78,16 @@ WATCH THIS WEEK: Does Nasdaq hold the 21 EMA (~28,982) and Friday's close? Can i
 ---
 
 INSTRUMENT: Russell 2000 (IWM)
-LAST CLOSE: 281.65 — down 3.55% on the day
+LAST CLOSE: 281.65 (down 3.55% on the day)
 
 8 EMA vs PRICE:
   - Price is BELOW the 8 EMA. Small caps pulled back sharply, dropping back under their short-term average.
   - 8 EMA estimated at ~284.55. Price is ~3 points below it.
 
 8 EMA vs 21 EMA:
-  - 8 EMA is still ABOVE 21 EMA, but the spread is very small.
+  - 8 EMA is ABOVE 21 EMA, but the spread is very small.
   - 21 EMA estimated at ~282.38. Gap between 8 and 21 EMA = ~2 pts (was ~5 pts last week — nearly flat now).
-  - EMA condition: Zone 1 barely — the two lines are close to crossing, which would be a bearish signal.
+  - EMA condition: Zone 1 (barely) — the two lines are close to crossing, which would be a bearish signal.
 
 TRENDLINE:
   - The uptrend line from early spring lows (running through ~270–280 area this week) is under pressure.
