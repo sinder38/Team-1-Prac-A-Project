@@ -4,6 +4,7 @@ This backs ``POST /export`` — e.g. after a successful pipeline run, produce th
 ``.md``/``.txt`` files from the stored structured data:
 
 * the four agents (almanac, macro, technical, evidence),
+* the Delta Engine report,
 * per-model LLM synthesis files (``synthesis_<slug>_<stem>.txt``),
 * the multi-model comparison (``llm_comparison_<stem>.md``),
 * the team human score (``human_score_<stem>.md``).
@@ -75,6 +76,17 @@ def build_run_artifacts(session: Session, run: PredictionRun) -> list[dict]:
                 "human",
                 f"human_score_{stem}.md",
                 render.render_human_score(human),
+            )
+        )
+
+    delta = repo.delta_report_for_run(session, run)
+    if delta:
+        artifacts.append(
+            _artifact(
+                "delta",
+                "qa",
+                f"delta_{stem}.md",
+                render.render_delta(delta.payload),
             )
         )
 
