@@ -128,13 +128,14 @@ def render_llm_comparison_from_payload(
     return build_comparison_md(rows_by_slug, models, stem, prediction_date)
 
 
-# Human-score dimensions in report order: (payload key, display label).
+# Human-score dimensions in report order: (payload key, table label, short label).
+# Adapted from feat/hsr-json-provider (server/human_score.py).
 _HUMAN_DIMENSIONS = [
-    ("macro", "Macro / News Weight"),
-    ("technical", "Technical Structure"),
-    ("almanac", "Almanac Seasonal Weight"),
-    ("aiAgreement", "AI Model Agreement Quality"),
-    ("wildCard", "Wild Card / Human Observation"),
+    ("macro", "Macro / News Weight", "Macro"),
+    ("technical", "Technical Structure", "Technical"),
+    ("almanac", "Almanac Seasonal Weight", "Almanac"),
+    ("aiAgreement", "AI Model Agreement Quality", "AI Agreement"),
+    ("wildCard", "Wild Card / Human Observation", "Wild Card"),
 ]
 
 _HUMAN_EVIDENCE_BULLETS = [
@@ -144,97 +145,129 @@ _HUMAN_EVIDENCE_BULLETS = [
     ("llm", "R6 LLM Comparison Output"),
 ]
 
-
-def _signed(value: int) -> str:
-    return "0" if value == 0 else f"{value:+d}"
+_HUMAN_PLACEHOLDER = "________"
 
 
-def _week_number(payload: dict) -> str:
-    # ``week`` may be "W25" or "2026-W25"; the report header wants just "25".
-    m = re.search(r"W(\d+)", str(payload.get("week", "")), re.I)
-    return m.group(1) if m else "?"
+def _signed(value) -> str:
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        n = 0
+    return f"+{n}" if n > 0 else str(n)
+
+
+def _human_total(scores: dict) -> int:
+    return sum(int(scores.get(key) or 0) for key, _, _ in _HUMAN_DIMENSIONS)
+
+
+def _week_title(payload: dict) -> str:
+    # ``week`` may be "W25" or "2026-W25"; the report header wants "Week 25".
+    m = re.search(r"W(\d{1,2})", str(payload.get("week", "")), re.I)
+    return f"Week {int(m.group(1))}" if m else str(payload.get("week") or "—")
 
 
 def render_human_score(payload: dict) -> str:
     """Rebuild ``human_score_<stem>.md`` from the stored human-score payload.
 
-    Lossy: reproduces the structured fields the parser captured (consensus,
-    per-dimension scores/reasoning, call, confidence, override/wild-card/
-    invalidation prose, evidence used). The original's long-form five-dimension
-    prose is not stored and is therefore omitted.
+    W28-style markdown (AI consensus, score table, five-dimension judgement,
+    call/confidence, override/wild-card/invalidation, evidence). Adapted from
+    feat/hsr-json-provider's ``render_human_score_markdown`` to read the DB
+    payload directly. Lossy: the five-dimension judgement reuses each
+    dimension's table reasoning (the original long-form prose is not stored).
     """
-    form = payload.get("form", {})
-    scores = form.get("scores", {})
-    reasoning = form.get("reasoning", {})
-    ai_said = payload.get("aiSaid", {})
-    evidence = form.get("evidence", {})
+    form = payload.get("form") or {}
+    scores = form.get("scores") or {}
+    reasoning = form.get("reasoning") or {}
+    evidence = form.get("evidence") or {}
+    ai_said = payload.get("aiSaid") or {}
+    consensus = (payload.get("consensus") or "—").strip()
+
+    total = payload.get("total")
+    if total is None:
+        total = _human_total(scores)
+
+    table = [
+        "| Dimension                         | AI Said                                   | Team Score | Team Reasoning |",
+        "| --------------------------------- | ----------------------------------------- | :--------: | -------------- |",
+    ]
+    for key, label, _ in _HUMAN_DIMENSIONS:
+        said = str(ai_said.get(key) or "—").replace("|", "/")
+        reason = str(reasoning.get(key) or _HUMAN_PLACEHOLDER).replace("|", "/")
+        table.append(f"| **{label}** | {said} | **{_signed(scores.get(key))}** | {reason} |")
+
+    judgements = []
+    for i, (key, label, _) in enumerate(_HUMAN_DIMENSIONS, 1):
+        judgements.append(
+            f"### {i}. {label} — Score: {_signed(scores.get(key))}\n\n"
+            f"{reasoning.get(key) or _HUMAN_PLACEHOLDER}\n"
+        )
+
+    breakdown = " + ".join(
+        f"{short} {_signed(scores.get(key))}" for key, _, short in _HUMAN_DIMENSIONS
+    )
+    evidence_lines = [f"* {label}" for key, label in _HUMAN_EVIDENCE_BULLETS if evidence.get(key)]
 
     parts = [
-        f"# Human Score Analyst Output — Week {_week_number(payload)}",
+        f"# Human Score Analyst Output — {_week_title(payload)}",
         "",
         "## AI Consensus",
         "",
-        f"**{payload.get('consensus', '—')}**",
+        f"**{consensus}**",
         "",
         "---",
         "",
         "## Human Score Table",
         "",
-        "| Dimension | AI Said | Team Score | Team Reasoning |",
-        "| :--- | :--- | :--- | :--- |",
-    ]
-    for key, label in _HUMAN_DIMENSIONS:
-        parts.append(
-            f"| {label} | {ai_said.get(key, '—') or '—'} | "
-            f"{_signed(int(scores.get(key, 0)))} | {reasoning.get(key, '') or ''} |"
-        )
-
-    total = payload.get("total")
-    if total is None:
-        total = sum(int(v) for v in scores.values())
-    parts += [
+        *table,
+        "",
+        "---",
         "",
         "## Human Score Total",
         "",
-        f"**{_signed(int(total))}**",
+        f"**{_signed(total)}**",
         "",
+        f"({breakdown})",
+        "",
+        "---",
+        "",
+        "## Five-Dimension Judgement",
+        "",
+        *judgements,
         "---",
         "",
         "## Human Call",
         "",
-        f"**{form.get('humanCall', 'Neutral')}**",
+        f"**{form.get('humanCall') or 'Neutral'}**",
         "",
         "---",
         "",
         "## Confidence",
         "",
-        f"**{form.get('confidence', 'Medium')}**",
+        f"**{form.get('confidence') or 'Medium'}**",
         "",
         "---",
         "",
         "## Override Paragraph",
         "",
-        form.get("overrideParagraph", ""),
+        form.get("overrideParagraph") or _HUMAN_PLACEHOLDER,
         "",
         "---",
         "",
         "## Wild Card Insight",
         "",
-        form.get("wildCardInsight", ""),
+        form.get("wildCardInsight") or _HUMAN_PLACEHOLDER,
         "",
         "---",
         "",
         "## Invalidation Condition",
         "",
-        form.get("invalidation", ""),
+        form.get("invalidation") or _HUMAN_PLACEHOLDER,
         "",
         "---",
         "",
         "## Evidence Used",
         "",
-    ]
-    parts += [
-        f"* {bullet}" for key, bullet in _HUMAN_EVIDENCE_BULLETS if evidence.get(key)
+        *evidence_lines,
     ]
     return "\n".join(parts).rstrip() + "\n"
 

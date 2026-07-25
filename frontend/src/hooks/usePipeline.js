@@ -13,6 +13,7 @@ import {
   getStageLogs,
   runStage as apiRunStage,
   exportArtifacts as apiExportArtifacts,
+  submitHumanScore,
   DEFAULT_HORIZON_DAYS,
 } from '../api'
 import { todayIso, dateToWeekLabel } from '../lib/date'
@@ -287,9 +288,23 @@ export function usePipeline() {
     }
   }
 
-  // Completing the human report marks the final stage done.
-  function completeReview(form) {
+  // Completing the human report marks the final stage done. Persists the report
+  // to the backend DB first (so it can be exported as markdown); if that fails,
+  // the error propagates and the stage is not marked complete.
+  async function completeReview(form) {
     if (!form) return
+    const report = buildHumanScoreReport(form, { week: currentWeek, outputs, predictionDate })
+
+    await submitHumanScore({
+      predictionDate,
+      runId,
+      horizonDays: DEFAULT_HORIZON_DAYS,
+      week: currentWeek,
+      form,
+      consensus: report?.consensus,
+      aiSaid: report?.aiSaid,
+      total: report?.total,
+    })
 
     const stageLog = getStageLogs(AI_STAGES)
     const finishedAt = new Date().toISOString()
@@ -306,10 +321,7 @@ export function usePipeline() {
     }))
     setSelectedWeek(currentWeek)
     setHumanScoreReports(prev => {
-      const next = {
-        ...prev,
-        [currentWeek]: buildHumanScoreReport(form, { week: currentWeek, outputs, predictionDate }),
-      }
+      const next = { ...prev, [currentWeek]: report }
       writeStoredReports(next)
       return next
     })

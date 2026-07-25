@@ -50,6 +50,8 @@ def build_run_artifacts(session: Session, run: PredictionRun) -> list[dict]:
     pred = run.prediction_date
     artifacts: list[dict] = []
 
+    # TODO: not the the best way to handle export.
+    # It would be better to create a more unified system for all agents/llm/human/etc to do export
     for agent_type in _EXPORTABLE:
         payload = repo.agent_payload_for_run(session, run, agent_type)
         if not payload:
