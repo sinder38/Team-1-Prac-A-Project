@@ -273,6 +273,70 @@ class TechnicalAgent(BaseAgent):
         return f"technical_agent_W{prediction_date.isocalendar().week:02d}.md"
 
 
+    @classmethod
+    def parse_md(cls, text: str, prediction_date: date | None = None) -> TechnicalOutput:
+        import re
+        from agents import md_parsing as mdp
+
+        # Date from "Week of 21 June 2026" or "Week of 30 May 2026"
+        m = re.search(r"Week of (\d{1,2}) ([A-Z][a-z]+) (\d{4})", text)
+        if m:
+            mn = mdp._MONTH_MAP.get(m.group(2)[:3].lower(), 6)
+            pred = date(int(m.group(3)), mn, int(m.group(1)))
+        else:
+            pred = prediction_date or date.today()
+
+        instruments: dict[str, InstrumentTechnical] = {}
+        blocks = re.split(r"\n(?=INSTRUMENT:)", text)
+
+        for b in blocks:
+            lines = b.strip().split("\n")
+            first_line = lines[0].strip() if lines else ""
+            pm = re.search(r"\((\w+)\)", first_line)
+            if not pm:
+                continue
+            ticker = pm.group(1)
+            if ticker not in ("SPX", "NDX", "IWM"):
+                continue
+
+            block = "\n".join(lines[1:])
+
+            # LAST CLOSE
+            close = mdp.num(mdp.first(r"LAST CLOSE:\s*" + mdp.NUM, block) or "0")
+
+            # EMA — "8 EMA (estimated )?at ~N" or "8 EMA at ~N"
+            ema8 = mdp.num(mdp.first(r"8 EMA (?:estimated )?at ~\s*" + mdp.NUM, block) or "0")
+            ema21 = mdp.num(mdp.first(r"21 EMA (?:estimated )?at ~\s*" + mdp.NUM, block) or "0")
+
+            # Support 1 / Resistance 1
+            sup = mdp.num(mdp.first(r"Support 1:\s*" + mdp.NUM, block) or "0")
+            res = mdp.num(mdp.first(r"Resistance 1:\s*" + mdp.NUM, block) or "0")
+
+            # Trend bias from EMA zone description
+            zone_match = re.search(r"Zone \d+ \((\w+)\)", block)
+            bias_raw = zone_match.group(1) if zone_match else ""
+
+            # Confidence: explicit or from certitude level
+            conf_raw = mdp.first(r"CONFIDENCE:\s*([A-Za-z–—-]+)", block)
+            if not conf_raw:
+                conf_raw = mdp.first(r"CERTITUDE:\s*([A-Za-z–—-]+)", block)
+
+            instruments[ticker] = InstrumentTechnical(
+                last_close=close,
+                ema_8=ema8,
+                ema_21=ema21,
+                trend_bias=Bias(mdp.norm_bias(bias_raw)),
+                key_support=sup,
+                key_resistance=res,
+                confidence=Confidence(mdp.norm_confidence(conf_raw or "")),
+            )
+
+        if not instruments:
+            raise ValueError("No instrument blocks found in technical markdown")
+
+        return TechnicalOutput(prediction_date=pred, instruments=instruments)
+
+
 if __name__ == "__main__":
     from core.io import FileSaver, week_stem
 

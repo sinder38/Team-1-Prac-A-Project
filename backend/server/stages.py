@@ -19,6 +19,7 @@ from pipeline.config import (
 from pipeline.context import PipelineContext
 from pipeline.stages import (
     run_almanac,
+    run_delta,
     run_evidence,
     run_llm,
     run_macro,
