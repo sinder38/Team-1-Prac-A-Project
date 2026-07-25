@@ -69,6 +69,8 @@ def _saved_artifact_response(
 
     with db_session() as session:
         if agent_type == "llm":
+            if model is None:
+                return err("Missing required query param: model", 400)
             data = repo.get_llm_payload(session, run_id, model)
         else:
             data = repo.get_agent_payload(session, run_id, agent_type)

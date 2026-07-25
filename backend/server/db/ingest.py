@@ -8,19 +8,30 @@ never blocks startup.
 
 from __future__ import annotations
 
+import json
 import logging
+from dataclasses import asdict
 
-from server.db import parsers, repository as repo
+from agents.almanac.almanac_agent import AlmanacAgent
+from agents.evidence.evidence_agent import EvidenceAgent
+from agents.macro.macro_agent import MacroAgent
+from agents.technical.technical_agent import TechnicalAgent
+from server.db import repository as repo
 from server.db.context import db_session
 
 logger = logging.getLogger(__name__)
 
-# agent_type -> parser(text, prediction_date)
-_AGENT_PARSERS = {
-    "almanac": parsers.parse_almanac,
-    "macro": parsers.parse_macro,
-    "technical": parsers.parse_technical,
+# agent_type -> agent class exposing parse_md(text, prediction_date) -> output
+_AGENT_CLASSES = {
+    "almanac": AlmanacAgent,
+    "macro": MacroAgent,
+    "technical": TechnicalAgent,
 }
+
+
+def _to_payload(output) -> dict:
+    """Serialize a dataclass output to a JSON-safe payload (dates, str-enums)."""
+    return json.loads(json.dumps(asdict(output), default=str))
 
 
 def ingest_data_dir() -> dict[str, int]:
@@ -44,13 +55,13 @@ def ingest_data_dir() -> dict[str, int]:
             )
             counts["weeks"] += 1
 
-            for agent_type, parser in _AGENT_PARSERS.items():
+            for agent_type, agent_cls in _AGENT_CLASSES.items():
                 path = _resolve_agent_path(agent_type, stem)
                 text = _read_text(path) if path else None
                 if not text:
                     continue
                 try:
-                    payload = parser(text, pred)
+                    payload = _to_payload(agent_cls.parse_md(text, pred))
                 except Exception as exc:  # noqa: BLE001 - keep startup resilient
                     logger.warning("ingest: %s %s failed: %s", agent_type, stem, exc)
                     counts["errors"] += 1
@@ -65,7 +76,7 @@ def ingest_data_dir() -> dict[str, int]:
                     session,
                     run,
                     "evidence",
-                    parsers.parse_evidence(evidence_text, pred, stem),
+                    _to_payload(EvidenceAgent.parse_md(evidence_text, pred)),
                 )
                 counts["agents"] += 1
 

@@ -142,7 +142,9 @@ def discover_archive_stems() -> dict[str, date]:
         if not folder.is_dir():
             continue
         for path in folder.iterdir():
-            if not path.is_file():
+            # Only Markdown archives define a week. Evidence chart images
+            # (e.g. finviz_..._W30.png) must not create a spurious empty week.
+            if not path.is_file() or path.suffix.lower() != ".md":
                 continue
             m = _STEM_RE.search(path.name)
             if m:
@@ -483,9 +485,12 @@ def _week_sort_value(entry: dict) -> str:
 
 
 def _run_entry(run) -> dict:
+    from agents.io import week_stem
+
+    stem = run.week_stem or week_stem(run.prediction_date)
     return {
-        "week": _label_for_stem(run.week_stem, run.prediction_date),
-        "stem": run.week_stem,
+        "week": _label_for_stem(stem, run.prediction_date),
+        "stem": stem,
         "prediction_date": run.prediction_date.isoformat(),
         "run_id": run.run_id,
         "source": run.source,
@@ -512,13 +517,13 @@ def list_all_weeks() -> list[dict]:
         key=lambda r: r.created_at,
     )
     for run in runtime:
-        by_week[_label_for_stem(run.week_stem, run.prediction_date)] = _run_entry(run)
+        entry = _run_entry(run)
+        by_week[entry["week"]] = entry
 
     for run in runs:
         if run.source != "archive":
             continue
-        by_week.setdefault(
-            _label_for_stem(run.week_stem, run.prediction_date), _run_entry(run)
-        )
+        entry = _run_entry(run)
+        by_week.setdefault(entry["week"], entry)
 
     return [by_week[week] for week in sorted(by_week)]

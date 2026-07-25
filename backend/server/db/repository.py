@@ -158,7 +158,7 @@ def list_runtime_run_ids_for_week(session: Session, week_stem: str) -> list[str]
             PredictionRun.run_id.is_not(None),
         )
     ).all()
-    return sorted(set(rows))
+    return sorted({r for r in rows if r is not None})
 
 
 # --- reserved for later stages (delta / comparison / human score) -------------

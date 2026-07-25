@@ -291,8 +291,17 @@ def post_llm():
             for agent_type in ("almanac", "technical", "macro", "evidence")
         }
 
-    missing = [agent_type for agent_type, p in payloads.items() if p is None]
-    if missing:
+    almanac_data = payloads["almanac"]
+    technical_data = payloads["technical"]
+    macro_data = payloads["macro"]
+    evidence_data = payloads["evidence"]
+    if (
+        almanac_data is None
+        or technical_data is None
+        or macro_data is None
+        or evidence_data is None
+    ):
+        missing = [agent_type for agent_type, p in payloads.items() if p is None]
         return err(
             f"Missing agent artifacts for run_id={run_id!r}: {', '.join(missing)}",
             404,
@@ -301,10 +310,10 @@ def post_llm():
     # Load agent outputs into PipelineContext
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        ctx.almanac = almanac_from_payload(payloads["almanac"])
-        ctx.technical = technical_from_payload(payloads["technical"])
-        ctx.macro = macro_from_payload(payloads["macro"])
-        ctx.evidence = evidence_from_payload(payloads["evidence"])
+        ctx.almanac = almanac_from_payload(almanac_data)
+        ctx.technical = technical_from_payload(technical_data)
+        ctx.macro = macro_from_payload(macro_data)
+        ctx.evidence = evidence_from_payload(evidence_data)
 
         with db_session() as session:
             delta_row = repo.get_latest_delta(session)
