@@ -1,13 +1,20 @@
 """Regenerate Markdown artifacts from the DB on request.
 
 This backs ``POST /export`` — e.g. after a successful pipeline run, produce the
-per-agent ``.md`` files from the stored structured data. Technical output is
-lossy (see ``server.db.render``); the LLM comparison and human score have no
-Markdown renderer and are not exported here.
+``.md``/``.txt`` files from the stored structured data:
+
+* the four agents (almanac, macro, technical, evidence),
+* per-model LLM synthesis files (``synthesis_<slug>_<stem>.txt``),
+* the multi-model comparison (``llm_comparison_<stem>.md``),
+* the team human score (``human_score_<stem>.md``).
+
+Only artifacts actually stored for the run are emitted. Technical output and the
+archive-sourced comparison/human-score are lossy (see ``server.db.render``).
 """
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -27,21 +34,85 @@ def _filename(agent_type: str, stem: str) -> str:
     return f"{agent_type}_agent_{stem}.md"
 
 
+def _artifact(agent_type: str, directory: str, filename: str, markdown: str) -> dict:
+    return {
+        "agent_type": agent_type,
+        "directory": directory,
+        "filename": filename,
+        "markdown": markdown,
+    }
+
+
 def build_run_artifacts(session: Session, run: PredictionRun) -> list[dict]:
-    """Render every exportable agent artifact stored for ``run``."""
+    """Render every artifact stored for ``run``: agents, LLM synthesis, the
+    multi-model comparison, and the human score."""
     stem = run.week_stem or week_stem(run.prediction_date)
+    pred = run.prediction_date
     artifacts: list[dict] = []
+
     for agent_type in _EXPORTABLE:
         payload = repo.agent_payload_for_run(session, run, agent_type)
         if not payload:
             continue
         artifacts.append(
-            {
-                "agent_type": agent_type,
-                "directory": agent_type,
-                "filename": _filename(agent_type, stem),
-                "markdown": render.render_markdown(agent_type, payload),
-            }
+            _artifact(
+                agent_type,
+                agent_type,
+                _filename(agent_type, stem),
+                render.render_markdown(agent_type, payload),
+            )
+        )
+
+    artifacts += _llm_artifacts(session, run, stem, pred)
+
+    human = repo.human_score_for_run(session, run)
+    if human:
+        artifacts.append(
+            _artifact(
+                "human_score",
+                "human",
+                f"human_score_{stem}.md",
+                render.render_human_score(human),
+            )
+        )
+
+    return artifacts
+
+
+def _llm_artifacts(
+    session: Session, run: PredictionRun, stem: str, pred: date
+) -> list[dict]:
+    """Per-model synthesis files plus the comparison table.
+
+    Prefers the run's per-model LLM outputs (lossless). Falls back to the parsed
+    comparison payload when only that is stored (archive weeks)."""
+    artifacts: list[dict] = []
+    llm_rows = repo.llm_outputs_for_run(session, run)
+
+    for row in llm_rows:
+        artifacts.append(
+            _artifact(
+                "llm_synthesis",
+                "llm",
+                f"synthesis_{row.model_slug}_{stem}.txt",
+                render.render_llm_synthesis(row.payload),
+            )
+        )
+
+    if llm_rows:
+        markdown = render.render_llm_comparison_from_outputs(
+            [(row.model_slug, row.payload) for row in llm_rows], stem, pred
+        )
+        artifacts.append(
+            _artifact("llm_comparison", "llm", f"llm_comparison_{stem}.md", markdown)
+        )
+        return artifacts
+
+    comparison = repo.llm_comparison_for_run(session, run)
+    if comparison:
+        markdown = render.render_llm_comparison_from_payload(comparison, stem, pred)
+        artifacts.append(
+            _artifact("llm_comparison", "llm", f"llm_comparison_{stem}.md", markdown)
         )
     return artifacts
 

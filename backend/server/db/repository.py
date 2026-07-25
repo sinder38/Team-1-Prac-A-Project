@@ -246,6 +246,39 @@ def agent_payload_for_run(
     return row.payload if row else None
 
 
+def llm_outputs_for_run(
+    session: Session, run: PredictionRun
+) -> list[LLMOutput]:
+    """All per-model LLM outputs for a run, ordered by model slug."""
+    return list(
+        session.scalars(
+            select(LLMOutput)
+            .where(LLMOutput.run_id_fk == run.id)
+            .order_by(LLMOutput.model_slug)
+        ).all()
+    )
+
+
+def llm_comparison_for_run(
+    session: Session, run: PredictionRun
+) -> dict | None:
+    """The stored multi-model comparison payload for a run (either source)."""
+    row = session.scalar(
+        select(LLMComparison).where(LLMComparison.run_id_fk == run.id)
+    )
+    return row.payload if row else None
+
+
+def human_score_for_run(
+    session: Session, run: PredictionRun
+) -> dict | None:
+    """The stored human-score payload for a run (either source)."""
+    row = session.scalar(
+        select(HumanScore).where(HumanScore.run_id_fk == run.id)
+    )
+    return row.payload if row else None
+
+
 def get_archive_agent_payload(
     session: Session, week_stem: str, agent_type: str
 ) -> dict | None:

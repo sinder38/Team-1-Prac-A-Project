@@ -12,6 +12,7 @@ import {
   getLlmModels,
   getStageLogs,
   runStage as apiRunStage,
+  exportArtifacts as apiExportArtifacts,
   DEFAULT_HORIZON_DAYS,
 } from '../api'
 import { todayIso, dateToWeekLabel } from '../lib/date'
@@ -86,6 +87,8 @@ export function usePipeline() {
   const [error, setError] = useState(null)
   const [availableModels, setAvailableModels] = useState([])
   const [selectedModels, setSelectedModels] = useState(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportStatus, setExportStatus] = useState(null)
 
   // Keep Logs "Run ID" in sync for live runs (pipeline.id === API runId).
   // Archive weeks set pipeline.id to archive-WXX separately without changing API runId.
@@ -156,6 +159,7 @@ export function usePipeline() {
 
   function resetRun() {
     setError(null)
+    setExportStatus(null)
     const nextId = makeRunId()
     setRunId(nextId)
     setPipeline(prev => ({
@@ -258,6 +262,31 @@ export function usePipeline() {
     return runStage(doneCount)
   }
 
+  // Export the current run's stored data to data/<agent>/*.md. Archive weeks are
+  // keyed by stem; live/saved runs by their real run id.
+  const canExport = doneCount > 0 && !isRunning && !exporting
+
+  async function exportArtifacts() {
+    if (!canExport) return
+    setExportStatus(null)
+    setExporting(true)
+    try {
+      const isArchive = pipeline.id?.startsWith('archive-')
+      const stem = isArchive ? currentWeek?.split('-').pop() : undefined
+      const data = await apiExportArtifacts({ runId, stem })
+      const written = data.written ?? []
+      setExportStatus(
+        written.length
+          ? { tone: 'success', message: `Exported ${written.length} file(s) to data/`, files: written }
+          : { tone: 'error', message: 'No artifacts found to export for this run.' },
+      )
+    } catch (err) {
+      setExportStatus({ tone: 'error', message: errorMessage(err, 'Export failed') })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   // Completing the human report marks the final stage done.
   function completeReview(form) {
     if (!form) return
@@ -293,6 +322,7 @@ export function usePipeline() {
 
   function onDateChange(date) {
     setError(null)
+    setExportStatus(null)
     setPredictionDate(date)
     const week = dateToWeekLabel(date)
     setSelectedWeek(week)
@@ -306,6 +336,7 @@ export function usePipeline() {
   // Selecting a saved week shows its stored (already-complete) outputs.
   async function onWeekSelect(entry) {
     setError(null)
+    setExportStatus(null)
     setSelectedWeek(entry.week)
     setPredictionDate(entry.predictionDate)
     setLogs([])
@@ -375,5 +406,9 @@ export function usePipeline() {
     runNext,
     resetRun,
     completeReview,
+    exportArtifacts,
+    exporting,
+    exportStatus,
+    canExport,
   }
 }
