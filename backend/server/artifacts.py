@@ -5,7 +5,9 @@ from agents.io import week_stem
 from flask import Blueprint, jsonify, request
 
 from server.archive import list_all_weeks, load_archive_week, load_human_score
-from server.utils import OUTPUTS_ROOT, artifact_path, err, load_artifact, parse_date
+from server.db import repository as repo
+from server.db.context import db_session
+from server.utils import err, parse_date
 
 artifacts_bp = Blueprint("artifacts", __name__, url_prefix="/artifacts")
 
@@ -54,27 +56,26 @@ def _saved_artifact_response(
         if not model:
             return err("Missing required query param: model", 400)
 
-    horizon_days = None
     if needs_horizon:
-        horizon_days, error = _get_horizon_days(request.args)
+        _horizon_days, error = _get_horizon_days(request.args)
         if error:
             return error
 
-    stem, error = _stem_from_args()
+    # prediction_date is validated for API compatibility; the DB locates the
+    # artifact by run_id, so the stem itself is no longer needed here.
+    _stem, error = _stem_from_args()
     if error:
         return error
 
-    path = artifact_path(
-        agent_type,
-        stem,
-        run_id,
-        horizon_days=horizon_days,
-        model=model,
-    )
-    try:
-        data = load_artifact(path)
-    except FileNotFoundError as exc:
-        return err(str(exc), 404)
+    with db_session() as session:
+        if agent_type == "llm":
+            data = repo.get_llm_payload(session, run_id, model)
+        else:
+            data = repo.get_agent_payload(session, run_id, agent_type)
+    if data is None:
+        return err(
+            f"Artifact not found: {agent_type} for run_id={run_id!r}", 404
+        )
     return jsonify(data), 200
 
 
@@ -118,33 +119,15 @@ def get_runs():
         return err(f"Invalid prediction_date: {raw_date!r}", 400)
 
     stem = week_stem(prediction_date)
-    if not OUTPUTS_ROOT.exists():
-        return jsonify({"prediction_date": raw_date, "week": stem, "run_ids": []}), 200
-    run_ids: set[str] = set()
-
-    # Scan all agent folders for artifact names containing this week.
-    stem_escaped = re.escape(stem)
-    standard_pattern = re.compile(
-        rf"^[a-z]+_{stem_escaped}_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$"
-    )
-    llm_pattern = re.compile(rf"^llm_[a-z0-9]+_{stem_escaped}_(.+?)_\d+d\.json$")
-
-    for subdir in OUTPUTS_ROOT.iterdir():
-        if not subdir.is_dir():
-            continue
-        for path in subdir.glob(f"*_{stem}_*.json"):
-            match = standard_pattern.match(path.name)
-            if not match:
-                match = llm_pattern.match(path.name)
-            if match:
-                run_ids.add(match.group(1))
+    with db_session() as session:
+        run_ids = repo.list_runtime_run_ids_for_week(session, stem)
 
     return (
         jsonify(
             {
                 "prediction_date": raw_date,
                 "week": stem,
-                "run_ids": sorted(run_ids),
+                "run_ids": run_ids,
             }
         ),
         200,
