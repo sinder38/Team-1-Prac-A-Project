@@ -19,7 +19,6 @@ from pipeline.config import (
 from pipeline.context import PipelineContext
 from pipeline.stages import (
     run_almanac,
-    run_delta,
     run_evidence,
     run_llm,
     run_macro,
@@ -55,16 +54,6 @@ _NO_ARTIFACTS_CONFIG = PipelineConfig(
     llm=LLMConfig(models=[], max_retries=5),
     artifacts=ArtifactsConfig(save_json=False, save_md=False),
 )
-
-# Registry maps short model keys (as accepted by the /stages/llm endpoint) → LLMModelEntry.
-_MODEL_REGISTRY: dict[str, LLMModelEntry] = {
-    "example": LLMModelEntry(id="example/example:free"),
-    "nemotron": LLMModelEntry(id="nvidia/nemotron-3-super-120b-a12b:free"),
-    "gptoss": LLMModelEntry(id="openai/gpt-oss-120b:free"),
-    "gemma": LLMModelEntry(id="google/gemma-4-31b-it:free"),
-    "laguna": LLMModelEntry(id="poolside/laguna-m.1:free"),
-}
-
 
 def _write_artifact(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
