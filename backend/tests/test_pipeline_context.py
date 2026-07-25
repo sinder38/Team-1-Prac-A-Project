@@ -33,3 +33,13 @@ def test_pipeline_context_stores_outputs():
     )
     ctx.evidence = ev
     assert ctx.evidence.week == "W25"
+
+
+def test_pipeline_context_horizon_default():
+    ctx = PipelineContext(prediction_date=date(2026, 6, 16))
+    assert ctx.horizon_days == 7
+
+
+def test_pipeline_context_horizon_custom():
+    ctx = PipelineContext(prediction_date=date(2026, 6, 16), horizon_days=14)
+    assert ctx.horizon_days == 14

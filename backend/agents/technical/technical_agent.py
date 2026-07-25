@@ -156,11 +156,12 @@ class TechnicalAgent(BaseAgent):
         instruments: list[Symbol] = INSTRUMENTS,
         **kwargs,
     ) -> TechnicalOutput:
+        horizon_days = int(kwargs.get("horizon_days", 7))
         self._frames = {}
         results: dict[str, InstrumentTechnical] = {}
         for symbol in instruments:
             results[symbol] = self.fetch_instrument(symbol, prediction_date)
-        return TechnicalOutput(prediction_date=prediction_date, instruments=results)
+        return TechnicalOutput(prediction_date=prediction_date, instruments=results, horizon_days=horizon_days,)
 
     def _ema_zone(self, p: float, fast: float, slow: float) -> tuple[int, str, str]:
         neutral = Bias.NEUTRAL.value
@@ -185,11 +186,16 @@ class TechnicalAgent(BaseAgent):
         )
 
     def _render_block(
-        self, symbol: Symbol, inst: InstrumentTechnical, bar_date: date
+        self, symbol: Symbol, inst: InstrumentTechnical, bar_date: date, horizon_days: int = 7
     ) -> list[str]:
         p, e8, e21 = inst.last_close, inst.ema_8, inst.ema_21
         sup, res, sup2, res2 = self._swing_levels(self._frames[symbol])
         zid, zlabel, zdesc = self._ema_zone(p, e8, e21)
+        watch = (
+            "WATCH THIS WEEK"
+            if horizon_days <= 7
+            else f"WATCH NEXT {horizon_days} DAYS"
+        )
 
         return [
             f"INSTRUMENT: {LABELS[symbol]}",
@@ -222,12 +228,19 @@ class TechnicalAgent(BaseAgent):
             f"TECHNICAL BIAS: {inst.trend_bias.value}.",
             f"CONFIDENCE: {inst.confidence.value}.",
             f"INVALIDATION: {self._invalidation(inst.trend_bias, inst.key_support, inst.key_resistance)}",
-            f"WATCH THIS WEEK: Watch {_fmt(res)} resistance and {_fmt(sup)} support.",
+            f"{watch}: Watch {_fmt(res)} resistance and {_fmt(sup)} support.",
         ]
 
     def render_md(self, output: TechnicalOutput, prediction_date: date) -> str:
+        horizon_days = getattr(output, "horizon_days", 7)
+        title = (
+            f"Technical Agent Output — Week of {prediction_date.day} {prediction_date.strftime('%B %Y')}"
+            if horizon_days <= 7
+            else f"Technical Agent Output — Next {horizon_days} days from {prediction_date.day} {prediction_date.strftime('%B %Y')}"
+        )
+
         lines = [
-            f"Technical Agent Output — Week of {prediction_date.day} {prediction_date.strftime('%B %Y')}",
+            f"{title }",
             "",
             "Quick note: The 8 EMA is a short-term average price line. The 21 EMA is a "
             "longer-term average. When price sits above both and the 8 is above the 21, "
@@ -246,7 +259,7 @@ class TechnicalAgent(BaseAgent):
                 raise ValueError(f"No valid bar date for {symbol}")
             bar_date = cast(date, last_ts.date())
             lines.extend(
-                self._render_block(symbol, output.instruments[symbol], bar_date)
+                self._render_block(symbol, output.instruments[symbol], bar_date, horizon_days)
             )
             if i < len(symbols) - 1:
                 lines.extend(["", "---", ""])

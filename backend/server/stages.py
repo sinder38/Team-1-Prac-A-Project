@@ -85,7 +85,7 @@ def post_almanac():
     except (ValueError, TypeError) as e:
         return err(str(e), 400)
 
-    ctx = PipelineContext(prediction_date=prediction_date)
+    ctx = PipelineContext(prediction_date=prediction_date, horizon_days=horizon_days)
     try:
         run_almanac(ctx, CONFIG)
     except Exception as e:
@@ -117,7 +117,7 @@ def post_technical():
     except (ValueError, TypeError) as e:
         return err(str(e), 400)
 
-    ctx = PipelineContext(prediction_date=prediction_date)
+    ctx = PipelineContext(prediction_date=prediction_date, horizon_days=horizon_days)
     try:
         run_technical(ctx, CONFIG)
     except Exception as e:
@@ -148,7 +148,7 @@ def post_macro():
     except (ValueError, TypeError) as e:
         return err(str(e), 400)
 
-    ctx = PipelineContext(prediction_date=prediction_date)
+    ctx = PipelineContext(prediction_date=prediction_date, horizon_days=horizon_days)
     try:
         run_macro(ctx, CONFIG)
     except Exception as e:
@@ -289,7 +289,7 @@ def post_llm():
         )
 
     # Load agent outputs from disk into PipelineContext
-    ctx = PipelineContext(prediction_date=prediction_date)
+    ctx = PipelineContext(prediction_date=prediction_date, horizon_days=horizon_days)
     try:
 
         def _load(agent_type, **kwargs):
@@ -314,6 +314,7 @@ def post_llm():
                 )
                 for s in almanac_data.get("sector_signals", [])
             ],
+            horizon_days=almanac_data.get("horizon_days", horizon_days),
         )
 
         ctx.technical = TechnicalOutput(
@@ -330,6 +331,7 @@ def post_llm():
                 )
                 for k, v in technical_data.get("instruments", {}).items()
             },
+            horizon_days=technical_data.get("horizon_days", horizon_days),
         )
 
         ctx.macro = MacroOutput(
@@ -360,6 +362,7 @@ def post_llm():
             ],
             key_earnings=macro_data.get("key_earnings", []),
             confirmed_news=macro_data.get("confirmed_news", []),
+            horizon_days=macro_data.get("horizon_days", horizon_days),
         )
 
         ctx.evidence = EvidenceOutput(

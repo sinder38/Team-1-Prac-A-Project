@@ -202,9 +202,9 @@ class MacroAgent(BaseAgent):
             ),
         )
 
-    def fetch_upcoming_events(self, prediction_date: date) -> list[Event]:
+    def fetch_upcoming_events(self, prediction_date: date, horizon_days: int = 7) -> list[Event]:
         """Fetch next week's five most important TradingEconomics events."""
-        return self.calendar_source.get_top_events(prediction_date)
+        return self.calendar_source.get_top_events(prediction_date, horizon_days=horizon_days)
 
     def build_week_ahead_calendar(self, events: list[Event]) -> list[CalendarEvent]:
         """Convert sourced events to schema objects for export."""
@@ -341,7 +341,7 @@ class MacroAgent(BaseAgent):
             and self.calculate_event_risk(events) >= 16
         )
 
-    def fetch_macro_data(self, prediction_date: date) -> MacroOutput:
+    def fetch_macro_data(self, prediction_date: date, horizon_days: int = 7) -> MacroOutput:
         """
         Fetch Fed rate, Treasury yields, DXY, WTI, and Gold with weekly changes.
         Uses no-key FRED CSV downloads for rates/yields and yfinance for commodities.
@@ -382,7 +382,7 @@ class MacroAgent(BaseAgent):
         else:
             confidence = Confidence.LOW
 
-        upcoming_events = self.fetch_upcoming_events(prediction_date)
+        upcoming_events = self.fetch_upcoming_events(prediction_date, horizon_days)
         key_earnings = [
             self.earnings_source.render_event(event)
             for event in self.earnings_source.get_key_events(prediction_date)
@@ -423,10 +423,12 @@ class MacroAgent(BaseAgent):
             week_ahead_calendar=self.build_week_ahead_calendar(upcoming_events),
             key_earnings=key_earnings,
             confirmed_news=confirmed_news,
+            horizon_days=horizon_days,
         )
 
     def run(self, prediction_date: date, **kwargs) -> MacroOutput:
-        return self.fetch_macro_data(prediction_date)
+        horizon_days = int(kwargs.get("horizon_days", 7))
+        return self.fetch_macro_data(prediction_date, horizon_days=horizon_days)
 
     def save_json(self, output: MacroOutput, prediction_date: date) -> None:
         """Serialize output to data/outputs/macro/{YYYY-WNN}.json."""
