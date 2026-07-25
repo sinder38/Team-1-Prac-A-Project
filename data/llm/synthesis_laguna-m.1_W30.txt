@@ -1,0 +1,17 @@
+# LLM Agent Output — Laguna M.1 — Week of 2026-07-25
+
+1. Weekly Regime: Bearish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - All three indices closed below their 8-day and 21-day EMAs with bearish trend bias confirmed by technical agent
+   - Energy sector surged 2.95% despite being in seasonal SHORT window, while Technology sector rose 1.63% in seasonal LONG window supporting Nasdaq
+   - Dollar and oil prices both rising (DXY +0.69%, WTI +8.27%) with neutral macro backdrop ahead of Fed decision on July 29
+4. Key Contradictions:
+   - Technical indicators show bearish bias across all indices but Technology sector seasonal window supports NDX bullishly
+   - Rising oil prices (+8.27%) contradict Energy sector's seasonal SHORT window classification
+5. Invalidation Conditions: A decisive Fed rate cut or significant drop in yields below 4.5% would invalidate the bearish technical read
+6. Predicted % move — SPX: -2.0% to 0.5%
+   Predicted % move — NDX: -1.5% to 0.8%
+   Predicted % move — IWM: -2.5% to 0.3%
+7. Plain-English brief: The market shows bearish technical momentum with all major indices trading below key moving averages, but mixed seasonal signals create uncertainty. Energy's strong performance despite seasonal headwinds and Technology's seasonal support for Nasdaq suggest potential for range-bound trading ahead of the Fed meeting.
+8. Disclaimer: This is not financial advice.

@@ -1,0 +1,17 @@
+# LLM Agent Output — Nemotron 3 Super 120B A12B — Week of 2026-07-25
+
+1. Weekly Regime: Bearish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - All three major indexes closed lower last week (SPX -0.66%, NDX -0.48%, IWM -0.66%).
+   - Sector performance showed strength in Energy (+2.95%), Utilities (+2.26%), and Technology (+1.63%), while Consumer discretionary (-5.79%), Communication (-4.76%), and Consumer staples (-2.32%) were weakest.
+   - Technical indicators show bearish bias with prices below 8- and 21-day EMAs, and key support levels nearby (SPX 7294, NDX 28231, IWM 290).
+4. Key Contradictions:
+   - Almanac sector signals indicate Technology is bullish (seasonal long window), yet technical trend bias for NDX is bearish.
+   - Macro bias is neutral with a hawkish hold expectation, but rising oil and gold prices suggest inflationary pressures that could conflict with a neutral stance.
+5. Invalidation Conditions: A decisive break above key resistance (SPX >7581.5, NDX >30328.8, IWM >302.7) or below key support (SPX <7294.2, NDX <28231.3, IWM <290.2) would invalidate the bearish outlook, as would a sharp move in yields or the dollar following the Fed decision.
+6. Predicted % move — SPX: -0.8% to 0.4%
+   Predicted % move — NDX: -0.3% to 0.5%
+   Predicted % move — IWM: -0.8% to 0.2%
+7. Plain-English brief: Markets are likely to drift lower or sideways this week, with limited upside potential, as bearish technical patterns outweigh mixed seasonal and neutral macro cues, pending the Fed's rate decision on July 29.
+8. Disclaimer: This is not financial advice.
