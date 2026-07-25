@@ -97,6 +97,12 @@ export function usePipeline() {
   const [availableModels, setAvailableModels] = useState([])
   const [selectedModels, setSelectedModels] = useState(null)
   const [providerMode, setProviderModeState] = useState(DEFAULT_PROVIDER_MODE)
+  // 'new' = idle/live run; 'archive' = viewing a saved week
+  const [weekPickerMode, setWeekPickerMode] = useState('new')
+  // Calendar-chosen week kept in the selector after switching to a past archive
+  // (even if that week has never been run yet).
+  const [newPredictionDate, setNewPredictionDate] = useState(todayIso)
+  const newWeek = dateToWeekLabel(newPredictionDate)
 
   // Keep Logs "Run ID" in sync for live runs (pipeline.id === API runId).
   // Archive weeks set pipeline.id to archive-WXX separately without changing API runId.
@@ -314,6 +320,8 @@ export function usePipeline() {
 
   function onDateChange(date) {
     setError(null)
+    setWeekPickerMode('new')
+    setNewPredictionDate(date)
     setPredictionDate(date)
     const week = dateToWeekLabel(date)
     setSelectedWeek(week)
@@ -328,6 +336,7 @@ export function usePipeline() {
   // real artifacts — calibration (4) and human score (5) stay pending until run.
   async function onWeekSelect(entry) {
     setError(null)
+    setWeekPickerMode('archive')
     setSelectedWeek(entry.week)
     setPredictionDate(entry.predictionDate)
     setLogs([])
@@ -406,6 +415,9 @@ export function usePipeline() {
     predictionDate,
     selectedWeek: currentWeek,
     savedWeeks,
+    weekPickerMode,
+    newWeek,
+    newPredictionDate,
     runId,
     humanScoreReport,
     doneCount,

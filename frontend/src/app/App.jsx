@@ -22,6 +22,9 @@ export default function App() {
     savedWeeks: pipeline.savedWeeks,
     onDateChange: pipeline.onDateChange,
     onWeekSelect: pipeline.onWeekSelect,
+    mode: pipeline.weekPickerMode,
+    newWeek: pipeline.newWeek,
+    newPredictionDate: pipeline.newPredictionDate,
   }
 
   const controls = {
