@@ -1,18 +1,8 @@
-import json
-from unittest.mock import patch
+from datetime import datetime, timezone
 
-import pytest
-
-from server import create_app
-from server.calibration import build_calibration_payload, load_latest_delta
-
-
-@pytest.fixture
-def client():
-    app = create_app()
-    app.config["TESTING"] = True
-    with app.test_client() as test_client:
-        yield test_client
+from tests.server.conftest import app_session
+from server.calibration import build_calibration_payload
+from server.db import repository as repo
 
 
 def _delta_data() -> dict:
@@ -49,56 +39,53 @@ def _delta_data() -> dict:
     }
 
 
-def test_load_latest_delta_skips_old_schema(tmp_path):
-    output_dir = tmp_path / "delta"
-    output_dir.mkdir()
-    (output_dir / "delta_W29.json").write_text(
-        json.dumps({"prediction_week": "vW29"}),
-        encoding="utf-8",
-    )
-    valid_path = output_dir / "delta_W28.json"
-    valid_path.write_text(json.dumps(_delta_data()), encoding="utf-8")
-
-    path, data = load_latest_delta(output_dir)
-
-    assert path == valid_path
-    assert data["prediction_week"] == "vW28"
+def _seed_delta(app, data: dict) -> None:
+    with app_session(app) as session:
+        repo.add_delta_report(
+            session,
+            None,
+            prediction_week=data.get("prediction_week"),
+            schema_version=data.get("schema_version"),
+            payload=data,
+        )
 
 
-def test_build_calibration_payload_maps_real_delta_data(tmp_path):
-    path = tmp_path / "delta_W28.json"
-    path.write_text("{}", encoding="utf-8")
+def test_build_calibration_payload_maps_real_delta_data():
+    modified = datetime(2026, 7, 20, 12, 0, tzinfo=timezone.utc)
 
-    payload = build_calibration_payload(_delta_data(), path)
+    payload = build_calibration_payload(_delta_data(), modified)
 
     assert payload["currentAccuracy"] == 71.4
     assert payload["rangeAccuracy"] == 50.0
     assert payload["latestDirectionAccuracy"] == 75.0
     assert payload["sectorCoverage"] == 1
     assert payload["suggestedWeights"]["technical"] == 30.0
+    assert payload["lastCalculated"] == modified.isoformat()
 
 
-def test_accuracy_tracker_returns_latest_delta(client, tmp_path):
-    path = tmp_path / "delta_W28.json"
-    data = _delta_data()
-    path.write_text(json.dumps(data), encoding="utf-8")
+def test_accuracy_tracker_returns_latest_delta(client, app):
+    _seed_delta(app, _delta_data())
 
-    with patch(
-        "server.calibration.load_latest_delta",
-        return_value=(path, data),
-    ):
-        response = client.get("/calibration/accuracy-tracker")
+    response = client.get("/calibration/accuracy-tracker")
+
+    assert response.status_code == 200
+    assert response.get_json()["latestWeek"] == "vW28"
+
+
+def test_accuracy_tracker_skips_old_schema(client, app):
+    # A newer week with an old schema version must not win over the valid one.
+    old = {"prediction_week": "vW29", "schema_version": 1}
+    _seed_delta(app, old)
+    _seed_delta(app, _delta_data())
+
+    response = client.get("/calibration/accuracy-tracker")
 
     assert response.status_code == 200
     assert response.get_json()["latestWeek"] == "vW28"
 
 
 def test_accuracy_tracker_returns_404_without_delta(client):
-    with patch(
-        "server.calibration.load_latest_delta",
-        side_effect=FileNotFoundError("No Delta output"),
-    ):
-        response = client.get("/calibration/accuracy-tracker")
+    response = client.get("/calibration/accuracy-tracker")
 
     assert response.status_code == 404
-    assert response.get_json()["error"] == "No Delta output"
+    assert "error" in response.get_json()

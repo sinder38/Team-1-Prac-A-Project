@@ -32,6 +32,7 @@ ASSET_ALIASES = {
 }
 FLAT_MOVE_THRESHOLD = 0.05
 
+# TODO: use Agent parsing instead
 
 def parse_prediction_file(path: Path) -> dict[str, PredictionRow]:
     """Read a locked prediction from either JSON or Markdown."""

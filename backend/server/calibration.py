@@ -1,14 +1,12 @@
 """Read the latest Delta Engine result for the calibration dashboard."""
 
-import json
-import re
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import datetime
 from typing import Any
 
 from flask import Blueprint, jsonify
 
-from agents.paths import OUTPUTS_DIR
+from server.db import repository as repo
+from server.db.context import db_session
 from server.utils import err
 
 calibration_bp = Blueprint(
@@ -16,40 +14,26 @@ calibration_bp = Blueprint(
     __name__,
     url_prefix="/calibration",
 )
-DELTA_OUTPUT_DIR = OUTPUTS_DIR / "delta"
 
 
 @calibration_bp.route("/accuracy-tracker", methods=["GET"])
 def get_accuracy_tracker():
+    with db_session() as session:
+        row = repo.get_latest_delta(session)
+        if row is None:
+            return err("No valid Delta Engine output is available yet.", 404)
+        data = row.payload
+        modified = row.created_at
     try:
-        path, data = load_latest_delta(DELTA_OUTPUT_DIR)
-        payload = build_calibration_payload(data, path)
-    except FileNotFoundError as exc:
-        return err(str(exc), 404)
-    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        payload = build_calibration_payload(data, modified)
+    except (KeyError, TypeError, ValueError) as exc:
         return err(f"Invalid Delta Engine output: {exc}", 500)
     return jsonify(payload), 200
 
 
-def load_latest_delta(output_dir: Path) -> tuple[Path, dict[str, Any]]:
-    """Return the latest valid v2 Delta artifact by prediction week."""
-    candidates: list[tuple[int, Path]] = []
-    if output_dir.exists():
-        for path in output_dir.glob("delta_W*.json"):
-            match = re.fullmatch(r"delta_W(\d{2})\.json", path.name)
-            if match:
-                candidates.append((int(match.group(1)), path))
-
-    for _, path in sorted(candidates, reverse=True):
-        data = json.loads(path.read_text(encoding="utf-8"))
-        if data.get("schema_version") == 2:
-            return path, data
-    raise FileNotFoundError("No valid Delta Engine output is available yet.")
-
-
 def build_calibration_payload(
     data: dict[str, Any],
-    path: Path,
+    modified: datetime,
 ) -> dict[str, Any]:
     history = data.get("history")
     rows = data.get("rows")
@@ -84,7 +68,6 @@ def build_calibration_payload(
         str(item["agent"]): round(float(item["suggested_weight"]) * 100, 1)
         for item in adjustments
     }
-    modified = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
 
     return {
         "latestWeek": data.get("prediction_week"),

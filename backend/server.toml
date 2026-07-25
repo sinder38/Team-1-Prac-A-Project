@@ -2,6 +2,10 @@
 save_json = false
 save_md   = false
 
+[database]
+# Ingest the /data markdown archives into SQLite on server startup.
+load_file_data = true
+
 [llm]
 max_retries = 3
 
