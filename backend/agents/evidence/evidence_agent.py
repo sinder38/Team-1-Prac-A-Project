@@ -269,6 +269,16 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
                     break
         return links
 
+    @classmethod
+    def parse_md(cls, text: str, prediction_date: date | None = None) -> EvidenceOutput:
+        from core.io import week_stem as ws
+        w = ws(prediction_date) if prediction_date else ""
+        return EvidenceOutput(
+            prediction_date=prediction_date or date.today(),
+            week=w,
+            content=text,
+        )
+
 
 if __name__ == "__main__":
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()

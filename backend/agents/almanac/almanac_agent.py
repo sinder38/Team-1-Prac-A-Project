@@ -305,6 +305,60 @@ Source: {SOURCE_NOTE}
         )
 
 
+    @classmethod
+    def parse_md(cls, text: str, prediction_date: date | None = None) -> AlmanacOutput:
+        import re
+        from agents import md_parsing as mdp
+
+        # prediction_date from "Week of 15–19 June 2026" in title
+        m = re.search(r"Week of (\d{1,2})[–-](\d{1,2}) ([A-Z][a-z]+) (\d{4})", text)
+        if m:
+            pred = date(int(m.group(4)), mdp._MONTH_MAP.get(m.group(3)[:3].lower(), 6), int(m.group(1)))
+        else:
+            pred = prediction_date or date.today()
+
+        seasonal_raw = mdp.first(r"ALMANAC SEASONAL BIAS:\s*(\w+)", text)
+        confidence_raw = mdp.first(r"PATTERN CONFIDENCE:\s*([A-Za-z–—-]+)", text)
+        thesis_raw = mdp.first(r'ALMANAC THESIS:\s*"(.+?)"', text) or ""
+        pattern_label = mdp.first(r"SPECIFIC WEEK PATTERN \(([^)]+)\)", text) or ""
+
+        # monthly_bias: look for "MONTH: (month)" and infer from known data
+        month_match = re.search(r"MONTH:\s*([A-Z][a-z]+)", text)
+        monthly = "Mixed"
+        if month_match:
+            mn = month_match.group(1)[:3].lower()
+            monthly_map = {"may": "Mixed", "jun": "Bearish", "jul": "Mixed", "dec": "Bullish"}
+            monthly = monthly_map.get(mn, "Mixed")
+
+        # sector_signals from "SECTOR SIGNALS:" section
+        sectors = []
+        in_sectors = False
+        for line in text.split("\n"):
+            if "SECTOR SIGNALS:" in line:
+                in_sectors = True
+                continue
+            if in_sectors and line.startswith("- "):
+                sm = re.match(r"- (.+?): (.+?) Bias: (\w+)\.", line)
+                if sm:
+                    sectors.append(SectorSignal(
+                        sector=sm.group(1).strip(),
+                        window=sm.group(2).strip(),
+                        bias=Bias(sm.group(3).title()),
+                    ))
+            elif in_sectors and not line.startswith("- "):
+                in_sectors = False
+
+        return AlmanacOutput(
+            prediction_date=pred,
+            monthly_bias=Bias(monthly),
+            seasonal_bias=Bias(mdp.norm_bias(seasonal_raw or "")),
+            confidence=Confidence(mdp.norm_confidence(confidence_raw or "")),
+            thesis=thesis_raw,
+            weekly_pattern=pattern_label,
+            sector_signals=sectors,
+        )
+
+
 if __name__ == "__main__":
     # Example:
     #   python backend/agents/almanac/almanac_agent.py 2026-06-16
