@@ -100,7 +100,7 @@ def post_almanac():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_almanac(ctx, CONFIG)
+        run_almanac(ctx, CONFIG)  # type: ignore[reportArgumentType]
     except Exception as e:
         return err(str(e), 500)
     assert ctx.almanac is not None
@@ -131,7 +131,7 @@ def post_technical():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_technical(ctx, CONFIG)
+        run_technical(ctx, CONFIG)  # type: ignore[reportArgumentType]
     except Exception as e:
         return err(str(e), 500)
     assert ctx.technical is not None
@@ -162,7 +162,7 @@ def post_macro():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_macro(ctx, CONFIG)
+        run_macro(ctx, CONFIG)  # type: ignore[reportArgumentType]
     except Exception as e:
         return err(str(e), 500)
     assert ctx.macro is not None
@@ -190,7 +190,7 @@ def post_evidence():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_evidence(ctx, CONFIG)
+        run_evidence(ctx, CONFIG)  # type: ignore[reportArgumentType]
     except Exception as e:
         return err(str(e), 500)
     assert ctx.evidence is not None
@@ -229,7 +229,7 @@ def post_delta():
 
     ctx = PipelineContext(prediction_date=prediction_date)
     try:
-        run_delta(
+        run_delta(  # type: ignore[reportArgumentType]
             ctx,
             CONFIG,
             actuals_markdown=actuals_markdown,
@@ -324,7 +324,7 @@ def post_llm():
         return err(f"Failed to load agent artifacts: {e}", 500)
 
     try:
-        _slug, _row = run_llm(ctx, CONFIG, _MODEL_REGISTRY[model_key])
+        _slug, _row = run_llm(ctx, CONFIG, _MODEL_REGISTRY[model_key])  # type: ignore[reportArgumentType]
     except Exception as e:
         return jsonify(
             {
