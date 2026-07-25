@@ -12,6 +12,100 @@ from server.utils import err, parse_date
 artifacts_bp = Blueprint("artifacts", __name__, url_prefix="/artifacts")
 
 
+@artifacts_bp.route("/almanac", methods=["GET"])
+def get_almanac():
+    return _saved_artifact_response("almanac", needs_horizon=True)
+
+
+@artifacts_bp.route("/technical", methods=["GET"])
+def get_technical():
+    return _saved_artifact_response("technical", needs_horizon=True)
+
+
+@artifacts_bp.route("/macro", methods=["GET"])
+def get_macro():
+    return _saved_artifact_response("macro", needs_horizon=True)
+
+
+@artifacts_bp.route("/evidence", methods=["GET"])
+def get_evidence():
+    return _saved_artifact_response("evidence")
+
+
+@artifacts_bp.route("/llm", methods=["GET"])
+def get_llm():
+    return _saved_artifact_response(
+        "llm",
+        needs_horizon=True,
+        needs_model=True,
+    )
+
+
+@artifacts_bp.route("/runs", methods=["GET"])
+def get_runs():
+    raw_date = request.args.get("prediction_date")
+    if not raw_date:
+        return err("Missing required query param: prediction_date", 400)
+    try:
+        prediction_date = parse_date(raw_date)
+    except ValueError:
+        return err(f"Invalid prediction_date: {raw_date!r}", 400)
+
+    stem = week_stem(prediction_date)
+    with db_session() as session:
+        run_ids = repo.list_runtime_run_ids_for_week(session, stem)
+
+    return (
+        jsonify(
+            {
+                "prediction_date": raw_date,
+                "week": stem,
+                "run_ids": run_ids,
+            }
+        ),
+        200,
+    )
+
+
+
+@artifacts_bp.route("/weeks", methods=["GET"])
+def list_weeks():
+    return jsonify({"weeks": list_all_weeks()}), 200
+
+
+@artifacts_bp.route("/archive", methods=["GET"])
+def get_archive():
+    raw_stem = request.args.get("stem") or request.args.get("week")
+    stem, error = _normalize_week_stem(raw_stem)
+    if error:
+        return error
+    if stem is None:
+        return err("Missing required query param: stem (e.g. W25)", 400)
+    try:
+        payload = load_archive_week(stem)
+    except ValueError as exc:
+        return err(str(exc), 400)
+    if payload is None:
+        return err(f"No archive data for {stem}", 404)
+    return jsonify(payload), 200
+
+
+@artifacts_bp.route("/human-score", methods=["GET"])
+def get_human_score():
+    raw_stem = request.args.get("stem") or request.args.get("week")
+    stem, error = _normalize_week_stem(raw_stem)
+    if error:
+        return error
+    if stem is None:
+        return err("Missing required query param: stem (e.g. W25)", 400)
+    try:
+        payload = load_human_score(stem)
+    except ValueError as exc:
+        return err(str(exc), 400)
+    if payload is None:
+        return err(f"No human score archive for {stem}", 404)
+    return jsonify(payload), 200
+
 def _stem_from_args() -> tuple[str, tuple | None]:
     """Extract week_stem from prediction_date query param.
 
@@ -80,65 +174,7 @@ def _saved_artifact_response(
         )
     return jsonify(data), 200
 
-
-@artifacts_bp.route("/almanac", methods=["GET"])
-def get_almanac():
-    return _saved_artifact_response("almanac", needs_horizon=True)
-
-
-@artifacts_bp.route("/technical", methods=["GET"])
-def get_technical():
-    return _saved_artifact_response("technical", needs_horizon=True)
-
-
-@artifacts_bp.route("/macro", methods=["GET"])
-def get_macro():
-    return _saved_artifact_response("macro", needs_horizon=True)
-
-
-@artifacts_bp.route("/evidence", methods=["GET"])
-def get_evidence():
-    return _saved_artifact_response("evidence")
-
-
-@artifacts_bp.route("/llm", methods=["GET"])
-def get_llm():
-    return _saved_artifact_response(
-        "llm",
-        needs_horizon=True,
-        needs_model=True,
-    )
-
-
-@artifacts_bp.route("/runs", methods=["GET"])
-def get_runs():
-    raw_date = request.args.get("prediction_date")
-    if not raw_date:
-        return err("Missing required query param: prediction_date", 400)
-    try:
-        prediction_date = parse_date(raw_date)
-    except ValueError:
-        return err(f"Invalid prediction_date: {raw_date!r}", 400)
-
-    stem = week_stem(prediction_date)
-    with db_session() as session:
-        run_ids = repo.list_runtime_run_ids_for_week(session, stem)
-
-    return (
-        jsonify(
-            {
-                "prediction_date": raw_date,
-                "week": stem,
-                "run_ids": run_ids,
-            }
-        ),
-        200,
-    )
-
-
 # Past weeks include generated JSON runs and older Markdown archives.
-
-
 def _normalize_week_stem(raw: str | None) -> tuple[str | None, tuple | None]:
     """Parse stem query param. Accepts W25 or 2026-W25. Returns (stem, error)."""
     if not raw:
@@ -149,42 +185,3 @@ def _normalize_week_stem(raw: str | None) -> tuple[str | None, tuple | None]:
     if not re.fullmatch(r"W\d{2}", stem):
         return None, err(f"Invalid stem: {raw!r} (expected W25 or 2026-W25)", 400)
     return stem, None
-
-
-@artifacts_bp.route("/weeks", methods=["GET"])
-def list_weeks():
-    return jsonify({"weeks": list_all_weeks()}), 200
-
-
-@artifacts_bp.route("/archive", methods=["GET"])
-def get_archive():
-    raw_stem = request.args.get("stem") or request.args.get("week")
-    stem, error = _normalize_week_stem(raw_stem)
-    if error:
-        return error
-    if stem is None:
-        return err("Missing required query param: stem (e.g. W25)", 400)
-    try:
-        payload = load_archive_week(stem)
-    except ValueError as exc:
-        return err(str(exc), 400)
-    if payload is None:
-        return err(f"No archive data for {stem}", 404)
-    return jsonify(payload), 200
-
-
-@artifacts_bp.route("/human-score", methods=["GET"])
-def get_human_score():
-    raw_stem = request.args.get("stem") or request.args.get("week")
-    stem, error = _normalize_week_stem(raw_stem)
-    if error:
-        return error
-    if stem is None:
-        return err("Missing required query param: stem (e.g. W25)", 400)
-    try:
-        payload = load_human_score(stem)
-    except ValueError as exc:
-        return err(str(exc), 400)
-    if payload is None:
-        return err(f"No human score archive for {stem}", 404)
-    return jsonify(payload), 200
