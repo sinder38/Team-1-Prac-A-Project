@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from agents.schemas import (
+from core.schemas import (
     AlmanacOutput,
     Bias,
     CalendarEvent,
