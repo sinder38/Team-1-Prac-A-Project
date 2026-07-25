@@ -37,9 +37,16 @@ from core.schemas import (
     SectorSignal,
     TechnicalOutput,
 )
+from server.config import load_server_config
+from server.db import repository as repo
 from server.utils import artifact_path, err, parse_date, require_fields
 
 stages_bp = Blueprint("stages", __name__, url_prefix="/stages")
+
+DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "server.toml"
+CONFIG = load_server_config(DEFAULT_CONFIG)
+_MODEL_REGISTRY: dict[str, LLMModelEntry] = {m.slug: m for m in CONFIG.llm.models}
+
 # TODO: move to config instead of manual
 _NO_ARTIFACTS_CONFIG = PipelineConfig(
     pipeline=PipelineSection(prediction_date="auto"),
