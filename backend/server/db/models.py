@@ -69,6 +69,9 @@ class PredictionRun(Base):
     human_score: Mapped["HumanScore | None"] = relationship(
         back_populates="run", cascade="all, delete-orphan", uselist=False
     )
+    final_prediction: Mapped["FinalPrediction | None"] = relationship(
+        back_populates="run", cascade="all, delete-orphan", uselist=False
+    )
     delta_reports: Mapped[list["DeltaReport"]] = relationship(
         back_populates="run", cascade="all, delete-orphan"
     )
@@ -169,6 +172,23 @@ class HumanScore(Base):
     generated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
 
     run: Mapped[PredictionRun] = relationship(back_populates="human_score")
+
+
+class FinalPrediction(Base):
+    """Team locked consensus brief. ``payload`` is the structured form + markdown."""
+
+    __tablename__ = "final_prediction"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id_fk: Mapped[int] = mapped_column(
+        ForeignKey("prediction_run.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+
+    run: Mapped[PredictionRun] = relationship(back_populates="final_prediction")
 
 
 class DeltaReport(Base):

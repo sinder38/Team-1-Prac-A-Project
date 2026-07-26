@@ -4,7 +4,12 @@
 import PropTypes from 'prop-types'
 import { PipelineController } from '../components/pipeline'
 import { AgentOutputsGrid } from '../components/agents'
-import { ReviewForm, HumanScoreReportCard } from '../components/review'
+import {
+  ReviewForm,
+  HumanScoreReportCard,
+  FinalPredictionForm,
+  FinalPredictionReportCard,
+} from '../components/review'
 
 export default function DashboardPage({
   pipeline,
@@ -12,10 +17,14 @@ export default function DashboardPage({
   controls,
   onNavigate,
   onCompleteReview,
+  onCompleteFinalPrediction,
   weekPicker,
   humanScoreReport,
+  finalPrediction,
 }) {
   const week = weekPicker?.selectedWeek || pipeline?.week || '—'
+  const predictionDate = weekPicker?.predictionDate || pipeline?.predictionDate
+  const showTeamReports = Boolean(humanScoreReport || finalPrediction)
 
   return (
     <div className="flex-1 overflow-auto">
@@ -39,14 +48,39 @@ export default function DashboardPage({
 
       <AgentOutputsGrid outputs={outputs} />
 
-      {humanScoreReport && (
+      {showTeamReports && (
         <section className="mx-4 pb-6 pt-2">
-          <div className="max-w-3xl">
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-900">Human Score Report</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Team assessment for {week}</p>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+            {humanScoreReport && (
+              <div className="min-w-0">
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-900">Human Score Report</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Team assessment for {week}</p>
+                </div>
+                <HumanScoreReportCard report={humanScoreReport} />
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-gray-900">Final Prediction</h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {finalPrediction
+                    ? `Locked consensus brief for ${week}`
+                    : `File the Team1 brief for ${week}`}
+                </p>
+              </div>
+              {finalPrediction ? (
+                <FinalPredictionReportCard report={finalPrediction} />
+              ) : (
+                <FinalPredictionForm
+                  week={week}
+                  predictionDate={predictionDate}
+                  hsrReady={Boolean(humanScoreReport)}
+                  onComplete={onCompleteFinalPrediction}
+                />
+              )}
             </div>
-            <HumanScoreReportCard report={humanScoreReport} />
           </div>
         </section>
       )}
@@ -60,6 +94,8 @@ DashboardPage.propTypes = {
   controls: PropTypes.object.isRequired,
   onNavigate: PropTypes.func,
   onCompleteReview: PropTypes.func,
+  onCompleteFinalPrediction: PropTypes.func,
   weekPicker: PropTypes.object,
   humanScoreReport: PropTypes.object,
+  finalPrediction: PropTypes.object,
 }
