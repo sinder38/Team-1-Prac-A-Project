@@ -45,12 +45,20 @@ describe('saved runtime runs', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ completed_stages: 2 }),
+        json: async () => ({
+          agent_types: ['almanac', 'macro', 'technical'],
+          has_llm_output: false,
+          has_delta_report: false,
+          has_human_score: false,
+        }),
       }),
     )
 
     await expect(getRunStatus('partial-run')).resolves.toEqual({
-      completedStages: 2,
+      agentTypes: ['almanac', 'macro', 'technical'],
+      hasLlmOutput: false,
+      hasDeltaReport: false,
+      hasHumanScore: false,
     })
   })
 })

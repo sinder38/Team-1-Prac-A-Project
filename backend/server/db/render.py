@@ -279,6 +279,13 @@ def render_human_score(payload: dict) -> str:
     return "\n".join(parts).rstrip() + "\n"
 
 
+def render_final_prediction(payload: dict) -> str:
+    markdown = str(payload.get("markdown") or "").strip()
+    if not markdown:
+        raise ValueError("final prediction payload has no markdown to export")
+    return markdown + "\n"
+
+
 def _render_technical(output: TechnicalOutput, prediction_date: date) -> str:
     """Lossy technical report from schema fields only (no frame-derived data)."""
     parts = [

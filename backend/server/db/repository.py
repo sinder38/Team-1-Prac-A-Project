@@ -17,6 +17,7 @@ from server.db.models import (
     SOURCE_RUN,
     AgentOutput,
     DeltaReport,
+    FinalPrediction,
     HumanScore,
     LLMComparison,
     LLMOutput,
@@ -246,6 +247,17 @@ def agent_payload_for_run(
     return row.payload if row else None
 
 
+def agent_types_for_run(session: Session, run: PredictionRun) -> list[str]:
+    """Return the names of all agent artifacts stored for a run."""
+    return list(
+        session.scalars(
+            select(AgentOutput.agent_type)
+            .where(AgentOutput.run_id_fk == run.id)
+            .order_by(AgentOutput.agent_type)
+        )
+    )
+
+
 def llm_outputs_for_run(
     session: Session, run: PredictionRun
 ) -> list[LLMOutput]:
@@ -290,21 +302,14 @@ def delta_report_for_run(
     )
 
 
-def completed_stages_for_run(session: Session, run: PredictionRun) -> int:
-    """Return how many sequential pipeline stages have persisted output."""
-    if human_score_for_run(session, run) is not None:
-        return 5
-    if delta_report_for_run(session, run):
-        return 4
-    if llm_outputs_for_run(session, run):
-        return 3
-
-    required_agents = ("almanac", "macro", "technical")
-    has_all_agents = all(
-        agent_payload_for_run(session, run, agent_type) is not None
-        for agent_type in required_agents
-    )
-    return 2 if has_all_agents else 0
+def artifact_status_for_run(session: Session, run: PredictionRun) -> dict:
+    """Describe which pipeline artifacts have been persisted for a run."""
+    return {
+        "agent_types": agent_types_for_run(session, run),
+        "has_llm_output": bool(llm_outputs_for_run(session, run)),
+        "has_delta_report": delta_report_for_run(session, run) is not None,
+        "has_human_score": human_score_for_run(session, run) is not None,
+    }
 
 
 def get_archive_agent_payload(
@@ -342,6 +347,69 @@ def get_archive_human_score(session: Session, week_stem: str) -> HumanScore | No
             PredictionRun.week_stem == week_stem,
             PredictionRun.source == SOURCE_ARCHIVE,
         )
+    )
+
+
+def get_runtime_human_score(session: Session, run_id: str) -> HumanScore | None:
+    return session.scalar(
+        select(HumanScore)
+        .join(PredictionRun, HumanScore.run_id_fk == PredictionRun.id)
+        .where(
+            PredictionRun.run_id == run_id,
+            PredictionRun.source == SOURCE_RUN,
+        )
+    )
+
+
+def upsert_final_prediction(
+    session: Session,
+    run: PredictionRun,
+    payload: dict,
+) -> FinalPrediction:
+    row = session.scalar(
+        select(FinalPrediction).where(FinalPrediction.run_id_fk == run.id)
+    )
+    if row is None:
+        row = FinalPrediction(run_id_fk=run.id)
+        session.add(row)
+    row.payload = payload
+    session.flush()
+    return row
+
+
+def get_runtime_final_prediction(session: Session, run_id: str) -> FinalPrediction | None:
+    return session.scalar(
+        select(FinalPrediction)
+        .join(PredictionRun, FinalPrediction.run_id_fk == PredictionRun.id)
+        .where(
+            PredictionRun.run_id == run_id,
+            PredictionRun.source == SOURCE_RUN,
+        )
+    )
+
+
+def final_prediction_for_run(
+    session: Session, run: PredictionRun
+) -> dict | None:
+    """The stored final-prediction payload for a run (either source)."""
+    row = session.scalar(
+        select(FinalPrediction).where(FinalPrediction.run_id_fk == run.id)
+    )
+    return row.payload if row else None
+
+
+def get_runtime_run_with_final_prediction_for_week(
+    session: Session, week_stem: str
+) -> PredictionRun | None:
+    """Any runtime run in this week that already has a locked final prediction."""
+    return session.scalar(
+        select(PredictionRun)
+        .join(FinalPrediction, FinalPrediction.run_id_fk == PredictionRun.id)
+        .where(
+            PredictionRun.week_stem == week_stem,
+            PredictionRun.source == SOURCE_RUN,
+        )
+        .limit(1)
     )
 
 

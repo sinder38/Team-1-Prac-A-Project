@@ -19,9 +19,13 @@ export default function App() {
   const weekPicker = {
     predictionDate: pipeline.predictionDate,
     selectedWeek: pipeline.selectedWeek,
+    selectedRunId: pipeline.selectedRunId,
     savedWeeks: pipeline.savedWeeks,
     onDateChange: pipeline.onDateChange,
     onWeekSelect: pipeline.onWeekSelect,
+    mode: pipeline.weekPickerMode,
+    newWeek: pipeline.newWeek,
+    newPredictionDate: pipeline.newPredictionDate,
   }
 
   const controls = {
@@ -42,6 +46,8 @@ export default function App() {
     canExport: pipeline.canExport,
     availableModels: pipeline.availableModels,
     selectedModels: pipeline.selectedModels,
+    providerMode: pipeline.providerMode,
+    setProviderMode: pipeline.setProviderMode,
     toggleModel: pipeline.toggleModel,
   }
 
@@ -53,8 +59,10 @@ export default function App() {
         controls={controls}
         onNavigate={setPage}
         onCompleteReview={pipeline.completeReview}
+        onCompleteFinalPrediction={pipeline.completeFinalPrediction}
         weekPicker={weekPicker}
         humanScoreReport={pipeline.humanScoreReport}
+        finalPrediction={pipeline.finalPrediction}
       />
     ),
     charts: <ChartsPage />,

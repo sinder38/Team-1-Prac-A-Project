@@ -9,6 +9,7 @@ const api = vi.hoisted(() => ({
   getRunStatus: vi.fn(),
   getStageLogs: vi.fn(),
   runStage: vi.fn(),
+  submitFinalPrediction: vi.fn(),
   submitHumanScore: vi.fn(),
 }))
 
@@ -36,7 +37,12 @@ describe('usePipeline history restore', () => {
       llmComparison: null,
       humanScoreReport: null,
     })
-    api.getRunStatus.mockResolvedValue({ completedStages: 2 })
+    api.getRunStatus.mockResolvedValue({
+      agentTypes: ['almanac', 'macro', 'technical'],
+      hasLlmOutput: false,
+      hasDeltaReport: false,
+      hasHumanScore: false,
+    })
 
     const { result } = renderHook(() => usePipeline())
     await waitFor(() => expect(api.getAvailableWeeks).toHaveBeenCalled())
@@ -59,5 +65,50 @@ describe('usePipeline history restore', () => {
       'idle',
       'idle',
     ])
+  })
+
+  it('submits human score to the restored run after all AI stages', async () => {
+    api.getAgentOutputs.mockResolvedValue({
+      almanac: { agent: 'Almanac Agent' },
+      macro: { agent: 'Macro Agent' },
+      technical: { agent: 'Technical Agent' },
+      llmComparison: null,
+      humanScoreReport: null,
+    })
+    api.getRunStatus.mockResolvedValue({
+      agentTypes: ['almanac', 'macro', 'technical'],
+      hasLlmOutput: true,
+      hasDeltaReport: true,
+      hasHumanScore: false,
+    })
+    api.submitHumanScore.mockResolvedValue({ ok: true })
+
+    const { result } = renderHook(() => usePipeline())
+    await waitFor(() => expect(api.getAvailableWeeks).toHaveBeenCalled())
+
+    await act(async () => {
+      await result.current.onWeekSelect({
+        week: '2026-W25',
+        predictionDate: '2026-06-18',
+        runId: 'restored-run',
+        source: 'run',
+      })
+    })
+
+    expect(result.current.doneCount).toBe(4)
+    expect(result.current.aiComplete).toBe(true)
+
+    await act(async () => {
+      await result.current.completeReview({
+        scores: {},
+        reasoning: {},
+        evidence: {},
+      })
+    })
+
+    expect(api.submitHumanScore).toHaveBeenCalledWith(
+      expect.objectContaining({ runId: 'restored-run' }),
+    )
+    expect(result.current.doneCount).toBe(5)
   })
 })

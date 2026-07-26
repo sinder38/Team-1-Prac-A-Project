@@ -1,7 +1,20 @@
-/** Infer saved archive progress when no runtime run ID is available. */
-export function completedStagesFromArtifacts(data = {}) {
-  if (data.humanScoreReport) return 5
-  if (data.llmComparison) return 3
-  if (data.almanac && data.macro && data.technical) return 2
-  return 0
+import { PIPELINE_STAGE_IDS, stageCountThrough } from './exampleData'
+
+const REQUIRED_AGENT_TYPES = ['almanac', 'macro', 'technical']
+
+/** Infer pipeline progress from artifacts loaded from SQLite or an archive. */
+export function completedStagesFromArtifacts(data = {}, runStatus = null) {
+  const storedAgentTypes = runStatus?.agentTypes ?? REQUIRED_AGENT_TYPES.filter(type => data[type])
+  const hasRequiredAgents = REQUIRED_AGENT_TYPES.every(type => storedAgentTypes.includes(type))
+  const hasLlmOutput = runStatus?.hasLlmOutput ?? Boolean(data.llmComparison)
+  const hasDeltaReport = runStatus?.hasDeltaReport ?? Boolean(data.deltaReport)
+  const hasHumanScore = runStatus?.hasHumanScore ?? Boolean(data.humanScoreReport)
+
+  let lastCompletedStage = null
+  if (hasRequiredAgents) lastCompletedStage = PIPELINE_STAGE_IDS.AGENTS
+  if (hasLlmOutput) lastCompletedStage = PIPELINE_STAGE_IDS.LLM
+  if (hasDeltaReport) lastCompletedStage = PIPELINE_STAGE_IDS.DELTA
+  if (hasHumanScore) lastCompletedStage = PIPELINE_STAGE_IDS.HUMAN_SCORE
+
+  return stageCountThrough(lastCompletedStage)
 }
