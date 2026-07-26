@@ -508,7 +508,7 @@ class MacroAgent(BaseAgent):
 
         return "\n\n".join(
             (
-                f"- {event.date_label}: [{event.name}]({event.source_url}) — Expected: "
+                f"- {event.date_label}: {event.name} — Expected: "
                 f"{event.expected}, Previous: {event.previous} — "
                 f"IMPORTANCE: {event.impact} — Priority: {event.priority}/100"
             )
