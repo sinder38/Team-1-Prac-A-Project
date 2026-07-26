@@ -555,7 +555,7 @@ def test_lookup_30_day_aggregates_expected_patterns():
         "End-of-quarter / early-July transition + "
         "Early-July holiday week / post-Independence Day + "
         "Post-holiday July follow-through + "
-        "General monthly seasonal pattern "
+        "Week after July monthly expiration "
         "(30-day window)"
     )
     assert long.seasonal_bias == Bias.MIXED
