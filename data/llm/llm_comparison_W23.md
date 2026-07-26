@@ -1,13 +1,23 @@
-# Multi-LLM Comparison Table — Week 23 (June 8–12, 2026)
+# Multi-LLM Comparison Table — W23 (run 2026-06-08)
 
-| Dimension | Claude (Opus 4.8 Max "Thinking") | ChatGPT (5.5 Instant) | Gemini (3.1 Pro "Extended") | DeepSeek (V4 Flash "Expert Mode") |
+Prompt was identical across all models (fair-comparison rule).
+
+| Dimension | NVIDIA Nemotron 3 Super | OpenAI gpt-oss-120b | Google Gemma 4 31B | Poolside Laguna M.1 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Weekly Regime** | Bearish | Bearish | Bearish | Bearish |
-| **Confidence Score** | Medium | High | Medium | Medium |
-| **SPX % estimate** | -3.5% to +1.5% | -0.8% to -3.0% | -1.0% to -3.0% | -3.0% to +1.5% |
-| **NDX % estimate** | -4.5% to +2.0% | -1.0% to -4.0% | -1.5% to -4.0% | -4.0% to +2.0% |
-| **IWM % estimate** | -4.0% to +2.0% | -1.0% to -3.5% | -1.0% to -3.5% | -3.5% to +2.0% |
-| **Top supporting reason** | Seasonality (midterm June), bearish macro (NFP), Tech breakdown | Midterm June weakest month, Macro deterioration (hot NFP, 10Y rising) | Almanac midterm June data, widespread technical damage (< 8 EMA) | Midterm June seasonality, Macro tightening (10y rising), Technical breakdown |
-| **Top contradiction cited** | CPI is 2-way wildcard, Tech bias only Neutral (8 EMA > 21 EMA) | Tech seasonality; Geopolitical support for energy/defense | XLK seasonal long, SPX technical bias still "Neutral" | XLK seasonal long window; CPI binary wildcard |
-| **Invalidation condition** | Cool CPI (< 3.9%), SPX reclaims 8 EMA, Oil rolls over | Cooler CPI, SPX reclaims 7,516.72, repricing Fed easing | Cooler CPI (< 3.8%), pushes indices > 8 EMA | Cooler CPI (MoM/YoY below consensus) |
-| **Tone / caveat language** | Wide ranges to reflect binary risk, highlights oversold bounce | High confidence, assertive, expects elevated volatility | Direct, warns of a bumpy ride | Automated, cautious, defensive |
+| **Weekly Regime** | Neutral | Bullish | Neutral | Uncertain |
+| **Confidence Score** | Low-Medium | Low-Medium | Low-Medium | Low |
+| **SPX % estimate** | -1.0% to 2.9% | -0.2% to 0.8% | -1.0% to 1.5% | -0.97% to 2.91% |
+| **NDX % estimate** | -2.9% to 4.6% | 1.5% to 2.5% | -1.0% to 2.0% | -2.88% to 4.58% |
+| **IWM % estimate** | -4.7% to 3.1% | 3.0% to 4.5% | -2.0% to 3.0% | -4.74% to 3.09% |
+| **Top supporting reason** | All three major indexes posted gains for the week, with IWM leading at +3.93%.; Sector performance showed Materials as top performer (+3.57%) while Communication services was the only sector down (-1.50%).; Chip stocks rallied strongly (Intel +26%, KLA +32%) while mega-cap software lagged (Oracle -14%, Microsoft -6%). | Week 04 Market Report shows SPX closed at 7,431.46, up 0.46% for the week.; Technical agent lists SPX EMA‑8 (7,492.27) above last close (7,405.73) and a neutral bias with low confidence.; Almanac agent signals a bearish monthly/seasonal bias but a bullish sector bias for Technology (XLK) supporting the Nasdaq rally. | Broad market recovery with 10 of 11 S&P sectors finishing green and VIX dropping 6.25%, indicating a shift toward risk-on sentiment.; Strong momentum in small caps (IWM up 3.93%) and a significant chip rally (Intel +26%, KLA +32%) supporting NDX.; Technicals show SPX and NDX are trading near or below their 8-day and 21-day EMAs, suggesting a neutral trend bias despite the weekly bounce. | All three indices posted gains last week with small caps leading (IWM +3.93%, NDX +2.17%, SPX +0.46%); Technology sector in bullish seasonal window (March-July) supporting Nasdaq while chip stocks surged (Intel +26%, KLA +32%); Risk-on sentiment returned with VIX down 6.25% and Bitcoin up 5.24% despite bearish monthly/seasonal context |
+| **Top contradiction** | Technical agent indicates neutral trend bias with low confidence, while Almanac agent shows bearish monthly and seasonal bias.; Evidence shows a bullish week with all indexes up, contradicting the bearish seasonal bias from Almanac. | Technical model is neutral/low confidence while the market data shows clear upside across all three indexes.; Almanac monthly/seasonal bias is bearish, yet the weekly performance is uniformly positive, especially for small‑cap and tech‑related sectors. | Almanac agent signals a bearish monthly and seasonal bias, while recent price action shows a strong broad-based recovery.; Almanac predicts a seasonal short window for Financials and Materials, yet these sectors were among the top 3 performers last week. | Technical indicators show Neutral trend bias while Almanac signals Bearish monthly and seasonal bias; Technology sector bullish seasonal signal conflicts with overall market bearish seasonal context |
+| **Invalidation condition** | A weekly close below SPX key support at 7333.68 or NDX below 28567.16 would invalidate the neutral/bearish outlook. | If SPX closes below its key support of 7,333.68, the bullish regime prediction is invalidated. | A break below SPX support at 7333.68 or a sharp spike in the VIX above 22 would invalidate the neutral-to-bullish recovery thesis. | A break below SPX 7333.68, NDX 28567.16, or IWM 270.63 support levels would confirm bearish momentum; sustained move above resistance levels would invalidate seasonal headwinds |
+
+## Plain-English summaries
+
+- **NVIDIA Nemotron 3 Super:** Despite bearish seasonal signals, the market showed a modest rebound last week led by small caps and a chip rally, suggesting a neutral to slightly bullish short‑term tone but with low confidence.
+- **OpenAI gpt-oss-120b:** Despite a technically neutral outlook and a bearish monthly almanac signal, the actual market week was upbeat. The S&P 500 nudged higher, the Nasdaq surged over 2%, and the Russell 2000 jumped nearly 4%, driven by a broad sector rally and a strong chip rally. The bullish bias holds as long as the S&P stays above its 7,333 support level.
+- **Google Gemma 4 31B:** The market is in a tug-of-war between a strong recent recovery led by small caps and semiconductors and a long-term seasonal trend that suggests a downturn. While the mood has shifted to risk-on, the overall trend remains neutral as indexes fight to reclaim their moving averages.
+- **Poolside Laguna M.1:** Markets are in a tug-of-war between recent recovery momentum and bearish seasonal forces. Small caps and chips are leading the bounce, but the broader seasonal backdrop remains negative. Trade carefully with tight stops as the technical setup offers limited directional conviction.
+
+_Disclaimer: model output, not financial advice._

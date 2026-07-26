@@ -1,0 +1,60 @@
+name: Weekly Pipeline
+
+on:
+  schedule:
+    - cron: "0 14 * * 5" # Every Friday at 14:00 UTC — change time here
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  run-pipeline:
+    name: Run prediction pipeline
+    runs-on: ubuntu-latest
+    environment: Weekly prediction
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run pipeline
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: uv run python run_pipeline.py --config pipeline.ci.toml
+
+      - name: Open PR with artifacts
+        if: ${{ !cancelled() }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="pipeline/artifacts-$(date -u +%Y-%m-%d)-${{ github.run_id }}"
+          git checkout -b "$BRANCH"
+          git add ../data/almanac/ ../data/technical/ ../data/evidence/ ../data/llm/ ../data/macro
+          if git diff --cached --quiet; then
+            echo "No new artifacts to commit."
+            exit 0
+          fi
+          git commit -m "chore: pipeline artifacts $(date -u +%Y-%m-%d)"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "chore: pipeline artifacts $(date -u +%Y-%m-%d)" \
+            --body "Automated weekly pipeline artifacts. Merge after reviewing LLM outputs." \
+            --base main \
+            --head "$BRANCH"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

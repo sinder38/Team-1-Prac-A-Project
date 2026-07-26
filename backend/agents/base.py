@@ -4,11 +4,11 @@ from dataclasses import asdict
 from datetime import date
 from typing import Generic, TypeVar, Union
 
-from agents.schemas import AlmanacOutput, LLMOutput, MacroOutput, TechnicalOutput
+from agents.schemas import AlmanacOutput, EvidenceOutput, LLMOutput, MacroOutput, TechnicalOutput
 
-AgentOutput = Union[TechnicalOutput, AlmanacOutput, MacroOutput, LLMOutput]
+AgentOutput = Union[TechnicalOutput, AlmanacOutput, MacroOutput, LLMOutput, EvidenceOutput]
 
-T = TypeVar("T", TechnicalOutput, AlmanacOutput, MacroOutput, LLMOutput)
+T = TypeVar("T", TechnicalOutput, AlmanacOutput, MacroOutput, LLMOutput, EvidenceOutput)
 
 
 class BaseAgent(ABC, Generic[T]):
