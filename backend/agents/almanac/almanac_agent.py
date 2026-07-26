@@ -310,10 +310,15 @@ Source: {SOURCE_NOTE}
         import re
         from agents import md_parsing as mdp
 
-        # prediction_date from "Week of 15–19 June 2026" in title
+        # prediction_date from "Week of 15–19 June 2026" or "Week of 26 May 2026"
         m = re.search(r"Week of (\d{1,2})[–-](\d{1,2}) ([A-Z][a-z]+) (\d{4})", text)
-        if m:
-            pred = date(int(m.group(4)), mdp._MONTH_MAP.get(m.group(3)[:3].lower(), 6), int(m.group(1)))
+        if not m:
+            m = re.search(r"Week of (\d{1,2}) ([A-Z][a-z]+) (\d{4})", text)
+        if m and m.lastindex and m.lastindex >= 3:
+            if m.lastindex == 4:
+                pred = date(int(m.group(4)), mdp._MONTH_MAP.get(m.group(3)[:3].lower(), 6), int(m.group(1)))
+            else:
+                pred = date(int(m.group(3)), mdp._MONTH_MAP.get(m.group(2)[:3].lower(), 6), int(m.group(1)))
         elif prediction_date:
             pred = prediction_date
         else:
