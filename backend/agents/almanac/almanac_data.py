@@ -529,6 +529,202 @@ WEEKLY_PATTERNS = {
             "caps are more sensitive to rates and risk appetite."
         ),
     },
+    (7, 3): {
+        "label": "Third July Week, 20-24 July",
+        "name": "Week after July monthly expiration",
+        "tendency": "Mixed / slightly bullish",
+        "strength": "Medium",
+        "bullets": [
+            "Week after July monthly expiration: Dow up 17 of last 23.",
+            "Historical examples show large swings: 2002 +3.1%, 2006 +3.2%, 2007 -4.2%, 2009 +4.0%, 2010 +3.2%, 2015 -2.9%.",
+            "July remains seasonally favorable as the best performing Dow and S&P 500 month of the third quarter.",
+            "Midterm-year July ranks #3 for Dow and S&P 500, while NASDAQ midterm-year July ranks #7.",
+            "Post-options-expiration trading can create volatility and sharp market moves.",
+            "Net: mixed with slight bullish bias, but volatility risk remains elevated.",
+        ],
+        "seasonal_bias": "Mixed",
+        "confidence": "Medium",
+        "thesis": (
+            "The third week of July combines a favorable July seasonal backdrop "
+            "with post-options-expiration volatility. The Dow has advanced 17 of "
+            "the last 23 times during the week after July monthly expiration, "
+            "creating a slight bullish historical tendency. However, the wide "
+            "range of past outcomes shows that this period can produce sharp "
+            "moves in either direction, keeping confidence at a medium level."
+        ),
+    },
+    (7, 4): {
+        "label": "Late July Week, 27-31 July",
+        "name": "End-of-July weakness / transition into August",
+        "tendency": "Bearish",
+        "strength": "Low-Medium",
+        "bullets": [
+            "Friday, July 31: Last Trading Day in July has historically been weak.",
+            "NASDAQ and S&P 500 are down 12 of the last 20 times on the last trading day of July.",
+            "Dow is down 13 of the last 20 times on the last trading day of July.",
+            "End-of-month positioning may increase volatility before the August seasonal period.",
+            "August begins with a weaker historical seasonal backdrop, especially for Dow and NASDAQ.",
+            "Net: slight bearish tendency into the August transition.",
+        ],
+        "seasonal_bias": "Bearish",
+        "confidence": "Low-Medium",
+        "thesis": (
+            "The final week of July transitions from a historically strong July "
+            "seasonal period into the weaker August period. The last trading day "
+            "of July has shown a bearish tendency, with the Dow down 13 of the "
+            "last 20 occurrences and both the S&P 500 and NASDAQ down 12 of the "
+            "last 20. The pattern is not a strong standalone signal, but it "
+            "adds caution heading into August."
+        ),
+        "source": "Stock Trader's Almanac 2026 July/August 2026 section",
+    },
+    (8, 1): {
+        "label": "Early August Week, 3-7 August",
+        "name": "First trading days of August weakness",
+        "tendency": "Bearish",
+        "strength": "Medium",
+        "bullets": [
+            "Monday, August 3: First Trading Day in August has historically been weak.",
+            "Dow has declined 19 of the last 28 times on the first trading day of August.",
+            "The first nine trading days of August are historically weak (Almanac pages 74 and 138).",
+            "Early August seasonal weakness creates a cautious backdrop after July strength.",
+            "Net: bearish seasonal bias during the opening part of August.",
+        ],
+        "seasonal_bias": "Bearish",
+        "confidence": "Medium",
+        "thesis": (
+            "The beginning of August carries a historically weak seasonal pattern. "
+            "The Dow has fallen 19 of the last 28 times on the first trading day "
+            "of August, and the first nine trading days of August have also shown "
+            "weakness historically. This creates a cautious seasonal setup heading "
+            "into the middle of the month."
+        ),
+        "source": "Stock Trader's Almanac 2026 August 2026 section",
+    },
+    (8, 2): {
+        "label": "Second August Week, 10-14 August",
+        "name": "Mid-August seasonal improvement",
+        "tendency": "Mixed",
+        "strength": "Low-Medium",
+        "bullets": [
+            "August is historically one of the weakest months in modern market history.",
+            "Since 1988, August ranks as the worst Dow month and second worst S&P 500 month.",
+            "Mid-August has historically been stronger than the beginning and end of August.",
+            "The seasonal pattern improves temporarily in the middle of the month despite August's overall weakness.",
+            "Net: mixed. Mid-month strength offsets broader August seasonal weakness.",
+        ],
+        "seasonal_bias": "Mixed",
+        "confidence": "Low-Medium",
+        "thesis": (
+            "The second week of August sits between two conflicting seasonal signals. "
+            "August remains historically weak, ranking as the worst Dow month and "
+            "second worst S&P 500 month since 1988, but mid-August has historically "
+            "performed better than the beginning and end of the month. The seasonal "
+            "setup is therefore mixed rather than strongly bearish."
+        ),
+        "source": "Stock Trader's Almanac 2026 August 2026 section",
+    },
+    (8, 3): {
+        "label": "August Expiration Week, 17-21 August",
+        "name": "August monthly expiration week",
+        "tendency": "Mixed",
+        "strength": "Medium",
+        "bullets": [
+            "Monday, August 17: Monday before August Monthly Expiration has historically been positive.",
+            "Dow is up 19 of the last 30 times on the Monday before August Monthly Expiration.",
+            "Average gain for this Monday pattern is +0.2%.",
+            "Friday, August 21: August Monthly Expiration Day has been weaker recently.",
+            "Dow is down 8 of the last 15 times on August Monthly Expiration Day.",
+            "Net: mixed. Early expiration-week strength is offset by weaker expiration-day performance.",
+        ],
+        "seasonal_bias": "Mixed",
+        "confidence": "Medium",
+        "thesis": (
+            "August expiration week contains conflicting seasonal signals. "
+            "The Monday before expiration has historically shown mild strength, "
+            "with the Dow up 19 of the last 30 occurrences and an average gain "
+            "of 0.2%. However, August Monthly Expiration Day has weakened recently, "
+            "with the Dow down 8 of the last 15 occurrences. The overall signal "
+            "is mixed heading into the end of August."
+        ),
+        "source": "Stock Trader's Almanac 2026 August 2026 section",
+    },
+    (8, 4): {
+        "label": "Late August Week, 24-28 August",
+        "name": "Week after August monthly expiration / late-August weakness",
+        "tendency": "Mixed to bearish",
+        "strength": "Medium",
+        "bullets": [
+            "Week after August Monthly Expiration has historically been mixed.",
+            "Dow is down 10 of the last 20 times during the week after August Monthly Expiration.",
+            "The week after expiration saw a major decline in 2022, when the Dow fell 4.2%.",
+            "Thursday, August 27: August's third-to-last trading day has shown strong historical S&P 500 performance,"
+            "including a 19-year winning streak from 2003-2021.",
+            "Friday, August 28: August's next-to-last trading day has been weaker, with the S&P 500 down 19 of the last 29 years.",
+            "Net: mixed. Late-month strength patterns are offset by weaker expiration follow-through and next-to-last-day weakness.",
+        ],
+        "seasonal_bias": "Mixed",
+        "confidence": "Medium",
+        "thesis": (
+            "Late August contains conflicting seasonal signals. The week after "
+            "monthly expiration has been mixed, with the Dow down 10 of the last "
+            "20 occurrences. Late-month trading days show both strength and "
+            "weakness: the third-to-last trading day had a long positive streak "
+            "through 2021, while the next-to-last trading day has historically "
+            "been weak with the S&P 500 down 19 of the last 29 years. The overall "
+            "signal remains mixed heading into September."
+        ),
+        "source": "Stock Trader's Almanac 2026 August 2026 section",
+    },
+    (9, 1): {
+        "label": "Early September Week, 31 August-4 September",
+        "name": "Labor Day transition / early September weakness",
+        "tendency": "Mixed to bearish",
+        "strength": "Medium",
+        "bullets": [
+            "Monday, August 31: Last Trading Day in August has been mixed historically.",
+            "S&P 500 was up 14 of the last 25 years on the last trading day of August, but down 6 of the last 10.",
+            "Tuesday, September 1: First Trading Day in September has shown mixed performance.",
+            "S&P 500 was up 18 of the last 30 years on the first trading day of September, but down 10 of the last 17.",
+            "September begins with a weak seasonal backdrop as the month is historically the weakest month for major indexes.",
+            "Net: mixed early-week action with a bearish monthly seasonal backdrop.",
+        ],
+        "seasonal_bias": "Bearish",
+        "confidence": "Medium",
+        "thesis": (
+            "The transition from August into September carries mixed short-term "
+            "signals but a historically weak monthly backdrop. The final trading "
+            "day of August has recently weakened, while the first trading day of "
+            "September has also become less reliable. September remains the "
+            "historically weakest month for major indexes, creating a cautious "
+            "seasonal setup."
+        ),
+        "source": "Stock Trader's Almanac 2026 August/September 2026 section",
+    },
+    (9, 2): {
+        "label": "Post-Labor Day Week, 7-11 September",
+        "name": "Day after Labor Day weakness",
+        "tendency": "Bearish",
+        "strength": "Medium",
+        "bullets": [
+            "Monday, September 7: Labor Day — market closed.",
+            "Tuesday, September 8: Day After Labor Day has historically weakened recently.",
+            "Dow is up 16 of the last 31 times on the day after Labor Day.",
+            "Recent trend is weaker, with Dow down 12 of the last 15 occurrences.",
+            "September seasonal weakness often begins after the Labor Day holiday.",
+            "Net: bearish bias due to recent post-Labor Day weakness.",
+        ],
+        "seasonal_bias": "Bearish",
+        "confidence": "Medium",
+        "thesis": (
+            "The post-Labor Day period has historically shown mixed results, "
+            "but recent performance has been notably weak. The Dow is down "
+            "12 of the last 15 occurrences after Labor Day despite a longer "
+            "historical record of 16 gains in 31 occurrences. Combined with "
+            "September's weak seasonal reputation, the setup favors caution."
+        ),
+        "source": "Stock Trader's Almanac 2026 September 2026 section",
+    },
 }
 
 # These sector windows come from the Almanac-style seasonal notes used by the
@@ -594,7 +790,8 @@ DATA_COVERAGE = {
         "data/almanac/almanac_agent_W22.md",
         "data/almanac/almanac_agent_W23.md",
     ],
-    "covered_sprint_weeks": ["W22", "W23", "W25", "W26", "W27", "W28", "W29"],
+    "covered_sprint_weeks": ["W22", "W23", "W25", "W26", "W27", "W28", "W29",
+                             "W30", "W31", "W32", "W33", "W34", "W35", "W36", "W37"],
     "support_encoder_completed": [
         "Cross-checked May monthly stats against W22 output.",
         "Cross-checked June monthly stats against W23 output.",
@@ -615,7 +812,7 @@ DATA_COVERAGE = {
 # page verification.
 SOURCE_NOTE = (
     "Stock Trader's Almanac 2026 team notes from W22/W23, plus public Stock "
-    "Trader's Almanac June/July seasonal summaries. W25-W29 entries are encoded "
+    "Trader's Almanac June/July seasonal summaries. W25-W37 entries are encoded "
     "for the first software increment. Jan-Dec monthly records are structured "
     "for data encoder follow-up where exact page figures are not yet verified."
 )

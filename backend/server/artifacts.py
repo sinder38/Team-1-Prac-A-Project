@@ -1,9 +1,9 @@
 import re
 from collections.abc import Mapping
 
-from agents.io import week_stem
 from flask import Blueprint, jsonify, request
 
+from agents.io import week_stem
 from server.archive import list_all_weeks, load_archive_week, load_human_score
 from server.db import repository as repo
 from server.db.context import db_session
@@ -100,6 +100,22 @@ def get_runs():
 
 
 
+@artifacts_bp.route("/run-status", methods=["GET"])
+def get_run_status():
+    """Return persisted pipeline progress for one runtime run."""
+    run_id = request.args.get("run_id")
+    if not run_id:
+        return err("Missing required query param: run_id", 400)
+
+    with db_session() as session:
+        run = repo.get_runtime_run(session, run_id)
+        if run is None:
+            return err(f"Run not found: run_id={run_id!r}", 404)
+        status = repo.artifact_status_for_run(session, run)
+
+    return jsonify({"run_id": run_id, **status}), 200
+
+
 @artifacts_bp.route("/weeks", methods=["GET"])
 def list_weeks():
     return jsonify({"weeks": list_all_weeks()}), 200
@@ -178,14 +194,31 @@ def save_human_score():
 
 @artifacts_bp.route("/final-prediction", methods=["GET"])
 def get_final_prediction():
+    """Return the locked prediction for the selected run's week."""
     run_id = request.args.get("run_id")
     if not run_id:
         return err("Missing required query param: run_id", 400)
+
     with db_session() as session:
+        run = repo.get_runtime_run(session, str(run_id))
+        if run is None:
+            return err(f"Unknown run_id={run_id!r}", 404)
+
+        owner = run
         row = repo.get_runtime_final_prediction(session, str(run_id))
         if row is None:
-            return err(f"No final prediction for run_id={run_id!r}", 404)
-        return jsonify(row.payload), 200
+            stem = run.week_stem or week_stem(run.prediction_date)
+            owner = repo.get_runtime_run_with_final_prediction_for_week(session, stem)
+            if owner is not None and owner.run_id is not None:
+                row = repo.get_runtime_final_prediction(session, owner.run_id)
+
+        if row is None:
+            return err(f"No final prediction for run_id={run_id!r} or its week", 404)
+
+        payload = dict(row.payload)
+        if owner is not None and owner.run_id is not None:
+            payload["runId"] = owner.run_id
+        return jsonify(payload), 200
 
 
 @artifacts_bp.route("/final-prediction", methods=["POST"])

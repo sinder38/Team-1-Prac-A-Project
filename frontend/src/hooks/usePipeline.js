@@ -9,6 +9,7 @@ import {
   getAgentOutputs,
   getAvailableWeeks,
   getLlmModels,
+  getRunStatus,
   getStageLogs,
   runStage as apiRunStage,
   exportArtifacts as apiExportArtifacts,
@@ -21,6 +22,7 @@ import { buildHumanScoreReport } from '../lib/humanScore'
 import { buildFinalPredictionReport } from '../lib/finalPrediction'
 import { emptyAgentOutputs } from '../lib/defaults'
 import { inferProviderMode } from '../lib/llmProvider'
+import { completedStagesFromArtifacts } from '../lib/pipelineStatus'
 import {
   DEMO_FINAL_ACCURACY,
   exampleHumanScoreFormForWeek,
@@ -32,7 +34,6 @@ import {
 
 const TOTAL_STAGES = 5
 const AI_STAGES = 4 // stages 1-4 run automatically per click; stage 5 is the human report
-const LLM_STAGE_INDEX = 2 // 0-based; keep in sync with PipelineController
 const HSR_STORAGE_KEY = 'humanScoreReports'
 const FP_STORAGE_KEY = 'finalPredictions'
 const DEFAULT_PROVIDER_MODE = 'ollama'
@@ -123,14 +124,6 @@ function pickAgentOutputs(data) {
     ...emptyAgentOutputs,
     ...Object.fromEntries(Object.entries(agents).filter(([, v]) => v != null)),
   }
-}
-
-/** How far the pipeline UI should look finished for a loaded week. */
-function doneCountFromArtifacts({ hasAgents, hasLlm, hasHsr }) {
-  if (hasHsr) return TOTAL_STAGES
-  if (hasLlm) return LLM_STAGE_INDEX + 1
-  if (hasAgents) return 2
-  return 0
 }
 
 /** Infer Local vs Real API from loaded LLM consensus. */
@@ -527,7 +520,10 @@ export function usePipeline() {
       setFinalPredictions(prev => {
         const next = {
           ...prev,
-          [key]: { ...data.finalPrediction, runId: entry.runId || undefined },
+          [key]: {
+            ...data.finalPrediction,
+            runId: data.finalPrediction.runId || entry.runId || undefined,
+          },
         }
         writeStoredReports(next, FP_STORAGE_KEY)
         return next
@@ -560,13 +556,17 @@ export function usePipeline() {
 
     setRunId(apiRunId)
     try {
-      const data = await getAgentOutputs({
-        predictionDate: entry.predictionDate,
-        runId: entry.runId,
-        horizonDays,
-        stem,
-        source: isArchive ? 'archive' : 'run',
-      })
+      const [data, runStatus] = await Promise.all([
+        getAgentOutputs({
+          predictionDate: entry.predictionDate,
+          runId: entry.runId,
+          horizonDays,
+          allowPartial: true,
+          stem,
+          source: isArchive ? 'archive' : 'run',
+        }),
+        entry.runId ? getRunStatus(entry.runId) : Promise.resolve(null),
+      ])
       const outputsForWeek = pickAgentOutputs(data)
       setOutputs(outputsForWeek)
 
@@ -574,12 +574,12 @@ export function usePipeline() {
         runId: entry.runId,
         week: entry.week,
       })
-      const hasAgents = Boolean(
-        outputsForWeek.almanac || outputsForWeek.macro || outputsForWeek.technical,
-      )
       const hasLlm = Boolean(outputsForWeek.llmComparison)
-      const hasHsr = Boolean(data.humanScoreReport || localHsr)
-      const doneCount = doneCountFromArtifacts({ hasAgents, hasLlm, hasHsr })
+      const artifacts = {
+        ...data,
+        humanScoreReport: data.humanScoreReport || localHsr,
+      }
+      const doneCount = completedStagesFromArtifacts(artifacts, runStatus)
 
       if (hasLlm) {
         const { models, mode, selectedKeys } = await resolveProviderFromLlm(
