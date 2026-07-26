@@ -1,7 +1,13 @@
 import json
 from datetime import date
 
-from tests.server.conftest import seed_agent_output, seed_llm_output, seed_runtime_run
+from server.db import repository as repo
+from tests.server.conftest import (
+    app_session,
+    seed_agent_output,
+    seed_llm_output,
+    seed_runtime_run,
+)
 
 
 def test_get_almanac_found(client, app):
@@ -95,6 +101,71 @@ def test_get_runs_empty_when_no_runs(client):
     assert resp.status_code == 200
     data = json.loads(resp.data)
     assert data["run_ids"] == []
+
+
+def test_run_status_tracks_persisted_pipeline_progress(client, app):
+    prediction_date = date(2026, 6, 18)
+    run_id = "partial-run"
+    seed_runtime_run(app, run_id=run_id, prediction_date=prediction_date)
+
+    def artifact_status() -> dict:
+        response = client.get(f"/artifacts/run-status?run_id={run_id}")
+        assert response.status_code == 200
+        data = response.get_json()
+        data.pop("run_id")
+        return data
+
+    assert artifact_status() == {
+        "agent_types": [],
+        "has_delta_report": False,
+        "has_human_score": False,
+        "has_llm_output": False,
+    }
+
+    for agent_type in ("almanac", "macro", "technical"):
+        seed_agent_output(
+            app,
+            run_id=run_id,
+            prediction_date=prediction_date,
+            agent_type=agent_type,
+            payload={},
+        )
+    assert artifact_status()["agent_types"] == ["almanac", "macro", "technical"]
+
+    seed_llm_output(
+        app,
+        run_id=run_id,
+        prediction_date=prediction_date,
+        model_slug="llama",
+        payload={"model_name": "Llama"},
+    )
+    assert artifact_status()["has_llm_output"] is True
+
+    with app_session(app) as session:
+        run = repo.get_runtime_run(session, run_id)
+        assert run is not None
+        repo.add_delta_report(
+            session,
+            run,
+            prediction_week="vW24",
+            schema_version=2,
+            payload={"schema_version": 2, "prediction_week": "vW24"},
+        )
+    assert artifact_status()["has_delta_report"] is True
+
+    with app_session(app) as session:
+        run = repo.get_runtime_run(session, run_id)
+        assert run is not None
+        repo.upsert_human_score(session, run, {})
+    assert artifact_status()["has_human_score"] is True
+
+
+def test_run_status_rejects_missing_or_unknown_run(client):
+    missing = client.get("/artifacts/run-status")
+    assert missing.status_code == 400
+
+    unknown = client.get("/artifacts/run-status?run_id=missing")
+    assert unknown.status_code == 404
 
 
 def test_list_weeks_across_stems(client, app):
@@ -318,6 +389,10 @@ def test_runtime_final_prediction_roundtrip(client, app, tmp_path, monkeypatch):
     assert again.status_code == 200
 
     seed_runtime_run(app, run_id="run-fp-2", prediction_date=date(2026, 7, 20))
+    restored = client.get("/artifacts/final-prediction?run_id=run-fp-2")
+    assert restored.status_code == 200
+    assert restored.get_json()["runId"] == "run-fp-1"
+
     conflict = client.post(
         "/artifacts/final-prediction",
         json={"run_id": "run-fp-2", "report": report},

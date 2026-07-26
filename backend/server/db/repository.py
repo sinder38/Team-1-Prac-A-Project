@@ -247,6 +247,17 @@ def agent_payload_for_run(
     return row.payload if row else None
 
 
+def agent_types_for_run(session: Session, run: PredictionRun) -> list[str]:
+    """Return the names of all agent artifacts stored for a run."""
+    return list(
+        session.scalars(
+            select(AgentOutput.agent_type)
+            .where(AgentOutput.run_id_fk == run.id)
+            .order_by(AgentOutput.agent_type)
+        )
+    )
+
+
 def llm_outputs_for_run(
     session: Session, run: PredictionRun
 ) -> list[LLMOutput]:
@@ -289,6 +300,16 @@ def delta_report_for_run(
         .where(DeltaReport.run_id_fk == run.id)
         .order_by(DeltaReport.created_at.desc(), DeltaReport.id.desc())
     )
+
+
+def artifact_status_for_run(session: Session, run: PredictionRun) -> dict:
+    """Describe which pipeline artifacts have been persisted for a run."""
+    return {
+        "agent_types": agent_types_for_run(session, run),
+        "has_llm_output": bool(llm_outputs_for_run(session, run)),
+        "has_delta_report": delta_report_for_run(session, run) is not None,
+        "has_human_score": human_score_for_run(session, run) is not None,
+    }
 
 
 def get_archive_agent_payload(
