@@ -24,13 +24,23 @@ function cellValue(model, dim) {
 
 const EMPTY_CELLS = new Set(['', '—', '-', '–', 'n/a', 'na'])
 
+const MODEL_OUTPUT_FIELDS = [
+  'consensus',
+  'spx',
+  'ndx',
+  'iwm',
+  'evidence',
+  'contradiction',
+  'invalidation',
+  'plainEnglish',
+]
+
 /** Drop unused/failed model columns (all dashes), e.g. gpt-oss left in an old table. */
 function modelHasOutput(model) {
-  return ['consensus', 'spx', 'ndx', 'iwm', 'evidence', 'contradiction', 'invalidation', 'plainEnglish']
-    .some(key => {
-      const v = String(model?.[key] ?? '').trim().toLowerCase()
-      return v && !EMPTY_CELLS.has(v)
-    })
+  return MODEL_OUTPUT_FIELDS.some(key => {
+    const v = String(model?.[key] ?? '').trim().toLowerCase()
+    return v && !EMPTY_CELLS.has(v)
+  })
 }
 
 export default function LlmComparisonPanel({ comparison, expanded, onToggle }) {

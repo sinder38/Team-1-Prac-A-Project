@@ -32,6 +32,7 @@ import {
 
 const TOTAL_STAGES = 5
 const AI_STAGES = 4 // stages 1-4 run automatically per click; stage 5 is the human report
+const LLM_STAGE_INDEX = 2 // 0-based; keep in sync with PipelineController
 const HSR_STORAGE_KEY = 'humanScoreReports'
 const FP_STORAGE_KEY = 'finalPredictions'
 const DEFAULT_PROVIDER_MODE = 'ollama'
@@ -121,6 +122,25 @@ function pickAgentOutputs(data) {
   return {
     ...emptyAgentOutputs,
     ...Object.fromEntries(Object.entries(agents).filter(([, v]) => v != null)),
+  }
+}
+
+/** How far the pipeline UI should look finished for a loaded week. */
+function doneCountFromArtifacts({ hasAgents, hasLlm, hasHsr }) {
+  if (hasHsr) return TOTAL_STAGES
+  if (hasLlm) return LLM_STAGE_INDEX + 1
+  if (hasAgents) return 2
+  return 0
+}
+
+/** Infer Local vs Real API from loaded LLM consensus. */
+async function resolveProviderFromLlm(llmComparison, availableModels) {
+  const models = availableModels.length ? availableModels : await getLlmModels()
+  const mode = inferProviderMode(llmComparison, models)
+  return {
+    models,
+    mode,
+    selectedKeys: mode ? keysForProvider(models, mode) : null,
   }
 }
 
@@ -489,6 +509,31 @@ export function usePipeline() {
     setPipeline(exampleIdlePipeline(week, date, nextId))
   }
 
+  function cacheLoadedReports(entry, data) {
+    const key = hsrKey({ runId: entry.runId, week: entry.week })
+    if (!key) return
+    if (data.humanScoreReport) {
+      setHumanScoreReports(prev => {
+        const next = {
+          ...prev,
+          [key]: { ...data.humanScoreReport, runId: entry.runId || undefined },
+        }
+        writeStoredReports(next)
+        return next
+      })
+    }
+    if (data.finalPrediction) {
+      setFinalPredictions(prev => {
+        const next = {
+          ...prev,
+          [key]: { ...data.finalPrediction, runId: entry.runId || undefined },
+        }
+        writeStoredReports(next, FP_STORAGE_KEY)
+        return next
+      })
+    }
+  }
+
   // Selecting a saved week/run loads outputs. Only mark stages finished that have
   // real artifacts — calibration (4) and human score (5) stay pending until run.
   async function onWeekSelect(entry) {
@@ -524,58 +569,33 @@ export function usePipeline() {
       const outputsForWeek = pickAgentOutputs(data)
       setOutputs(outputsForWeek)
 
-      const key = hsrKey({ runId: entry.runId, week: entry.week })
       const localHsr = lookupHsr(readStoredReports(), {
         runId: entry.runId,
         week: entry.week,
       })
-      const report = data.humanScoreReport || localHsr
       const hasAgents = Boolean(
         outputsForWeek.almanac || outputsForWeek.macro || outputsForWeek.technical,
       )
       const hasLlm = Boolean(outputsForWeek.llmComparison)
-      const hasHsr = Boolean(report)
-      // Stages: 0 data, 1 agents, 2 LLM, 3 calibration, 4 human score
-      let doneCount = 0
-      if (hasAgents) doneCount = 2
-      if (hasLlm) doneCount = 3
-      if (hasHsr) doneCount = TOTAL_STAGES
+      const hasHsr = Boolean(data.humanScoreReport || localHsr)
+      const doneCount = doneCountFromArtifacts({ hasAgents, hasLlm, hasHsr })
 
-      // Stage 3 radio should match the loaded consensus (OpenRouter vs Ollama).
       if (hasLlm) {
-        const models = availableModels.length ? availableModels : await getLlmModels()
+        const { models, mode, selectedKeys } = await resolveProviderFromLlm(
+          outputsForWeek.llmComparison,
+          availableModels,
+        )
         if (!availableModels.length) setAvailableModels(models)
-        const mode = inferProviderMode(outputsForWeek.llmComparison, models)
         if (mode) {
           setProviderModeState(mode)
-          setSelectedModels(keysForProvider(models, mode))
+          setSelectedModels(selectedKeys)
         }
       }
 
       setPipeline(
         exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId, { doneCount }),
       )
-      // Keep existing local HSR; only write when the API returned one.
-      if (data.humanScoreReport && key) {
-        setHumanScoreReports(prev => {
-          const next = {
-            ...prev,
-            [key]: { ...data.humanScoreReport, runId: entry.runId || undefined },
-          }
-          writeStoredReports(next)
-          return next
-        })
-      }
-      if (data.finalPrediction && key) {
-        setFinalPredictions(prev => {
-          const next = {
-            ...prev,
-            [key]: { ...data.finalPrediction, runId: entry.runId || undefined },
-          }
-          writeStoredReports(next, FP_STORAGE_KEY)
-          return next
-        })
-      }
+      cacheLoadedReports(entry, data)
     } catch (err) {
       setError(errorMessage(err, `Could not load ${entry.week}`))
     }

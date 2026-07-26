@@ -106,6 +106,40 @@ ModelSelector.propTypes = {
   disabled: PropTypes.bool,
 }
 
+function LlmModelControls({
+  providerMode,
+  setProviderMode,
+  availableModels,
+  selectedModels,
+  toggleModel,
+  disabled,
+}) {
+  return (
+    <>
+      <ProviderModeSelector
+        providerMode={providerMode}
+        setProviderMode={setProviderMode}
+        disabled={disabled || !setProviderMode}
+      />
+      <ModelSelector
+        availableModels={availableModels}
+        selectedModels={selectedModels}
+        toggleModel={toggleModel}
+        disabled={disabled}
+      />
+    </>
+  )
+}
+
+LlmModelControls.propTypes = {
+  providerMode: PropTypes.oneOf(['ollama', 'openrouter']).isRequired,
+  setProviderMode: PropTypes.func,
+  availableModels: PropTypes.array.isRequired,
+  selectedModels: PropTypes.array.isRequired,
+  toggleModel: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+}
+
 export default function PipelineController({ pipeline, controls, weekPicker, onNavigate }) {
   const {
     doneCount,
@@ -131,6 +165,8 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
 
   const statusLabel = isRunning ? 'Running' : allDone ? 'Complete' : doneCount > 0 ? 'In progress' : 'Idle'
   const statusTone = isRunning ? 'running' : allDone ? 'done' : 'idle'
+  const blockedByModels = doneCount === LLM_STAGE_INDEX && selectedModels.length === 0
+  const showRunNext = doneCount < aiStages
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-md mx-4 mt-4 px-4 py-4 md:px-6">
@@ -167,24 +203,21 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
               <RotateCcw className="w-4 h-4" />
               Reset
             </button>
-            {doneCount < aiStages && (() => {
-              const blockedByModels = doneCount === LLM_STAGE_INDEX && selectedModels.length === 0
-              return (
-                <button
-                  onClick={runNext}
-                  disabled={isRunning || blockedByModels}
-                  title={blockedByModels ? 'Select at least one LLM model to run this stage' : undefined}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium ${
-                    isRunning || blockedByModels
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-900 text-white hover:bg-gray-800'
-                  }`}
-                >
-                  <Play className="w-4 h-4" />
-                  {isRunning ? 'Running…' : `Run stage ${doneCount + 1}`}
-                </button>
-              )
-            })()}
+            {showRunNext && (
+              <button
+                onClick={runNext}
+                disabled={isRunning || blockedByModels}
+                title={blockedByModels ? 'Select at least one LLM model to run this stage' : undefined}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium ${
+                  isRunning || blockedByModels
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-gray-900 text-white hover:bg-gray-800'
+                }`}
+              >
+                <Play className="w-4 h-4" />
+                {isRunning ? 'Running…' : `Run stage ${doneCount + 1}`}
+              </button>
+            )}
           </div>
         </div>
 
@@ -252,26 +285,16 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
                   <StatusBadge label={label} tone={tone} />
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5 truncate">{stage.description}</p>
-                {i === LLM_STAGE_INDEX && (() => {
-                  // Allow picking provider/models before Stage 3 unlocks; only lock
-                  // while running or after this stage already succeeded.
-                  const modelsDisabled = isRunning || stage.status === 'success'
-                  return (
-                    <>
-                      <ProviderModeSelector
-                        providerMode={providerMode}
-                        setProviderMode={setProviderMode}
-                        disabled={modelsDisabled || !setProviderMode}
-                      />
-                      <ModelSelector
-                        availableModels={availableModels}
-                        selectedModels={selectedModels}
-                        toggleModel={toggleModel}
-                        disabled={modelsDisabled}
-                      />
-                    </>
-                  )
-                })()}
+                {i === LLM_STAGE_INDEX && (
+                  <LlmModelControls
+                    providerMode={providerMode}
+                    setProviderMode={setProviderMode}
+                    availableModels={availableModels}
+                    selectedModels={selectedModels}
+                    toggleModel={toggleModel}
+                    disabled={isRunning || stage.status === 'success'}
+                  />
+                )}
               </div>
 
               <div className="shrink-0">
