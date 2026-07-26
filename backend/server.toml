@@ -10,18 +10,19 @@ load_file_data = true
 max_retries = 3
 
 # Models offered by the /stages/llm endpoint, keyed by slug.
+# Frontend Stage 3 filters by provider: Local (ollama) vs Real API (openrouter).
 models = [
-    # {slug = "example",  id = "example/example:free"},
-    # {slug = "nemotron", id = "nvidia/nemotron-3-super-120b-a12b:free"},
-    # {slug = "gptoss",   id = "openai/gpt-oss-120b:free"},
-    # {slug = "gemma",    id = "google/gemma-4-31b-it:free"},
-    # {slug = "gemm26",   id = "gemma-4-26b-a4b-it:free"},
-    # {slug = "laguna",   id = "poolside/laguna-m.1:free"},
+    # Real API (OpenRouter) — needs OPENROUTER_API_KEY in .env
+    {slug = "nemotron", id = "nvidia/nemotron-3-super-120b-a12b:free", provider = "openrouter"},
+    # {slug = "hy3",      id = "tencent/hy3:free", provider = "openrouter"},
+    {slug = "ling3", id = "inclusionai/ling-3.0-flash:free", provider = "openrouter"},
+    {slug = "gemm26",   id = "gemma-4-26b-a4b-it:free", provider = "openrouter"},
+    {slug = "laguna",   id = "poolside/laguna-m.1:free", provider = "openrouter"},
 
-    # For local testing without OpenRouter (requires `ollama serve` + `ollama pull llama3.2:1b`).
-    # llama3.2:1b is small enough to run at usable speed on CPU; llama3.1 (8B) takes
+    # For local testing without OpenRouter (requires `ollama serve` + `ollama pull llama3.2:3b`).
+    # llama3.2:3b is small enough to run at usable speed on CPU; llama3.1 (8B) takes
     # minutes per prompt without a GPU.
-    {slug = "llama3.2-1b", id = "llama3.2:1b", provider = "ollama"},
+    {slug = "llama3.2-3b", id = "llama3.2:3b", provider = "ollama"},
     {slug = "qwen2.5-0.5b", id = "qwen2.5:1.5b", provider = "ollama"},
     {slug = "smollm2-1.7b", id = "smollm2:1.7b", provider = "ollama"},
 ]

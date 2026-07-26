@@ -1,9 +1,18 @@
 """Export: regenerate markdown artifacts from the DB (never write to real /data)."""
 
 import json
+from dataclasses import asdict
 from datetime import date
+from pathlib import Path
 
-from tests.server.conftest import seed_agent_output, seed_llm_output
+from agents.delta.models import DeltaReport, WeekAccuracy
+from server.db import export, repository as repo
+from tests.server.conftest import (
+    app_session,
+    seed_agent_output,
+    seed_llm_output,
+    seed_runtime_run,
+)
 
 
 def _llm_payload(model_name: str) -> dict:
@@ -21,6 +30,32 @@ def _llm_payload(model_name: str) -> dict:
         "contradictions": ["Bullish technicals vs bearish June seasonality"],
         "agent_type": "llm",
     }
+
+
+def _delta_payload() -> dict:
+    report = DeltaReport(
+        schema_version=2,
+        prediction_week="vW25",
+        actuals_week="W26",
+        rows=[],
+        missing_prediction_assets=[],
+        missing_actual_assets=[],
+        history=[
+            WeekAccuracy(
+                prediction_week="W25",
+                actuals_week="W26",
+                scored_assets=3,
+                direction_hits=2,
+                ranged_assets=3,
+                range_hits=1,
+                average_range_error=0.5,
+            )
+        ],
+        history_notes=[],
+        weight_adjustments=[],
+        prescription="Review the missed range before the next lock.",
+    )
+    return asdict(report)
 
 
 def test_post_export_stem_no_write(archive_client):
@@ -114,8 +149,86 @@ def test_post_export_runtime_run_synthesis_and_comparison(app):
     assert "Poolside Laguna M.1" in comparison
 
 
+def test_post_export_includes_final_prediction(app):
+    """A runtime run with a stored final prediction exports the Team1 brief."""
+    from datetime import date as _date
+
+    from server.db import repository as repo
+    from tests.server.conftest import app_session, seed_runtime_run
+
+    seed_runtime_run(app, run_id="run-fp", prediction_date=_date(2026, 6, 21))
+    report = {
+        "week": "2026-W25",
+        "form": {"regime": "Neutral-bullish."},
+        "markdown": "# TEAM 1 2026-W25 CONSENSUS BRIEF — FILED: 21 JUN 2026\n\n## REGIME\n\nNeutral-bullish.\n",
+    }
+    with app_session(app) as session:
+        run = repo.get_runtime_run(session, "run-fp")
+        assert run is not None
+        repo.upsert_final_prediction(session, run, report)
+
+    with app.test_client() as c:
+        resp = c.post("/export", json={"run_id": "run-fp", "write": False})
+    assert resp.status_code == 200
+    arts = json.loads(resp.data)["artifacts"]
+    fp = next(a for a in arts if a["agent_type"] == "final_prediction")
+    assert fp["filename"] == "prediction_2026-W25_Team1.md"
+    assert "CONSENSUS BRIEF" in fp["markdown"]
+    assert fp["markdown"].endswith("\n")
+
+def test_post_export_includes_delta_report_from_sqlite(app):
+    """The export endpoint renders a stored Delta report as Markdown."""
+    prediction_date = date(2026, 6, 21)
+    seed_runtime_run(app, run_id="run-delta", prediction_date=prediction_date)
+
+    with app_session(app) as session:
+        run = repo.get_runtime_run(session, "run-delta")
+        assert run is not None
+        repo.add_delta_report(
+            session,
+            run,
+            prediction_week="vW25",
+            schema_version=2,
+            payload=_delta_payload(),
+        )
+
+    response = app.test_client().post(
+        "/export", json={"run_id": "run-delta", "write": False}
+    )
+
+    assert response.status_code == 200
+    artifacts = response.get_json()["artifacts"]
+    delta = next(item for item in artifacts if item["agent_type"] == "delta")
+    assert delta["filename"] == "delta_W25.md"
+    assert "## Current-week summary" in delta["markdown"]
+    assert "## Prescription for next sprint" in delta["markdown"]
+
+
+def test_write_delta_report_to_markdown_file(app, tmp_path):
+    """The Delta artifact is written under the QA directory."""
+    prediction_date = date(2026, 6, 21)
+    seed_runtime_run(app, run_id="run-delta-file", prediction_date=prediction_date)
+
+    with app_session(app) as session:
+        run = repo.get_runtime_run(session, "run-delta-file")
+        assert run is not None
+        repo.add_delta_report(
+            session,
+            run,
+            prediction_week="vW25",
+            schema_version=2,
+            payload=_delta_payload(),
+        )
+        artifacts = export.build_run_artifacts(session, run)
+        written = export.write_artifacts(artifacts, data_dir=tmp_path)
+
+    assert str(tmp_path / "qa" / "delta_W25.md") in written
+    assert (tmp_path / "qa" / "delta_W25.md").read_text(encoding="utf-8").startswith(
+        "# delta_W25.md"
+    )
+
+
 def test_write_artifacts_to_tmp(archive_app, tmp_path):
-    from server.db import export, repository as repo
     from server.db.context import db_session
 
     with archive_app.app_context():
@@ -125,7 +238,8 @@ def test_write_artifacts_to_tmp(archive_app, tmp_path):
             artifacts = export.build_run_artifacts(session, run)
             written = export.write_artifacts(artifacts, data_dir=tmp_path)
 
-    names = {p.rsplit("/", 1)[-1] for p in written}
+    # Paths may use / or \ depending on OS — compare basenames only.
+    names = {Path(p).name for p in written}
     assert "almanac_agent_W25.md" in names
     assert "macro_agent_W25.md" in names
     assert "technical_agent_W25.md" in names

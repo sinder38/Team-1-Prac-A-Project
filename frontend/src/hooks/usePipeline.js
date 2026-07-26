@@ -2,8 +2,7 @@
  * Pipeline state for the app — the human runs each stage manually.
  * Stages 1-4 are run from the Dashboard; stage 5 (Human Score) is completed
  * by submitting the report on the Dashboard. Stages 1-2 call the real backend
- * (see src/api/pipeline.js and src/api/agents.js). Human-score submission is
- * still local-only until the backend supports it.
+ * (see src/api/pipeline.js and src/api/agents.js). HSR is stored per run_id.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
@@ -14,11 +13,14 @@ import {
   runStage as apiRunStage,
   exportArtifacts as apiExportArtifacts,
   submitHumanScore,
+  submitFinalPrediction,
   DEFAULT_HORIZON_DAYS,
 } from '../api'
 import { todayIso, dateToWeekLabel } from '../lib/date'
 import { buildHumanScoreReport } from '../lib/humanScore'
+import { buildFinalPredictionReport } from '../lib/finalPrediction'
 import { emptyAgentOutputs } from '../lib/defaults'
+import { inferProviderMode } from '../lib/llmProvider'
 import {
   DEMO_FINAL_ACCURACY,
   exampleHumanScoreFormForWeek,
@@ -30,37 +32,79 @@ import {
 
 const TOTAL_STAGES = 5
 const AI_STAGES = 4 // stages 1-4 run automatically per click; stage 5 is the human report
+const LLM_STAGE_INDEX = 2 // 0-based; keep in sync with PipelineController
 const HSR_STORAGE_KEY = 'humanScoreReports'
+const FP_STORAGE_KEY = 'finalPredictions'
+const DEFAULT_PROVIDER_MODE = 'ollama'
+
+function modelsForProvider(models, provider) {
+  return models.filter(m => (m.provider || 'openrouter') === provider)
+}
+
+function keysForProvider(models, provider) {
+  return modelsForProvider(models, provider).map(m => m.key)
+}
 
 function makeRunId() {
   return `run-${Date.now().toString(36)}`
 }
 
-function readStoredReports() {
+function readStoredReports(key = HSR_STORAGE_KEY) {
   try {
-    const raw = sessionStorage.getItem(HSR_STORAGE_KEY)
+    const raw = sessionStorage.getItem(key)
     return raw ? JSON.parse(raw) : {}
   } catch {
     return {}
   }
 }
 
-function writeStoredReports(reports) {
+function writeStoredReports(reports, key = HSR_STORAGE_KEY) {
   try {
-    sessionStorage.setItem(HSR_STORAGE_KEY, JSON.stringify(reports))
+    sessionStorage.setItem(key, JSON.stringify(reports))
   } catch {
     /* quota / private mode */
   }
 }
 
+/** HSR cache key — runtime runs use run_id; archives use week label. */
+function hsrKey({ runId, week } = {}) {
+  if (runId) return `run:${runId}`
+  if (week) return `week:${week}`
+  return null
+}
+
+function lookupHsr(reports, { runId, week, allowWeekFallback = false } = {}) {
+  if (!reports) return null
+  const byRun = runId ? reports[hsrKey({ runId })] : null
+  if (byRun) return byRun
+  // Week keys are for markdown archives only — never leak onto a runtime run.
+  if (!allowWeekFallback) return null
+  if (week && reports[week]) return reports[week]
+  if (week && reports[hsrKey({ week })]) return reports[hsrKey({ week })]
+  return null
+}
+
 function mergeSavedWeeks(apiWeeks, storedReports) {
   const merged = [...(apiWeeks || [])]
-  for (const [week, report] of Object.entries(storedReports)) {
-    if (!merged.some(w => w.week === week)) {
-      merged.push({ week, predictionDate: report.predictionDate ?? todayIso() })
+  for (const report of Object.values(storedReports || {})) {
+    const week = report?.week
+    if (!week) continue
+    const runId = report.runId || null
+    if (!merged.some(w => w.week === week && (w.runId || null) === runId)) {
+      merged.push({
+        week,
+        predictionDate: report.predictionDate ?? todayIso(),
+        runId,
+        source: runId ? 'run' : 'archive',
+      })
     }
   }
-  return merged.sort((a, b) => a.week.localeCompare(b.week))
+  // Multiple run_ids can share a week (prediction_run schema).
+  return merged.sort(
+    (a, b) =>
+      a.week.localeCompare(b.week) ||
+      String(a.runId || '').localeCompare(String(b.runId || '')),
+  )
 }
 
 function errorMessage(err, fallback) {
@@ -69,10 +113,34 @@ function errorMessage(err, fallback) {
 
 /** Keep only the agent keys that actually have data (drops the `week` field). */
 function pickAgentOutputs(data) {
-  const { week: _week, humanScoreReport: _hs, ...agents } = data || {}
+  const {
+    week: _week,
+    humanScoreReport: _hs,
+    finalPrediction: _fp,
+    ...agents
+  } = data || {}
   return {
     ...emptyAgentOutputs,
     ...Object.fromEntries(Object.entries(agents).filter(([, v]) => v != null)),
+  }
+}
+
+/** How far the pipeline UI should look finished for a loaded week. */
+function doneCountFromArtifacts({ hasAgents, hasLlm, hasHsr }) {
+  if (hasHsr) return TOTAL_STAGES
+  if (hasLlm) return LLM_STAGE_INDEX + 1
+  if (hasAgents) return 2
+  return 0
+}
+
+/** Infer Local vs Real API from loaded LLM consensus. */
+async function resolveProviderFromLlm(llmComparison, availableModels) {
+  const models = availableModels.length ? availableModels : await getLlmModels()
+  const mode = inferProviderMode(llmComparison, models)
+  return {
+    models,
+    mode,
+    selectedKeys: mode ? keysForProvider(models, mode) : null,
   }
 }
 
@@ -84,11 +152,20 @@ export function usePipeline() {
   const [predictionDate, setPredictionDate] = useState(todayIso())
   const [horizonDays, setHorizonDays] = useState(DEFAULT_HORIZON_DAYS)
   const [selectedWeek, setSelectedWeek] = useState(null)
+  // Which saved run is open (null = new run or markdown archive without run_id).
+  const [selectedRunId, setSelectedRunId] = useState(null)
   const [savedWeeks, setSavedWeeks] = useState([])
-  const [humanScoreReports, setHumanScoreReports] = useState(readStoredReports)
+  const [humanScoreReports, setHumanScoreReports] = useState(() => readStoredReports())
+  const [finalPredictions, setFinalPredictions] = useState(() => readStoredReports(FP_STORAGE_KEY))
   const [error, setError] = useState(null)
   const [availableModels, setAvailableModels] = useState([])
   const [selectedModels, setSelectedModels] = useState(null)
+  const [providerMode, setProviderModeState] = useState(DEFAULT_PROVIDER_MODE)
+  // 'new' = idle/live run; 'archive' = viewing a saved week/run
+  const [weekPickerMode, setWeekPickerMode] = useState('new')
+  // Calendar-chosen week kept in the selector after switching to a past run.
+  const [newPredictionDate, setNewPredictionDate] = useState(todayIso)
+  const newWeek = dateToWeekLabel(newPredictionDate)
   const [exporting, setExporting] = useState(false)
   const [exportStatus, setExportStatus] = useState(null)
 
@@ -107,8 +184,17 @@ export function usePipeline() {
   const allDone = doneCount >= TOTAL_STAGES
   const aiComplete = doneCount >= AI_STAGES
 
+  const activeRunId = selectedRunId || runId
+  // Archive markdown weeks have no run_id; runtime runs must not inherit week: cache.
+  const allowWeekFallback = weekPickerMode === 'archive' && !selectedRunId
+
   const humanScoreReport = useMemo(() => {
-    if (humanScoreReports[currentWeek]) return humanScoreReports[currentWeek]
+    const stored = lookupHsr(humanScoreReports, {
+      runId: allowWeekFallback ? null : activeRunId,
+      week: currentWeek,
+      allowWeekFallback,
+    })
+    if (stored) return stored
     if (!allDone) return null
     if (isExampleWeek(currentWeek)) {
       return buildHumanScoreReport(exampleHumanScoreFormForWeek(currentWeek), {
@@ -118,16 +204,45 @@ export function usePipeline() {
       })
     }
     return null
-  }, [allDone, humanScoreReports, currentWeek, outputs, predictionDate])
+  }, [
+    allDone,
+    humanScoreReports,
+    activeRunId,
+    currentWeek,
+    outputs,
+    predictionDate,
+    allowWeekFallback,
+  ])
+
+  const finalPrediction = useMemo(
+    () =>
+      lookupHsr(finalPredictions, {
+        runId: allowWeekFallback ? null : activeRunId,
+        week: currentWeek,
+        allowWeekFallback,
+      }),
+    [finalPredictions, activeRunId, currentWeek, allowWeekFallback],
+  )
 
   const clearError = useCallback(() => setError(null), [])
 
-  function clearHumanScoreForWeek(week) {
+  function clearHumanScoreForRun(id, week) {
+    const key = hsrKey({ runId: id, week })
+    if (!key) return
     setHumanScoreReports(prev => {
-      if (!prev[week]) return prev
+      if (!prev[key] && !(week && prev[week])) return prev
       const next = { ...prev }
-      delete next[week]
+      delete next[key]
+      if (week) delete next[week]
       writeStoredReports(next)
+      return next
+    })
+    setFinalPredictions(prev => {
+      if (!prev[key] && !(week && prev[week])) return prev
+      const next = { ...prev }
+      delete next[key]
+      if (week) delete next[week]
+      writeStoredReports(next, FP_STORAGE_KEY)
       return next
     })
   }
@@ -147,14 +262,24 @@ export function usePipeline() {
     getLlmModels()
       .then(models => {
         setAvailableModels(models)
-        setSelectedModels(models.map(m => m.key)) // default is all models enabled
+        setSelectedModels(keysForProvider(models, DEFAULT_PROVIDER_MODE))
       })
       .catch(err => setError(errorMessage(err, 'Could not load LLM model list')))
   }, [])
 
+  const modelsForMode = useMemo(
+    () => modelsForProvider(availableModels, providerMode),
+    [availableModels, providerMode],
+  )
+
+  function setProviderMode(mode) {
+    setProviderModeState(mode)
+    setSelectedModels(keysForProvider(availableModels, mode))
+  }
+
   function toggleModel(key) {
     setSelectedModels(prev => {
-      const current = prev ?? availableModels.map(m => m.key)
+      const current = prev ?? keysForProvider(availableModels, providerMode)
       return current.includes(key) ? current.filter(k => k !== key) : [...current, key]
     })
   }
@@ -175,7 +300,7 @@ export function usePipeline() {
     }))
     setLogs([])
     setOutputs(emptyAgentOutputs)
-    clearHumanScoreForWeek(currentWeek)
+    clearHumanScoreForRun(runId, currentWeek)
   }
 
   // Run one AI stage (index 0-3). Only the next pending stage can be run.
@@ -226,8 +351,9 @@ export function usePipeline() {
               },
         )
         if (index === 2 && data.humanScoreReport) {
+          const key = hsrKey({ runId })
           setHumanScoreReports(prev => {
-            const next = { ...prev, [currentWeek]: data.humanScoreReport }
+            const next = { ...prev, [key]: { ...data.humanScoreReport, runId } }
             writeStoredReports(next)
             return next
           })
@@ -289,26 +415,32 @@ export function usePipeline() {
     }
   }
 
-  // Completing the human report marks the final stage done. Persists the report
-  // to the backend DB first (so it can be exported as markdown); if that fails,
-  // the error propagates and the stage is not marked complete.
+  // Completing the human report marks the final stage done and persists by run_id.
   async function completeReview(form) {
     if (!form) return
-    const report = buildHumanScoreReport(form, { week: currentWeek, outputs, predictionDate })
-
-    await submitHumanScore({
-      predictionDate,
+    const report = {
+      ...buildHumanScoreReport(form, { week: currentWeek, outputs, predictionDate }),
       runId,
-      horizonDays: DEFAULT_HORIZON_DAYS,
-      week: currentWeek,
-      form,
-      consensus: report?.consensus,
-      aiSaid: report?.aiSaid,
-      total: report?.total,
-    })
+    }
+    try {
+      await submitHumanScore({
+        predictionDate,
+        runId,
+        horizonDays: DEFAULT_HORIZON_DAYS,
+        week: currentWeek,
+        form,
+        consensus: report?.consensus,
+        aiSaid: report?.aiSaid,
+        total: report?.total,
+      })
+    } catch (err) {
+      setError(errorMessage(err, 'Could not save human score'))
+      throw err
+    }
 
     const stageLog = getStageLogs(AI_STAGES)
     const finishedAt = new Date().toISOString()
+    const key = hsrKey({ runId })
     setLogs(prev => [...prev, ...stageLog.start, ...stageLog.done])
     setPipeline(prev => ({
       ...prev,
@@ -321,20 +453,52 @@ export function usePipeline() {
       predictionDate,
     }))
     setSelectedWeek(currentWeek)
+    setSelectedRunId(runId)
+    setWeekPickerMode('archive')
     setHumanScoreReports(prev => {
-      const next = { ...prev, [currentWeek]: report }
+      const next = { ...prev, [key]: report }
       writeStoredReports(next)
       return next
     })
     setSavedWeeks(prev =>
-      prev.some(w => w.week === currentWeek)
+      prev.some(w => w.week === currentWeek && w.runId === runId)
         ? prev
-        : [...prev, { week: currentWeek, predictionDate, runId }].sort((a, b) => a.week.localeCompare(b.week)),
+        : [...prev, { week: currentWeek, predictionDate, runId, source: 'run' }].sort((a, b) =>
+            a.week.localeCompare(b.week) || String(a.runId || '').localeCompare(String(b.runId || '')),
+          ),
     )
+  }
+
+  // After HSR: lock the Team1 consensus brief (DB + markdown file for delta).
+  async function completeFinalPrediction(form) {
+    if (!form) return
+    const report = buildFinalPredictionReport(form, {
+      week: currentWeek,
+      predictionDate,
+      runId,
+    })
+    try {
+      await submitFinalPrediction({ runId, report })
+    } catch (err) {
+      setError(errorMessage(err, 'Could not save final prediction'))
+      throw err
+    }
+    const key = hsrKey({ runId })
+    setSelectedWeek(currentWeek)
+    setSelectedRunId(runId)
+    setWeekPickerMode('archive')
+    setFinalPredictions(prev => {
+      const next = { ...prev, [key]: report }
+      writeStoredReports(next, FP_STORAGE_KEY)
+      return next
+    })
   }
 
   function onDateChange(date) {
     setError(null)
+    setWeekPickerMode('new')
+    setSelectedRunId(null)
+    setNewPredictionDate(date)
     setExportStatus(null)
     setPredictionDate(date)
     const week = dateToWeekLabel(date)
@@ -346,11 +510,39 @@ export function usePipeline() {
     setPipeline(exampleIdlePipeline(week, date, nextId))
   }
 
-  // Selecting a saved week shows its stored (already-complete) outputs.
+  function cacheLoadedReports(entry, data) {
+    const key = hsrKey({ runId: entry.runId, week: entry.week })
+    if (!key) return
+    if (data.humanScoreReport) {
+      setHumanScoreReports(prev => {
+        const next = {
+          ...prev,
+          [key]: { ...data.humanScoreReport, runId: entry.runId || undefined },
+        }
+        writeStoredReports(next)
+        return next
+      })
+    }
+    if (data.finalPrediction) {
+      setFinalPredictions(prev => {
+        const next = {
+          ...prev,
+          [key]: { ...data.finalPrediction, runId: entry.runId || undefined },
+        }
+        writeStoredReports(next, FP_STORAGE_KEY)
+        return next
+      })
+    }
+  }
+
+  // Selecting a saved week/run loads outputs. Only mark stages finished that have
+  // real artifacts — calibration (4) and human score (5) stay pending until run.
   async function onWeekSelect(entry) {
     setError(null)
+    setWeekPickerMode('archive')
     setExportStatus(null)
     setSelectedWeek(entry.week)
+    setSelectedRunId(entry.runId || null)
     setPredictionDate(entry.predictionDate)
     setLogs([])
     const stem = entry.stem || entry.week?.split('-').pop()
@@ -362,8 +554,7 @@ export function usePipeline() {
     if (!entry.runId && !stem) {
       setOutputs(emptyAgentOutputs)
       setRunId(apiRunId)
-      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId))
-      clearHumanScoreForWeek(entry.week)
+      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId, { doneCount: 0 }))
       return
     }
 
@@ -376,18 +567,36 @@ export function usePipeline() {
         stem,
         source: isArchive ? 'archive' : 'run',
       })
-      setOutputs(pickAgentOutputs(data))
-      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId))
-      setHumanScoreReports(prev => {
-        const next = { ...prev }
-        if (data.humanScoreReport) {
-          next[entry.week] = data.humanScoreReport
-        } else {
-          delete next[entry.week]
-        }
-        writeStoredReports(next)
-        return next
+      const outputsForWeek = pickAgentOutputs(data)
+      setOutputs(outputsForWeek)
+
+      const localHsr = lookupHsr(readStoredReports(), {
+        runId: entry.runId,
+        week: entry.week,
       })
+      const hasAgents = Boolean(
+        outputsForWeek.almanac || outputsForWeek.macro || outputsForWeek.technical,
+      )
+      const hasLlm = Boolean(outputsForWeek.llmComparison)
+      const hasHsr = Boolean(data.humanScoreReport || localHsr)
+      const doneCount = doneCountFromArtifacts({ hasAgents, hasLlm, hasHsr })
+
+      if (hasLlm) {
+        const { models, mode, selectedKeys } = await resolveProviderFromLlm(
+          outputsForWeek.llmComparison,
+          availableModels,
+        )
+        if (!availableModels.length) setAvailableModels(models)
+        if (mode) {
+          setProviderModeState(mode)
+          setSelectedModels(selectedKeys)
+        }
+      }
+
+      setPipeline(
+        exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId, { doneCount }),
+      )
+      cacheLoadedReports(entry, data)
     } catch (err) {
       setError(errorMessage(err, `Could not load ${entry.week}`))
     }
@@ -403,17 +612,24 @@ export function usePipeline() {
     horizonDays,
     setHorizonDays,
     selectedWeek: currentWeek,
+    selectedRunId,
     savedWeeks,
+    weekPickerMode,
+    newWeek,
+    newPredictionDate,
     runId,
     humanScoreReport,
+    finalPrediction,
     doneCount,
     isRunning,
     allDone,
     aiComplete,
     totalStages: TOTAL_STAGES,
     aiStages: AI_STAGES,
-    availableModels,
-    selectedModels: selectedModels ?? availableModels.map(m => m.key),
+    availableModels: modelsForMode,
+    selectedModels: selectedModels ?? keysForProvider(availableModels, providerMode),
+    providerMode,
+    setProviderMode,
     toggleModel,
     onDateChange,
     onWeekSelect,
@@ -421,6 +637,7 @@ export function usePipeline() {
     runNext,
     resetRun,
     completeReview,
+    completeFinalPrediction,
     exportArtifacts,
     exporting,
     exportStatus,

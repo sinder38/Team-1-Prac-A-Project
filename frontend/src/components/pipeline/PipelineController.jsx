@@ -37,10 +37,49 @@ function StageIcon({ status, locked }) {
 
 const LLM_STAGE_INDEX = 2
 
-function ModelSelector({ availableModels, selectedModels, toggleModel, disabled }) {
-  if (!availableModels.length) return null
+function ProviderModeSelector({ providerMode, setProviderMode, disabled }) {
   return (
     <div className="mt-2 pl-9 flex flex-wrap gap-x-4 gap-y-1.5">
+      {[
+        { value: 'ollama', label: 'Local (Ollama)' },
+        { value: 'openrouter', label: 'Real API (OpenRouter)' },
+      ].map(({ value, label }) => (
+        <label
+          key={value}
+          className={`flex items-center gap-1.5 text-xs ${disabled ? 'text-gray-400' : 'text-gray-600'}`}
+        >
+          <input
+            type="radio"
+            name="llm-provider-mode"
+            value={value}
+            checked={providerMode === value}
+            onChange={() => setProviderMode(value)}
+            disabled={disabled}
+            className="border-gray-300"
+          />
+          {label}
+        </label>
+      ))}
+    </div>
+  )
+}
+
+ProviderModeSelector.propTypes = {
+  providerMode: PropTypes.oneOf(['ollama', 'openrouter']).isRequired,
+  setProviderMode: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+}
+
+function ModelSelector({ availableModels, selectedModels, toggleModel, disabled }) {
+  if (!availableModels.length) {
+    return (
+      <p className="mt-1.5 pl-9 text-xs text-gray-400">
+        No models for this provider in server.toml
+      </p>
+    )
+  }
+  return (
+    <div className="mt-1.5 pl-9 flex flex-wrap gap-x-4 gap-y-1.5">
       {availableModels.map(({ key, name }) => (
         <label
           key={key}
@@ -67,6 +106,40 @@ ModelSelector.propTypes = {
   disabled: PropTypes.bool,
 }
 
+function LlmModelControls({
+  providerMode,
+  setProviderMode,
+  availableModels,
+  selectedModels,
+  toggleModel,
+  disabled,
+}) {
+  return (
+    <>
+      <ProviderModeSelector
+        providerMode={providerMode}
+        setProviderMode={setProviderMode}
+        disabled={disabled || !setProviderMode}
+      />
+      <ModelSelector
+        availableModels={availableModels}
+        selectedModels={selectedModels}
+        toggleModel={toggleModel}
+        disabled={disabled}
+      />
+    </>
+  )
+}
+
+LlmModelControls.propTypes = {
+  providerMode: PropTypes.oneOf(['ollama', 'openrouter']).isRequired,
+  setProviderMode: PropTypes.func,
+  availableModels: PropTypes.array.isRequired,
+  selectedModels: PropTypes.array.isRequired,
+  toggleModel: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+}
+
 export default function PipelineController({ pipeline, controls, weekPicker, onNavigate }) {
   const {
     doneCount,
@@ -80,6 +153,8 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
     resetRun,
     availableModels = [],
     selectedModels = [],
+    providerMode = 'ollama',
+    setProviderMode,
     toggleModel,
     exportArtifacts,
     exporting = false,
@@ -90,6 +165,8 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
 
   const statusLabel = isRunning ? 'Running' : allDone ? 'Complete' : doneCount > 0 ? 'In progress' : 'Idle'
   const statusTone = isRunning ? 'running' : allDone ? 'done' : 'idle'
+  const blockedByModels = doneCount === LLM_STAGE_INDEX && selectedModels.length === 0
+  const showRunNext = doneCount < aiStages
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-md mx-4 mt-4 px-4 py-4 md:px-6">
@@ -126,24 +203,21 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
               <RotateCcw className="w-4 h-4" />
               Reset
             </button>
-            {doneCount < aiStages && (() => {
-              const blockedByModels = doneCount === LLM_STAGE_INDEX && selectedModels.length === 0
-              return (
-                <button
-                  onClick={runNext}
-                  disabled={isRunning || blockedByModels}
-                  title={blockedByModels ? 'Select at least one LLM model to run this stage' : undefined}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium ${
-                    isRunning || blockedByModels
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-900 text-white hover:bg-gray-800'
-                  }`}
-                >
-                  <Play className="w-4 h-4" />
-                  {isRunning ? 'Running…' : `Run stage ${doneCount + 1}`}
-                </button>
-              )
-            })()}
+            {showRunNext && (
+              <button
+                onClick={runNext}
+                disabled={isRunning || blockedByModels}
+                title={blockedByModels ? 'Select at least one LLM model to run this stage' : undefined}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium ${
+                  isRunning || blockedByModels
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-gray-900 text-white hover:bg-gray-800'
+                }`}
+              >
+                <Play className="w-4 h-4" />
+                {isRunning ? 'Running…' : `Run stage ${doneCount + 1}`}
+              </button>
+            )}
           </div>
         </div>
 
@@ -212,11 +286,13 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5 truncate">{stage.description}</p>
                 {i === LLM_STAGE_INDEX && (
-                  <ModelSelector
+                  <LlmModelControls
+                    providerMode={providerMode}
+                    setProviderMode={setProviderMode}
                     availableModels={availableModels}
                     selectedModels={selectedModels}
                     toggleModel={toggleModel}
-                    disabled={locked || isRunning || stage.status === 'success'}
+                    disabled={isRunning || stage.status === 'success'}
                   />
                 )}
               </div>
@@ -292,6 +368,8 @@ PipelineController.propTypes = {
     resetRun: PropTypes.func,
     availableModels: PropTypes.array,
     selectedModels: PropTypes.array,
+    providerMode: PropTypes.oneOf(['ollama', 'openrouter']),
+    setProviderMode: PropTypes.func,
     toggleModel: PropTypes.func,
     exportArtifacts: PropTypes.func,
     exporting: PropTypes.bool,
