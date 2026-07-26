@@ -19,7 +19,7 @@ test:
 	uv run pytest tests/
 
 load-model:
-	ollama pull llama3.2:1b
+	ollama pull llama3.2:3b
 	ollama pull qwen2.5:1.5b
 	ollama pull smollm2:1.7b
 
