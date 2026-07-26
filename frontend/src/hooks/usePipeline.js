@@ -10,6 +10,7 @@ import {
   getAgentOutputs,
   getAvailableWeeks,
   getLlmModels,
+  getRunStatus,
   getStageLogs,
   runStage as apiRunStage,
   exportArtifacts as apiExportArtifacts,
@@ -19,6 +20,7 @@ import {
 import { todayIso, dateToWeekLabel } from '../lib/date'
 import { buildHumanScoreReport } from '../lib/humanScore'
 import { emptyAgentOutputs } from '../lib/defaults'
+import { completedStagesFromArtifacts } from '../lib/pipelineStatus'
 import {
   DEMO_FINAL_ACCURACY,
   exampleHumanScoreFormForWeek,
@@ -361,22 +363,37 @@ export function usePipeline() {
     if (!entry.runId && !stem) {
       setOutputs(emptyAgentOutputs)
       setRunId(apiRunId)
-      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId))
+      setPipeline(
+        exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId, {
+          doneCount: 0,
+        }),
+      )
       clearHumanScoreForWeek(entry.week)
       return
     }
 
     setRunId(apiRunId)
     try {
-      const data = await getAgentOutputs({
-        predictionDate: entry.predictionDate,
-        runId: entry.runId,
-        horizonDays: DEFAULT_HORIZON_DAYS,
-        stem,
-        source: isArchive ? 'archive' : 'run',
-      })
+      const [data, runStatus] = await Promise.all([
+        getAgentOutputs({
+          predictionDate: entry.predictionDate,
+          runId: entry.runId,
+          horizonDays: DEFAULT_HORIZON_DAYS,
+          allowPartial: true,
+          stem,
+          source: isArchive ? 'archive' : 'run',
+        }),
+        entry.runId ? getRunStatus(entry.runId) : Promise.resolve(null),
+      ])
       setOutputs(pickAgentOutputs(data))
-      setPipeline(exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId))
+      const completedStages = runStatus
+        ? runStatus.completedStages
+        : completedStagesFromArtifacts(data)
+      setPipeline(
+        exampleSavedWeekPipeline(entry.week, entry.predictionDate, displayId, {
+          doneCount: completedStages,
+        }),
+      )
       setHumanScoreReports(prev => {
         const next = { ...prev }
         if (data.humanScoreReport) {

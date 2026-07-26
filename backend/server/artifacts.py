@@ -68,6 +68,24 @@ def get_runs():
 
 
 
+@artifacts_bp.route("/run-status", methods=["GET"])
+def get_run_status():
+    """Return persisted pipeline progress for one runtime run."""
+    run_id = request.args.get("run_id")
+    if not run_id:
+        return err("Missing required query param: run_id", 400)
+
+    with db_session() as session:
+        run = repo.get_runtime_run(session, run_id)
+        if run is None:
+            return err(f"Run not found: run_id={run_id!r}", 404)
+        completed_stages = repo.completed_stages_for_run(session, run)
+
+    return jsonify(
+        {"run_id": run_id, "completed_stages": completed_stages}
+    ), 200
+
+
 @artifacts_bp.route("/weeks", methods=["GET"])
 def list_weeks():
     return jsonify({"weeks": list_all_weeks()}), 200

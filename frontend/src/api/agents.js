@@ -123,6 +123,13 @@ export async function getAvailableWeeks() {
   return { weeks }
 }
 
+export async function getRunStatus(runId) {
+  const data = await getJson(
+    `/artifacts/run-status?run_id=${encodeURIComponent(runId)}`,
+  )
+  return { completedStages: data.completed_stages ?? 0 }
+}
+
 export async function getArchiveOutputs(stem) {
   const data = await getJson(`/artifacts/archive?stem=${encodeURIComponent(stem)}`)
   return {
@@ -143,6 +150,7 @@ export async function getAgentOutputs({
   runId,
   horizonDays = DEFAULT_HORIZON_DAYS,
   includeLlm = true,
+  allowPartial = false,
   stem,
   source,
 }) {
@@ -151,11 +159,19 @@ export async function getAgentOutputs({
   }
 
   const qs = `prediction_date=${predictionDate}&run_id=${runId}&horizon_days=${horizonDays}`
+  const loadArtifact = async path => {
+    if (!allowPartial) return getJson(path)
+    try {
+      return await getJson(path)
+    } catch {
+      return null
+    }
+  }
 
   const [almanac, technical, macro] = await Promise.all([
-    getJson(`/artifacts/almanac?${qs}`),
-    getJson(`/artifacts/technical?${qs}`),
-    getJson(`/artifacts/macro?${qs}`),
+    loadArtifact(`/artifacts/almanac?${qs}`),
+    loadArtifact(`/artifacts/technical?${qs}`),
+    loadArtifact(`/artifacts/macro?${qs}`),
   ])
 
   let llmComparison = null
@@ -185,9 +201,9 @@ export async function getAgentOutputs({
   }
 
   return {
-    almanac: almanacCard(almanac),
-    technical: technicalCard(technical),
-    macro: macroCard(macro),
+    almanac: almanac ? almanacCard(almanac) : null,
+    technical: technical ? technicalCard(technical) : null,
+    macro: macro ? macroCard(macro) : null,
     llmComparison,
     humanScoreReport,
   }

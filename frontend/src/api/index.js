@@ -4,7 +4,13 @@
  */
 export { getStageLogs, getLlmModels, runStage, exportArtifacts, DEFAULT_HORIZON_DAYS } from './pipeline'
 
-export { getAvailableWeeks, getAgentOutputs, getArchiveOutputs, getHumanScore } from './agents'
+export {
+  getAvailableWeeks,
+  getAgentOutputs,
+  getArchiveOutputs,
+  getHumanScore,
+  getRunStatus,
+} from './agents'
 export { getCalibrationScores } from './calibration'
 export { submitHumanScore, HUMAN_SCORE_DECISION } from './validation'
 export { getInstruments, getMarketHistory } from './market'

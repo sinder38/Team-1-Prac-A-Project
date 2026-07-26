@@ -290,6 +290,23 @@ def delta_report_for_run(
     )
 
 
+def completed_stages_for_run(session: Session, run: PredictionRun) -> int:
+    """Return how many sequential pipeline stages have persisted output."""
+    if human_score_for_run(session, run) is not None:
+        return 5
+    if delta_report_for_run(session, run):
+        return 4
+    if llm_outputs_for_run(session, run):
+        return 3
+
+    required_agents = ("almanac", "macro", "technical")
+    has_all_agents = all(
+        agent_payload_for_run(session, run, agent_type) is not None
+        for agent_type in required_agents
+    )
+    return 2 if has_all_agents else 0
+
+
 def get_archive_agent_payload(
     session: Session, week_stem: str, agent_type: str
 ) -> dict | None:

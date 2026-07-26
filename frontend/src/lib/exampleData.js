@@ -279,14 +279,21 @@ export function exampleIdlePipeline(week = EXAMPLE_CURRENT_WEEK, date = EXAMPLE_
   }
 }
 
-/** A fully-complete pipeline, used when viewing a saved week. */
-export function exampleSavedWeekPipeline(week, date, id = null) {
+/** Pipeline state restored from a saved week or runtime run. */
+export function exampleSavedWeekPipeline(
+  week,
+  date,
+  id = null,
+  { doneCount = STAGE_DEFS.length } = {},
+) {
+  const completed = Math.max(0, Math.min(doneCount, STAGE_DEFS.length))
+  const isComplete = completed === STAGE_DEFS.length
   return {
     id: id || null,
     isRunning: false,
-    currentStage: STAGE_DEFS.length - 1,
-    stages: exampleStages(STAGE_DEFS.length, -1, null, { stamp: false }),
-    accuracy: DEMO_FINAL_ACCURACY,
+    currentStage: Math.max(0, completed - 1),
+    stages: exampleStages(completed, -1, null, { stamp: false }),
+    accuracy: isComplete ? DEMO_FINAL_ACCURACY : 0,
     lastRun: null,
     week,
     predictionDate: date,
