@@ -1,10 +1,17 @@
 /**
  * Backend API layer. Pipeline stages, artifacts, calibration, and market data
- * use Flask. Human-score submission is still stored by the frontend.
+ * use Flask. Human-score and final-prediction submit persist by run_id.
  */
-export { getStageLogs, getLlmModels, runStage, DEFAULT_HORIZON_DAYS } from './pipeline'
+export { getStageLogs, getLlmModels, runStage, exportArtifacts, DEFAULT_HORIZON_DAYS } from './pipeline'
 
-export { getAvailableWeeks, getAgentOutputs, getArchiveOutputs, getHumanScore } from './agents'
+export {
+  getAvailableWeeks,
+  getAgentOutputs,
+  getArchiveOutputs,
+  getHumanScore,
+  getRunStatus,
+} from './agents'
 export { getCalibrationScores } from './calibration'
 export { submitHumanScore, HUMAN_SCORE_DECISION } from './validation'
+export { getFinalPrediction, submitFinalPrediction } from './finalPrediction'
 export { getInstruments, getMarketHistory } from './market'

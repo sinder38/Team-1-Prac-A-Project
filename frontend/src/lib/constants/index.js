@@ -10,3 +10,8 @@ export {
   CONFIDENCE_LEVELS,
   EVIDENCE_SOURCES,
 } from './review'
+export {
+  FINAL_PRED_ASSETS,
+  FINAL_PRED_DIRECTIONS,
+  FINAL_PRED_CONFIDENCE,
+} from './finalPrediction'

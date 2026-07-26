@@ -22,10 +22,31 @@ function cellValue(model, dim) {
   return '—'
 }
 
+const EMPTY_CELLS = new Set(['', '—', '-', '–', 'n/a', 'na'])
+
+const MODEL_OUTPUT_FIELDS = [
+  'consensus',
+  'spx',
+  'ndx',
+  'iwm',
+  'evidence',
+  'contradiction',
+  'invalidation',
+  'plainEnglish',
+]
+
+/** Drop unused/failed model columns (all dashes), e.g. gpt-oss left in an old table. */
+function modelHasOutput(model) {
+  return MODEL_OUTPUT_FIELDS.some(key => {
+    const v = String(model?.[key] ?? '').trim().toLowerCase()
+    return v && !EMPTY_CELLS.has(v)
+  })
+}
+
 export default function LlmComparisonPanel({ comparison, expanded, onToggle }) {
   if (!comparison) return null
 
-  const models = Array.isArray(comparison.models) ? comparison.models : []
+  const models = (Array.isArray(comparison.models) ? comparison.models : []).filter(modelHasOutput)
   const agreement = Number.isFinite(comparison.disagreementRatio)
     ? `${100 - comparison.disagreementRatio}%`
     : '—'

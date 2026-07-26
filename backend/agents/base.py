@@ -30,3 +30,17 @@ class BaseAgent(ABC, Generic[T]):
     def render_md(self, output: T, prediction_date: date) -> str:
         """Return Markdown string for output. Subclasses implement their own template."""
         ...
+
+    @classmethod
+    def parse_md(cls, text: str, prediction_date: date | None = None) -> T:
+        """Parse Markdown produced by ``render_md`` back into a typed output.
+
+        The inverse of ``render_md``. The prediction date is read from the
+        document when present; pass ``prediction_date`` to override or as a
+        fallback for agents whose Markdown does not carry a recoverable date.
+
+        Optional: agents whose Markdown cannot be reconstructed from the schema
+        do not override this. Parsing may be lossy where the rendered document
+        carries more than the schema stores.
+        """
+        raise NotImplementedError(f"{cls.__name__} does not support parse_md")

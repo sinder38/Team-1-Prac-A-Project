@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import json
 import re
 from datetime import date
 from pathlib import Path
 
 from agents.paths import DATA_DIR
-from server.utils import OUTPUTS_ROOT, artifact_path, parse_date
+from server.db import render, repository as repo
+from server.db.context import db_session
+from server.utils import parse_date
 
 DATA_ROOT = DATA_DIR
 
@@ -17,10 +18,6 @@ DATA_ROOT = DATA_DIR
 _STEM_RE = re.compile(r"_(W\d{2})\.")
 _RUN_DATE_RE = re.compile(r"run\s+(\d{4}-\d{2}-\d{2})", re.I)
 _CONFIDENCE_SCORE = {"Low": 40, "Low-Medium": 55, "Medium": 65, "High": 85}
-
-# Patterns for standard and LLM artifacts stored under data/outputs.
-_STANDARD_RUN = re.compile(r"^[a-z]+_(W\d{2})_(.+?)(?:_\d+d|_[a-z]+_\d+d)?\.json$")
-_LLM_RUN = re.compile(r"^llm_[a-z0-9]+_(W\d{2})_(.+?)_\d+d\.json$")
 
 _AGENT_FILES = {
     "almanac": ["almanac/almanac_agent_{stem}.md"],
@@ -145,7 +142,9 @@ def discover_archive_stems() -> dict[str, date]:
         if not folder.is_dir():
             continue
         for path in folder.iterdir():
-            if not path.is_file():
+            # Only Markdown archives define a week. Evidence chart images
+            # (e.g. finviz_..._W30.png) must not create a spurious empty week.
+            if not path.is_file() or path.suffix.lower() != ".md":
                 continue
             m = _STEM_RE.search(path.name)
             if m:
@@ -166,17 +165,19 @@ def _extract_metrics(agent: str, text: str) -> list[dict]:
     return metrics[:4]
 
 
-def _agent_card(agent_key: str, label: str, stem: str) -> dict | None:
-    path = _resolve_agent_path(agent_key, stem)
-    if not path:
+def _agent_card(agent_key: str, label: str, payload: dict | None) -> dict | None:
+    """Build a frontend agent card from a stored payload.
+
+    ``rawData`` is regenerated from the structured payload (lossy for
+    technical, which the schema cannot fully reproduce — see server.db.render).
+    """
+    if not payload:
         return None
-    text = _read_text(path)
-    if not text:
-        return None
+    raw = render.render_markdown(agent_key, payload)
     return {
         "agent": label,
-        "metrics": _extract_metrics(agent_key, text),
-        "rawData": text,
+        "metrics": _extract_metrics(agent_key, raw),
+        "rawData": raw,
     }
 
 
@@ -340,6 +341,185 @@ def _section_body(text: str, title: str) -> str:
     return body
 
 
+# Labels in Team1 prediction tables → frontend asset keys.
+_FP_ASSET_KEYS = {
+    "s&p 500 (spx)": "spx",
+    "nasdaq 100 (ndx)": "ndx",
+    "russell 2000 (iwm)": "iwm",
+    "gold": "gold",
+    "wti crude oil": "wti",
+    "10-year yield": "yield10y",
+    "vix": "vix",
+    "bitcoin": "btc",
+}
+
+_FP_FILED_RE = re.compile(
+    r"FILED:\s*(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})",
+    re.I,
+)
+_MONTH_NUM = {
+    "jan": 1,
+    "feb": 2,
+    "mar": 3,
+    "apr": 4,
+    "may": 5,
+    "jun": 6,
+    "jul": 7,
+    "aug": 8,
+    "sep": 9,
+    "oct": 10,
+    "nov": 11,
+    "dec": 12,
+}
+
+
+def _final_prediction_path(stem: str, pred: date | None = None) -> Path | None:
+    """Resolve data/final prediction/prediction_*_{stem}_Team1.md (either separator)."""
+    stem = _require_stem(stem)
+    week = stem  # W29
+    pred_dir = DATA_ROOT / "final prediction"
+    years: list[int] = []
+    if pred is not None:
+        years.append(pred.year)
+    today_year = date.today().year
+    for year in (today_year, today_year - 1):
+        if year not in years:
+            years.append(year)
+
+    names: list[str] = []
+    for year in years:
+        names.append(f"prediction_{year}-{week}_Team1.md")
+        names.append(f"prediction_{year}_{week}_Team1.md")
+    names.append(f"prediction_{week}_Team1.md")
+
+    for name in names:
+        path = pred_dir / name
+        if path.exists():
+            return path
+    return None
+
+
+def _strip_md_cell(cell: str) -> str:
+    return re.sub(r"[*_]", "", cell).strip()
+
+
+def _parse_fp_assets(text: str) -> dict[str, dict]:
+    assets: dict[str, dict] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        if re.match(r"^\|\s*:?-{3,}", stripped):
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if len(cells) < 4:
+            continue
+        label = _strip_md_cell(cells[0]).lower()
+        if label in ("asset", ""):
+            continue
+        key = _FP_ASSET_KEYS.get(label)
+        if not key:
+            continue
+        assets[key] = {
+            "direction": _strip_md_cell(cells[1]) or "FLAT",
+            "range": cells[2].strip() or "",
+            "confidence": _strip_md_cell(cells[3]) or "MEDIUM",
+        }
+    return assets
+
+
+def _parse_fp_evidence(body: str) -> tuple[str, str, str]:
+    items = re.findall(r"(?m)^\s*\d+\.\s+(.*?)(?=^\s*\d+\.\s+|\Z)", body, re.S)
+    cleaned = [re.sub(r"\s+", " ", item).strip() for item in items]
+    while len(cleaned) < 3:
+        cleaned.append("")
+    return cleaned[0], cleaned[1], cleaned[2]
+
+
+def _filed_iso_from_header(text: str, fallback: date | None) -> str | None:
+    first = text.splitlines()[0] if text else ""
+    m = _FP_FILED_RE.search(first)
+    if not m:
+        return fallback.isoformat() if fallback else None
+    day, mon, year = int(m.group(1)), m.group(2).lower()[:3], int(m.group(3))
+    month = _MONTH_NUM.get(mon)
+    if not month:
+        return fallback.isoformat() if fallback else None
+    try:
+        return date(year, month, day).isoformat()
+    except ValueError:
+        return fallback.isoformat() if fallback else None
+
+
+def _strip_md_tables(body: str) -> str:
+    """Drop markdown tables that sit inside a section (e.g. asset table under REGIME)."""
+    lines: list[str] = []
+    for line in body.splitlines():
+        if line.strip().startswith("|"):
+            break
+        lines.append(line)
+    return "\n".join(lines).strip()
+
+
+def _unwrap_bold_paragraph(body: str) -> str:
+    """Turn `**Neutral-Bullish.** rest` into plain text for the report card."""
+    body = body.strip()
+    if not body.startswith("**"):
+        return body
+    # Unwrap a leading **...** span (may be only the first sentence).
+    m = re.match(r"^\*\*(.+?)\*\*\s*(.*)$", body, re.S)
+    if not m:
+        return body
+    head, rest = m.group(1).strip(), m.group(2).strip()
+    return f"{head} {rest}".strip() if rest else head
+
+
+def _parse_final_prediction(stem: str, pred: date | None = None) -> dict | None:
+    """Parse Team1 consensus brief markdown into the frontend report shape."""
+    if pred is None:
+        pred = discover_archive_stems().get(stem) or _prediction_date_for_stem(stem)
+    path = _final_prediction_path(stem, pred)
+    text = _read_text(path) if path else None
+    if not text:
+        return None
+
+    week = _label_for_stem(stem, pred)
+    filed = _filed_iso_from_header(text, pred)
+
+    evidence_body = _section_body(text, "KEY EVIDENCE (3 points)")
+    if not evidence_body:
+        evidence_body = _section_body(text, "KEY EVIDENCE")
+    e1, e2, e3 = _parse_fp_evidence(evidence_body)
+
+    contradiction = _section_body(
+        text, "KEY CONTRADICTION (Why Confidence Is MEDIUM, Not HIGH)"
+    ) or _section_body(text, "KEY CONTRADICTION")
+
+    regime = _unwrap_bold_paragraph(_strip_md_tables(_section_body(text, "REGIME")))
+
+    form = {
+        "regime": regime,
+        "assets": _parse_fp_assets(text),
+        "leadingSector": _unwrap_bold_paragraph(_section_body(text, "LEADING SECTOR")),
+        "laggingSector": _unwrap_bold_paragraph(_section_body(text, "LAGGING SECTOR")),
+        "evidence1": e1,
+        "evidence2": e2,
+        "evidence3": e3,
+        "contradiction": contradiction,
+        "wildCard": _section_body(text, "HUMAN OVERRIDE / WILD CARD"),
+        "invalidation": _section_body(text, "INVALIDATION CONDITIONS"),
+    }
+
+    return {
+        "form": form,
+        "week": week,
+        "predictionDate": filed,
+        "filedDate": filed,
+        "markdown": text,
+        "source": "archive",
+    }
+
+
 def _parse_score_cell(cell: str) -> int:
     cleaned = re.sub(r"[*_]", "", cell).strip()
     m = _SCORE_RE.search(cleaned)
@@ -358,8 +538,10 @@ def _clean_consensus_label(body: str) -> str:
 
 
 def load_human_score(stem: str) -> dict | None:
-    """Parse data/human/human_score_{stem}.md into the frontend report shape."""
-    return _human_score(_require_stem(stem))
+    """Return the stored human-score report for a week from the DB."""
+    with db_session() as session:
+        row = repo.get_archive_human_score(session, _require_stem(stem))
+        return row.payload if row else None
 
 
 def _human_score(stem: str, pred: date | None = None) -> dict | None:
@@ -449,39 +631,45 @@ def _human_score(stem: str, pred: date | None = None) -> dict | None:
 def load_archive_week(stem: str) -> dict | None:
     """Return frontend-shaped agent + LLM payloads for an archive week stem."""
     stem = _require_stem(stem)
-    archives = discover_archive_stems()
-    if stem not in archives:
-        return None
+    with db_session() as session:
+        run = repo.get_archive_run(session, stem)
+        if run is None:
+            return None
+        pred = run.prediction_date
+        cards = {
+            agent: repo.get_archive_agent_payload(session, stem, agent)
+            for agent in ("almanac", "macro", "technical", "evidence")
+        }
+        comparison = repo.get_archive_llm_comparison(session, stem)
+        human_row = repo.get_archive_human_score(session, stem)
+        human = human_row.payload if human_row else None
 
-    pred = archives[stem]
+    # DB miss (e.g. data/llm was sparse-checkout excluded at ingest) → parse MD.
+    if comparison is None:
+        try:
+            comparison = _parse_llm_comparison(stem)
+        except Exception:  # noqa: BLE001 - keep archive load resilient
+            comparison = None
+
+    final_prediction = None
+    try:
+        final_prediction = _parse_final_prediction(stem, pred)
+    except Exception:  # noqa: BLE001 - keep archive load resilient
+        final_prediction = None
+
     return {
         "week": _label_for_stem(stem, pred),
         "stem": stem,
         "prediction_date": pred.isoformat(),
         "source": "archive",
-        "almanac": _agent_card("almanac", "Almanac Agent", stem),
-        "macro": _agent_card("macro", "Macro Agent", stem),
-        "technical": _agent_card("technical", "Technical Agent", stem),
-        "evidence": _agent_card("evidence", "Evidence Agent", stem),
-        "llmComparison": _parse_llm_comparison(stem),
-        "humanScoreReport": _human_score(stem, pred),
+        "almanac": _agent_card("almanac", "Almanac Agent", cards["almanac"]),
+        "macro": _agent_card("macro", "Macro Agent", cards["macro"]),
+        "technical": _agent_card("technical", "Technical Agent", cards["technical"]),
+        "evidence": _agent_card("evidence", "Evidence Agent", cards["evidence"]),
+        "llmComparison": comparison,
+        "humanScoreReport": human,
+        "finalPrediction": final_prediction,
     }
-
-
-def list_archive_weeks() -> list[dict]:
-    weeks: list[dict] = []
-    for stem, pred in discover_archive_stems().items():
-        weeks.append(
-            {
-                "week": _label_for_stem(stem, pred),
-                "stem": stem,
-                "prediction_date": pred.isoformat(),
-                "run_id": None,
-                "source": "archive",
-            }
-        )
-    weeks.sort(key=_week_sort_value)
-    return weeks
 
 
 def _week_sort_value(entry: dict) -> str:
@@ -489,95 +677,55 @@ def _week_sort_value(entry: dict) -> str:
     return str(entry["week"])
 
 
-def _latest_run_ids() -> dict[str, str]:
-    """Find the newest run ID for each week in the output folders."""
-    best_runs: dict[str, tuple[float, str]] = {}
-    if not OUTPUTS_ROOT.exists():
-        return {}
+def _run_entry(run) -> dict:
+    from agents.io import week_stem
 
-    for folder in OUTPUTS_ROOT.iterdir():
-        if not folder.is_dir():
-            continue
-
-        for path in folder.glob("*.json"):
-            match = _STANDARD_RUN.match(path.name)
-            if not match:
-                match = _LLM_RUN.match(path.name)
-            if not match:
-                continue
-
-            stem = match.group(1)
-            run_id = match.group(2)
-            try:
-                modified_time = path.stat().st_mtime
-            except OSError:
-                modified_time = 0.0
-
-            candidate = (modified_time, run_id)
-            current = best_runs.get(stem)
-            if current is None or candidate > current:
-                best_runs[stem] = candidate
-
-    latest: dict[str, str] = {}
-    for stem, (_, run_id) in best_runs.items():
-        latest[stem] = run_id
-    return latest
-
-
-def _run_prediction_date(stem: str, run_id: str) -> date:
-    """Read a prediction date from any available artifact in the run."""
-    for agent in ("almanac", "technical", "macro", "evidence"):
-        if agent == "evidence":
-            path = artifact_path(agent, stem, run_id)
-        else:
-            path = artifact_path(
-                agent,
-                stem,
-                run_id,
-                horizon_days=7,
-            )
-        if not path.exists():
-            continue
-
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            raw_date = data.get("prediction_date")
-            if raw_date:
-                return parse_date(str(raw_date)[:10])
-        except (OSError, ValueError, TypeError, json.JSONDecodeError):
-            continue
-
-    year = date.today().isocalendar().year
-    week_number = int(stem[1:])
-    return date.fromisocalendar(year, week_number, 1)
-
-
-def _run_week_entry(stem: str, run_id: str) -> dict:
-    """Build one frontend week entry for a generated JSON run."""
-    prediction_date = _run_prediction_date(stem, run_id)
-    year = prediction_date.isocalendar().year
-    label = f"{year}-{stem}"
+    stem = run.week_stem or week_stem(run.prediction_date)
+    created = run.created_at
     return {
-        "week": label,
+        "week": _label_for_stem(stem, run.prediction_date),
         "stem": stem,
-        "prediction_date": prediction_date.isoformat(),
-        "run_id": run_id,
-        "source": "run",
+        "prediction_date": run.prediction_date.isoformat(),
+        "run_id": run.run_id,
+        "source": run.source,
+        # ISO timestamp so the UI can show a readable "when" instead of run-ms06533c.
+        "created_at": created.isoformat() if created is not None else None,
     }
 
 
-def list_all_weeks() -> list[dict]:
-    """JSON run weeks from data/outputs, plus archive markdown weeks for gaps."""
-    by_week: dict[str, dict] = {}
-
-    for stem, run_id in _latest_run_ids().items():
-        entry = _run_week_entry(stem, run_id)
-        by_week[entry["week"]] = entry
-
-    for entry in list_archive_weeks():
-        by_week.setdefault(entry["week"], entry)
-
-    weeks: list[dict] = []
-    for week in sorted(by_week):
-        weeks.append(by_week[week])
+def list_archive_weeks() -> list[dict]:
+    with db_session() as session:
+        runs = repo.list_runs(session, source="archive")
+        weeks = [_run_entry(run) for run in runs]
+    weeks.sort(key=_week_sort_value)
     return weeks
+
+
+def list_all_weeks() -> list[dict]:
+    """Every runtime run (multiple run_ids per week), plus archive gaps."""
+    with db_session() as session:
+        runs = repo.list_runs(session)
+
+    entries: list[dict] = []
+    weeks_with_runs: set[str] = set()
+
+    runtime = sorted(
+        (r for r in runs if r.source == "run"),
+        key=lambda r: (r.prediction_date, r.created_at, r.run_id or ""),
+    )
+    for run in runtime:
+        entry = _run_entry(run)
+        entries.append(entry)
+        weeks_with_runs.add(entry["week"])
+
+    for run in runs:
+        if run.source != "archive":
+            continue
+        entry = _run_entry(run)
+        if entry["week"] not in weeks_with_runs:
+            entries.append(entry)
+
+    entries.sort(
+        key=lambda e: (_week_sort_value(e), e.get("created_at") or "", e.get("run_id") or "")
+    )
+    return entries

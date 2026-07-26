@@ -3,6 +3,7 @@
  */
 import { getJson } from './http'
 import { DEFAULT_HORIZON_DAYS, getLlmModels } from './pipeline'
+import { getFinalPrediction } from './finalPrediction'
 
 const CONFIDENCE_SCORE = { Low: 40, 'Low-Medium': 55, Medium: 65, High: 85 }
 
@@ -119,8 +120,21 @@ export async function getAvailableWeeks() {
     runId: w.run_id || null,
     stem: w.stem,
     source: w.source || (w.run_id ? 'run' : 'archive'),
+    createdAt: w.created_at || null,
   }))
   return { weeks }
+}
+
+export async function getRunStatus(runId) {
+  const data = await getJson(
+    `/artifacts/run-status?run_id=${encodeURIComponent(runId)}`,
+  )
+  return {
+    agentTypes: data.agent_types ?? [],
+    hasLlmOutput: Boolean(data.has_llm_output),
+    hasDeltaReport: Boolean(data.has_delta_report),
+    hasHumanScore: Boolean(data.has_human_score),
+  }
 }
 
 export async function getArchiveOutputs(stem) {
@@ -131,10 +145,15 @@ export async function getArchiveOutputs(stem) {
     macro: data.macro || null,
     llmComparison: data.llmComparison || null,
     humanScoreReport: data.humanScoreReport || null,
+    finalPrediction: data.finalPrediction || null,
   }
 }
 
-export async function getHumanScore(stem) {
+export async function getHumanScore({ stem, runId } = {}) {
+  if (runId) {
+    return getJson(`/artifacts/human-score?run_id=${encodeURIComponent(runId)}`)
+  }
+  if (!stem) throw new Error('stem or runId is required')
   return getJson(`/artifacts/human-score?stem=${encodeURIComponent(stem)}`)
 }
 
@@ -143,6 +162,7 @@ export async function getAgentOutputs({
   runId,
   horizonDays = DEFAULT_HORIZON_DAYS,
   includeLlm = true,
+  allowPartial = false,
   stem,
   source,
 }) {
@@ -151,44 +171,71 @@ export async function getAgentOutputs({
   }
 
   const qs = `prediction_date=${predictionDate}&run_id=${runId}&horizon_days=${horizonDays}`
+  const loadArtifact = async path => {
+    if (!allowPartial) return getJson(path)
+    try {
+      return await getJson(path)
+    } catch {
+      return null
+    }
+  }
 
   const [almanac, technical, macro] = await Promise.all([
-    getJson(`/artifacts/almanac?${qs}`),
-    getJson(`/artifacts/technical?${qs}`),
-    getJson(`/artifacts/macro?${qs}`),
+    loadArtifact(`/artifacts/almanac?${qs}`),
+    loadArtifact(`/artifacts/technical?${qs}`),
+    loadArtifact(`/artifacts/macro?${qs}`),
   ])
 
   let llmComparison = null
-  if (includeLlm) {
-    const modelList = await getLlmModels()
-    const models = []
-    await Promise.all(
-      modelList.map(async ({ key, name }) => {
-        try {
-          const data = await getJson(`/artifacts/llm?${qs}&model=${key}`)
-          models.push({ name, data })
-        } catch {
-          // Skip models that failed or were not run.
-        }
-      }),
-    )
-    if (models.length) llmComparison = buildLlmComparison(models)
+  if (includeLlm && runId) {
+    try {
+      const packed = await getJson(
+        `/artifacts/llm-comparison?run_id=${encodeURIComponent(runId)}`,
+      )
+      if (packed.comparison) {
+        llmComparison = packed.comparison
+      } else if (Array.isArray(packed.models) && packed.models.length) {
+        llmComparison = buildLlmComparison(packed.models)
+      }
+    } catch {
+      // Fall back to per-model fetches (older servers / partial runs).
+      const modelList = await getLlmModels()
+      const models = []
+      await Promise.all(
+        modelList.map(async ({ key, name }) => {
+          try {
+            const data = await getJson(`/artifacts/llm?${qs}&model=${key}`)
+            models.push({ name, data })
+          } catch {
+            // Skip models that failed or were not run.
+          }
+        }),
+      )
+      if (models.length) llmComparison = buildLlmComparison(models)
+    }
   }
 
   let humanScoreReport = null
-  if (stem) {
+  let finalPrediction = null
+  if (runId) {
     try {
-      humanScoreReport = await getHumanScore(stem)
+      humanScoreReport = await getHumanScore({ runId })
     } catch {
-      // No archived human score for this week.
+      // No human score saved for this run yet.
+    }
+    try {
+      finalPrediction = await getFinalPrediction(runId)
+    } catch {
+      // No final prediction for this run yet.
     }
   }
 
   return {
-    almanac: almanacCard(almanac),
-    technical: technicalCard(technical),
-    macro: macroCard(macro),
+    almanac: almanac ? almanacCard(almanac) : null,
+    technical: technical ? technicalCard(technical) : null,
+    macro: macro ? macroCard(macro) : null,
     llmComparison,
     humanScoreReport,
+    finalPrediction,
   }
 }
