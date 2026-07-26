@@ -46,7 +46,7 @@ def _save_artifacts(
 def run_almanac(ctx: PipelineContext, config: StageConfig) -> None:
 
     agent = AlmanacAgent()
-    output = agent.run(ctx.prediction_date)
+    output = agent.run(ctx.prediction_date, horizon_days=ctx.horizon_days)
     ctx.almanac = output
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
@@ -54,14 +54,14 @@ def run_almanac(ctx: PipelineContext, config: StageConfig) -> None:
 def run_technical(ctx: PipelineContext, config: StageConfig) -> None:
 
     agent = TechnicalAgent()
-    output = agent.run(ctx.prediction_date)
+    output = agent.run(ctx.prediction_date, horizon_days=ctx.horizon_days)
     ctx.technical = output
     _save_artifacts(agent, output, ctx.prediction_date, config)
 
 
 def run_macro(ctx: PipelineContext, config: StageConfig) -> None:
     agent = MacroAgent()
-    output = agent.run(ctx.prediction_date)
+    output = agent.run(ctx.prediction_date, horizon_days=ctx.horizon_days)
     ctx.macro = output
     _save_artifacts(agent, output, ctx.prediction_date, config)
 

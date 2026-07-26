@@ -80,9 +80,19 @@ class BaseLLMAgent(BaseAgent):
 
         context = "\n\n".join(context_blocks) if context_blocks else "No agent data available."
 
+        horizon_days = 7
+        if ctx is not None:
+            horizon_days = int(getattr(ctx, "horizon_days", 7) or 7)
+        period = (
+            f"the week of {prediction_date}"
+            if horizon_days <= 7
+            else f"the next {horizon_days} days starting {prediction_date}"
+        )
+
         return (
-            f"You are a market analyst. Based on the following data for the week of {prediction_date}, "
-            f"provide a structured market prediction for SPX, NDX, and IWM.\n\n"
+            f"You are a market analyst. Based on the following data for {period}, "
+            f"provide a structured market prediction for SPX, NDX, and IWM."
+            f"covering that same {horizon_days}-day horizon.\n\n"
             f"{context}\n\n"
             f"Respond in this exact format:\n"
             f"WEEKLY_REGIME: [Bullish/Bearish/Neutral/Uncertain]\n"

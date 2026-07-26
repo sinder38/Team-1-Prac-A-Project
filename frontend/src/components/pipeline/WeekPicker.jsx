@@ -52,6 +52,8 @@ export default function WeekPicker({
   savedWeeks = [],
   onDateChange,
   onWeekSelect,
+  horizonDays = 7,
+  onHorizonChange,
   disabled,
   mode = 'new',
   newWeek: newWeekProp,
@@ -119,6 +121,20 @@ export default function WeekPicker({
       </div>
 
       <select
+        value={horizonDays}
+        onChange={e => onHorizonChange?.(Number(e.target.value))}
+        disabled={disabled}
+        aria-label="Prediction horizon"
+        className="px-2 py-1.5 text-sm border border-gray-200 rounded-md bg-white text-gray-900 focus:outline-none focus:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400"
+      >
+        <option value={7}>7 days</option>
+        <option value={14}>14 days</option>
+        <option value={21}>21 days</option>
+        <option value={28}>28 days</option>
+      </select>
+
+
+      <select
         value={selectValue}
         onChange={e => {
           const hit = options.find(o => o.value === e.target.value)
@@ -156,6 +172,8 @@ WeekPicker.propTypes = {
   savedWeeks: PropTypes.array,
   onDateChange: PropTypes.func,
   onWeekSelect: PropTypes.func,
+  horizonDays: PropTypes.number,
+  onHorizonChange: PropTypes.func,
   disabled: PropTypes.bool,
   mode: PropTypes.oneOf(['new', 'archive']),
   newWeek: PropTypes.string,

@@ -1,6 +1,6 @@
 import json
 import pytest
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from agents.almanac.almanac_agent import AlmanacAgent
@@ -16,9 +16,11 @@ class _FakeConfig:
     branch uses config.artifacts.save_json (PipelineConfig).  This class supports
     both at once so the same test file passes in both environments.
     """
+
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, _FakeConfig(**v) if isinstance(v, dict) else v)
+
     def get(self, key, default=None):
         return getattr(self, key, default)
 
@@ -137,11 +139,11 @@ def _load_reference_almanac(week_str: str) -> str | None:
 
 
 def _assert_phrases_from_almanac_source(
-    generated_md: str,
-    week_str: str,
-    phrases: list[str],
-    *,
-    citation: str,
+        generated_md: str,
+        week_str: str,
+        phrases: list[str],
+        *,
+        citation: str,
 ) -> None:
     """Cross-check agent output against the team's almanac reference notes.
 
@@ -499,3 +501,69 @@ def test_almanac_integration_week_5_early_july(setup_integration):
             ],
         },
     )
+
+
+def test_horizon_bounds_week_vs_long():
+    d = date(2026, 6, 16)
+    assert AlmanacAgent._horizon_bounds(d, 7) == AlmanacAgent._week_bounds(d)
+    assert AlmanacAgent._horizon_bounds(d, 7) == (date(2026, 6, 15), date(2026, 6, 19))
+    start, end = AlmanacAgent._horizon_bounds(d, 14)
+    assert start == date(2026, 6, 16)
+    assert end == date(2026, 6, 29)  # 16 + 13 days
+
+
+def test_lookup_default_week_pattern():
+    out = AlmanacAgent().lookup_seasonal_data(date(2026, 6, 16), horizon_days=7)
+    assert out.horizon_days == 7
+    assert out.monthly_bias == Bias.BEARISH
+    assert out.seasonal_bias == Bias.BEARISH
+    assert out.confidence == Confidence.MEDIUM
+    assert out.weekly_pattern == "Mid-June weakness / Triple-Witching week"
+    assert "Triple-Witching" in out.thesis or "bearish" in out.thesis.lower()
+
+
+def test_lookup_horizon_days_stored():
+    out = AlmanacAgent().lookup_seasonal_data(date(2026, 6, 16), horizon_days=14)
+    assert out.horizon_days == 14
+
+
+def test_lookup_14_day_aggregates_expected_patterns():
+    out = AlmanacAgent().lookup_seasonal_data(date(2026, 6, 16), horizon_days=14)
+    assert out.horizon_days == 14
+    assert out.weekly_pattern == (
+        "Mid-June weakness / Triple-Witching week + "
+        "Week after June Triple-Witching + "
+        "End-of-quarter / early-July transition "
+        "(14-day window)"
+    )
+    assert out.seasonal_bias == Bias.BEARISH
+    assert out.confidence == Confidence.LOW
+    assert "14 days" in out.thesis
+    assert "2026-06-16" in out.thesis and "2026-06-29" in out.thesis
+    assert "bearish seasonal lean" in out.thesis.lower()
+
+
+def test_lookup_30_day_aggregates_expected_patterns():
+    short = AlmanacAgent().lookup_seasonal_data(date(2026, 6, 16), horizon_days=7)
+    long = AlmanacAgent().lookup_seasonal_data(date(2026, 6, 16), horizon_days=30)
+    assert short.weekly_pattern == "Mid-June weakness / Triple-Witching week"
+    assert short.seasonal_bias == Bias.BEARISH
+    assert long.horizon_days == 30
+    assert long.weekly_pattern == (
+        "Mid-June weakness / Triple-Witching week + "
+        "Week after June Triple-Witching + "
+        "End-of-quarter / early-July transition + "
+        "Early-July holiday week / post-Independence Day + "
+        "Post-holiday July follow-through + "
+        "Week after July monthly expiration "
+        "(30-day window)"
+    )
+    assert long.seasonal_bias == Bias.MIXED
+    assert long.confidence == Confidence.LOW
+    assert long.monthly_bias == Bias.BEARISH  # midpoint lands in June
+    assert "30 days" in long.thesis
+    assert "2026-06-16" in long.thesis and "2026-07-15" in long.thesis
+    assert "mixed seasonal lean" in long.thesis.lower()
+    # must differ from single-week result
+    assert long.weekly_pattern != short.weekly_pattern
+    assert long.seasonal_bias != short.seasonal_bias

@@ -109,6 +109,13 @@ def next_week_window(prediction_date: date) -> tuple[date, date]:
     start = prediction_date + timedelta(days=days_until_next_monday)
     return start, start + timedelta(days=4)
 
+def forward_window(prediction_date: date, horizon_days: int) -> tuple[date, date]:
+    if horizon_days <= 7:
+        return next_week_window(prediction_date)  # same as today
+    start = prediction_date + timedelta(days=1)
+    end = prediction_date + timedelta(days=horizon_days)
+    return start, end
+
 
 def clean_html(value: str) -> str:
     """Remove tags/entities and normalize whitespace."""
@@ -134,8 +141,8 @@ def apply_keyword_weights(text: str, weights: list[tuple[tuple[str, ...], int]])
 class SourceFetcher:
     """Tiny wrapper around requests so source collectors are easy to test."""
 
-    def fetch_text(self, url: str) -> str:
-        response = requests.get(url, headers=HTTP_HEADERS, timeout=20)
+    def fetch_text(self, url: str, cookies: dict | None = None) -> str:
+        response = requests.get(url, headers=HTTP_HEADERS, cookies=cookies or {}, timeout=20)
         response.raise_for_status()
         return response.text
 
@@ -151,19 +158,21 @@ class TradingEconomicsCalendar:
     def __init__(self, fetcher: SourceFetcher | None = None):
         self.fetcher = fetcher or SourceFetcher()
 
-    def get_top_events(self, prediction_date: date, limit: int = 5) -> list[Event]:
+    def get_top_events(self, prediction_date: date, limit: int = 5, horizon_days: int = 7) -> list[Event]:
         """Return the top next-week events from TradingEconomics."""
-        start_date, end_date = next_week_window(prediction_date)
-        try:
-            html_text = self.fetcher.fetch_text(TRADING_ECONOMICS_CALENDAR_URL)
-            events = self.parse_events(html_text, start_date, end_date)
-            selected = self.select_top_events(events, limit)
-            if selected:
-                return selected
-        except (requests.RequestException, ValueError, AttributeError) as exc:
-            print(f"Warning: TradingEconomics calendar unavailable ({exc}); continuing.")
-
-        return []
+        start_date, end_date = forward_window(prediction_date, horizon_days)
+        html_this = self.fetcher.fetch_text(
+            TRADING_ECONOMICS_CALENDAR_URL,
+            cookies={"calendar-range": "5", "calendar-importance": "3",},
+        )
+        html_next = self.fetcher.fetch_text(
+            TRADING_ECONOMICS_CALENDAR_URL,
+            cookies={"calendar-range": "6", "calendar-importance": "3",},
+        )
+        events = []
+        events.extend(self.parse_events(html_this, start_date, end_date))
+        events.extend(self.parse_events(html_next, start_date, end_date))
+        return self.select_top_events(events, limit)
 
     def parse_events(
             self,

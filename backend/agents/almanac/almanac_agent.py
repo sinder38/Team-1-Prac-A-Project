@@ -58,21 +58,24 @@ class AlmanacAgent(BaseAgent):
     # FileSaver uses this name when saving JSON under data/outputs/almanac/.
     agent_type = "almanac"
 
-    def lookup_seasonal_data(self, prediction_date: date) -> AlmanacOutput:
+    def lookup_seasonal_data(self, prediction_date: date, horizon_days: int = 7) -> AlmanacOutput:
         """Build the structured AlmanacOutput for one prediction date.
 
         prediction_date can be any date inside the target prediction week. The
         agent uses the month and week-of-month to pick the closest encoded
         Almanac entry.
         """
-        # Month data gives the broad seasonal background, for example whether
-        # June is normally weak in a midterm year.
-        month_data = MONTHLY_STATS.get(prediction_date.month, MONTHLY_STATS[6])
+        if horizon_days <= 7:
+            # Month data gives the broad seasonal background, for example whether
+            # June is normally weak in a midterm year.
+            month_data = MONTHLY_STATS.get(prediction_date.month, MONTHLY_STATS[6])
 
-        # Week data gives the more specific pattern, for example mid-June or
-        # early-July behavior. If no weekly pattern exists, _get_week_data()
-        # falls back to the month-level signal.
-        week_data = self._get_week_data(prediction_date)
+            # Week data gives the more specific pattern, for example mid-June or
+            # early-July behavior. If no weekly pattern exists, _get_week_data()
+            # falls back to the month-level signal.
+            week_data = self._get_week_data(prediction_date)
+        else:
+            month_data, week_data = self._lookup_horizon_data(prediction_date, horizon_days)
 
         # The schema classes use enums such as Bias and Confidence, so convert
         # the plain strings from almanac_data.py into those enum values here.
@@ -91,11 +94,13 @@ class AlmanacAgent(BaseAgent):
                 for item in SECTOR_WINDOWS
             ],
             thesis=week_data["thesis"],
+            horizon_days=horizon_days,
         )
 
     def run(self, prediction_date: date, **kwargs) -> AlmanacOutput:
         """Entry point required by BaseAgent."""
-        return self.lookup_seasonal_data(prediction_date)
+        horizon_days = int(kwargs.get("horizon_days", 7))
+        return self.lookup_seasonal_data(prediction_date, horizon_days=horizon_days)
 
     def render_md(self, output: AlmanacOutput, prediction_date: date) -> str:
         """Return Markdown matching data/formats/almanac_agent.md."""
@@ -107,7 +112,7 @@ class AlmanacAgent(BaseAgent):
 
         # The report title should show the full Monday-Friday prediction week,
         # not just the single date passed on the command line.
-        week_start, week_end = self._week_bounds(prediction_date)
+        week_start, week_end = self._horizon_bounds(prediction_date, output.horizon_days)
         period = self._format_period(week_start, week_end)
 
         # Build each Markdown section separately so the big template below stays
@@ -197,6 +202,71 @@ Source: {SOURCE_NOTE}
             ),
         }
 
+    def _lookup_horizon_data(
+            self, prediction_date: date, horizon_days: int
+    ) -> tuple[dict, dict]:
+        """Aggregate month/week Almanac patterns over [prediction_date, +horizon).
+        week_data uses the same keys as _get_week_data():
+        label, name, bullets, seasonal_bias, confidence, thesis
+        """
+        start = prediction_date
+        end = prediction_date + timedelta(days=horizon_days - 1)
+        patterns: list[dict] = []
+        seen: set[tuple[int, int]] = set()
+
+        def _add(day: date) -> None:
+            key = (day.month, self._week_of_month(day))
+            if key in seen:
+                return
+            seen.add(key)
+            patterns.append(self._get_week_data(day))
+
+        day = start
+        while day <= end:
+            _add(day)
+            day += timedelta(days=7)
+        _add(end)
+        # Midpoint month for monthly_bias
+        mid = start + timedelta(days=(end - start).days // 2)
+        month_data = MONTHLY_STATS.get(mid.month, MONTHLY_STATS[6])
+        biases = [p["seasonal_bias"] for p in patterns]
+        counts: dict[str, int] = {}
+        for bias in biases:
+            counts[bias] = counts.get(bias, 0) + 1
+        top_count = max(counts.values())
+        leaders = [bias for bias, n in counts.items() if n == top_count]
+        seasonal_bias = leaders[0] if len(leaders) == 1 else "Mixed"
+        conf_rank = {"High": 3, "Medium": 2, "Low-Medium": 1.5, "Low": 1}
+        if len(set(biases)) > 1:
+            confidence = "Low"
+        else:
+            confidence = min(
+                patterns,
+                key=lambda p: conf_rank.get(p["confidence"], 1),
+            )["confidence"]
+        names = [p["name"] for p in patterns]
+        labels = [p["label"] for p in patterns]
+        bullets: list[str] = []
+        for p in patterns:
+            bullets.extend(p.get("bullets", [])[:2])
+        if not bullets:
+            bullets = [
+                f"Seasonal window covers {horizon_days} days from {start} to {end}."
+            ]
+        week_data = {
+            "label": " + ".join(labels),
+            "name": " + ".join(names) + f" ({horizon_days}-day window)",
+            "bullets": bullets,
+            "seasonal_bias": seasonal_bias,
+            "confidence": confidence,
+            "thesis": (
+                f"Over the next {horizon_days} days ({start} to {end}), "
+                f"Almanac patterns ({', '.join(names)}) aggregate to a "
+                f"{seasonal_bias.lower()} seasonal lean."
+            ),
+        }
+        return month_data, week_data
+
     @staticmethod
     def _week_of_month(prediction_date: date) -> int:
         """Convert a calendar day into a simple week number inside the month."""
@@ -208,6 +278,14 @@ Source: {SOURCE_NOTE}
         week_start = prediction_date - timedelta(days=prediction_date.weekday())
         week_end = week_start + timedelta(days=4)
         return week_start, week_end
+
+    @staticmethod
+    def _horizon_bounds(prediction_date: date, horizon_days: int) -> tuple[date, date]:
+        if horizon_days <= 7:
+            return AlmanacAgent._week_bounds(prediction_date)
+        start = prediction_date
+        end = prediction_date + timedelta(days=horizon_days - 1)
+        return start, end
 
     @staticmethod
     def _format_period(start: date, end: date) -> str:

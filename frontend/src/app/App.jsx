@@ -23,6 +23,8 @@ export default function App() {
     savedWeeks: pipeline.savedWeeks,
     onDateChange: pipeline.onDateChange,
     onWeekSelect: pipeline.onWeekSelect,
+    horizonDays: pipeline.horizonDays,
+    onHorizonChange: pipeline.setHorizonDays,
     mode: pipeline.weekPickerMode,
     newWeek: pipeline.newWeek,
     newPredictionDate: pipeline.newPredictionDate,

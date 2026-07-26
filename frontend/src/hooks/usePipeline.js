@@ -143,6 +143,7 @@ export function usePipeline() {
   const [logs, setLogs] = useState([])
   const [outputs, setOutputs] = useState(emptyAgentOutputs)
   const [predictionDate, setPredictionDate] = useState(todayIso())
+  const [horizonDays, setHorizonDays] = useState(DEFAULT_HORIZON_DAYS)
   const [selectedWeek, setSelectedWeek] = useState(null)
   // Which saved run is open (null = new run or markdown archive without run_id).
   const [selectedRunId, setSelectedRunId] = useState(null)
@@ -319,7 +320,7 @@ export function usePipeline() {
       const stageResult = await apiRunStage(index, {
         predictionDate,
         runId,
-        horizonDays: DEFAULT_HORIZON_DAYS,
+        horizonDays,
         models: selectedModels,
       })
 
@@ -329,7 +330,7 @@ export function usePipeline() {
         const data = await getAgentOutputs({
           predictionDate,
           runId,
-          horizonDays: DEFAULT_HORIZON_DAYS,
+          horizonDays,
           includeLlm: index === 2,
           stem,
           source: 'run',
@@ -559,7 +560,7 @@ export function usePipeline() {
         getAgentOutputs({
           predictionDate: entry.predictionDate,
           runId: entry.runId,
-          horizonDays: DEFAULT_HORIZON_DAYS,
+          horizonDays,
           allowPartial: true,
           stem,
           source: isArchive ? 'archive' : 'run',
@@ -608,6 +609,8 @@ export function usePipeline() {
     error,
     clearError,
     predictionDate,
+    horizonDays,
+    setHorizonDays,
     selectedWeek: currentWeek,
     selectedRunId,
     savedWeeks,

@@ -98,7 +98,7 @@ def post_almanac():
     except (ValueError, TypeError) as e:
         return err(str(e), 400)
 
-    ctx = PipelineContext(prediction_date=prediction_date)
+    ctx = PipelineContext(prediction_date=prediction_date, horizon_days=horizon_days)
     try:
         run_almanac(ctx, CONFIG)
     except Exception as e:
@@ -129,7 +129,7 @@ def post_technical():
     except (ValueError, TypeError) as e:
         return err(str(e), 400)
 
-    ctx = PipelineContext(prediction_date=prediction_date)
+    ctx = PipelineContext(prediction_date=prediction_date, horizon_days=horizon_days)
     try:
         run_technical(ctx, CONFIG)
     except Exception as e:
@@ -160,7 +160,7 @@ def post_macro():
     except (ValueError, TypeError) as e:
         return err(str(e), 400)
 
-    ctx = PipelineContext(prediction_date=prediction_date)
+    ctx = PipelineContext(prediction_date=prediction_date, horizon_days=horizon_days)
     try:
         run_macro(ctx, CONFIG)
     except Exception as e:
@@ -307,8 +307,8 @@ def post_llm():
             404,
         )
 
-    # Load agent outputs into PipelineContext
-    ctx = PipelineContext(prediction_date=prediction_date)
+      # Load agent outputs into PipelineContext
+    ctx = PipelineContext(prediction_date=prediction_date, horizon_days=horizon_days)
     try:
         ctx.almanac = almanac_from_payload(almanac_data)
         ctx.technical = technical_from_payload(technical_data)
