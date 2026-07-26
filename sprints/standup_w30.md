@@ -145,16 +145,140 @@ Communicate branch updates and changes earlier, especially when multiple pull re
 
 
 
+## Oakkar
+
+### What have you completed or contributed so far?
+
+Implemented the Final Prediction user interface.
+Fixed archive loading issues and improved the week picker so newly generated weeks remain selectable.
+Reviewed teammates' pull requests and provided feedback.
+
+### Did you face any blockers or challenges?
+
+Managing the archive and new-run states was challenging because cached data carried over between runs.
+The week selector also lost newly generated weeks after viewing archived results.
+
+### What went well during this sprint?
+
+Code review feedback was clear and helpful, making it easier to improve the implementation and resolve issues.
+
+### Is there anything we can improve as a team?
+
+Reply to pull request comments after addressing the requested changes so reviewers know when the pull request is ready for another review.
+
+
+
+## Georgii
+
+### What have you completed or contributed so far?
+
+Implemented local persistence using SQLite.
+Reviewed, merged, and fixed pull requests.
+Assigned development tasks to team members.
+Identified several issues, including continuity errors, incomplete deliveries, and unstable AI models.
+Prepared the sprint goal and acceptance criteria.
+Fixed the weekly pipeline before the final run.
+
+### Did you face any blockers or challenges?
+
+Migrating the project to SQLite persistence was more complex than expected and introduced several issues during implementation.
+Some work was completed very close to the deadline, leaving limited time for review and integration.
+
+### What went well during this sprint?
+
+The core development team worked well together and understood the project workflow.
+Most development tasks were completed earlier than in previous sprints.
+Most of the planned sprint objectives were successfully completed.
+
+### Is there anything we can improve as a team?
+
+Complete assigned tasks earlier to allow sufficient time for testing and code review.
+Maintain a high standard of work before submitting pull requests for review.
+
+
+
+## Naing Phone Pyae
+
+### What have you completed or contributed so far?
+
+Implemented the prediction range feature in both the backend and frontend.
+Updated the Almanac Agent and Macro Agent to retrieve seasonal data and future events based on the selected prediction range.
+Modified the LLM prompts to generate predictions according to the selected prediction horizon.
+Updated the encoded Almanac data to support additional future weeks.
+
+### Did you face any blockers or challenges?
+
+Implementing the prediction range across both the backend and frontend was challenging.
+Testing the LLM integration also required additional effort to ensure the prompts and outputs worked as expected.
+
+### What went well during this sprint?
+
+The prediction range feature is working as intended across all agents.
+The updated LLM prompts correctly generate predictions based on the selected prediction horizon.
+The implementation has been submitted as a pull request and is awaiting review and merge.
+
+### Is there anything we can improve as a team?
+
+The team showed stronger participation throughout this sprint.
+We should continue maintaining this level of collaboration and communication in future sprints.
+
+
+
+## Aeron
+
+### What have you completed or contributed so far?
+
+Completed the Human Score and Final Prediction tasks.
+Researched additional free AI models to replace rate-limited models and support the project pipeline.
+Assisted with the final project deliverables.
+
+### Did you face any blockers or challenges?
+
+I did not encounter any major technical blockers.
+The main challenge was editing the project demonstration video because the original recording exceeded the file size limit.
+
+### What went well during this sprint?
+
+I became more familiar with the development workflow and codebase.
+I communicated with the development team to better understand the implementation and complete my assigned tasks.
+
+### Is there anything we can improve as a team?
+
+I participated more actively during this sprint than in previous weeks.
+We should continue encouraging active participation and collaboration across the team.
+
+
+
+## Minghao
+
+### What have you completed or contributed so far?
+
+Finalised most of the presentation slides and speaker notes for the sprint presentation.
+Assisted in researching alternative free LLM models to replace rate-limited models and support the project pipeline.
+
+### Did you face any blockers or challenges?
+
+Some pull requests were submitted later than expected, making it difficult to finalise the presentation early.
+The presentation content had to be updated continuously as development tasks and pull request statuses changed.
+
+### What went well during this sprint?
+
+Most team members were more productive compared to previous sprints.
+Many development tasks were completed earlier than expected, allowing the presentation to progress more smoothly.
+
+### Is there anything we can improve as a team?
+
+Assign team roles and tasks earlier so deadlines can be planned more effectively.
+Continue monitoring task progress throughout the sprint to reduce delays and ensure work is completed on time.
 
 
 
 
+**Henry**
+actual work -
+Created all wiki
+Updated README
+not more not less
 
-
-
-
-
-
-
-
-
+**Zaw Latt Naung**
+hes improvement suggestion is irrelevant, its his responsobility, and is just a consequence of fast development and his slow progress
