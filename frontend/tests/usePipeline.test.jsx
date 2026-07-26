@@ -111,4 +111,41 @@ describe('usePipeline history restore', () => {
     )
     expect(result.current.doneCount).toBe(5)
   })
+
+  it('loads the week prediction owned by another run', async () => {
+    api.getAgentOutputs.mockResolvedValue({
+      almanac: { agent: 'Almanac Agent' },
+      macro: { agent: 'Macro Agent' },
+      technical: { agent: 'Technical Agent' },
+      llmComparison: null,
+      humanScoreReport: { week: '2026-W25' },
+      finalPrediction: {
+        week: '2026-W25',
+        runId: 'prediction-owner',
+        form: { regime: 'Neutral' },
+      },
+    })
+    api.getRunStatus.mockResolvedValue({
+      agentTypes: ['almanac', 'macro', 'technical'],
+      hasLlmOutput: true,
+      hasDeltaReport: true,
+      hasHumanScore: true,
+    })
+
+    const { result } = renderHook(() => usePipeline())
+    await waitFor(() => expect(api.getAvailableWeeks).toHaveBeenCalled())
+
+    await act(async () => {
+      await result.current.onWeekSelect({
+        week: '2026-W25',
+        predictionDate: '2026-06-18',
+        runId: 'restored-run',
+        source: 'run',
+      })
+    })
+
+    expect(result.current.finalPrediction).toEqual(
+      expect.objectContaining({ runId: 'prediction-owner' }),
+    )
+  })
 })

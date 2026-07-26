@@ -389,6 +389,10 @@ def test_runtime_final_prediction_roundtrip(client, app, tmp_path, monkeypatch):
     assert again.status_code == 200
 
     seed_runtime_run(app, run_id="run-fp-2", prediction_date=date(2026, 7, 20))
+    restored = client.get("/artifacts/final-prediction?run_id=run-fp-2")
+    assert restored.status_code == 200
+    assert restored.get_json()["runId"] == "run-fp-1"
+
     conflict = client.post(
         "/artifacts/final-prediction",
         json={"run_id": "run-fp-2", "report": report},

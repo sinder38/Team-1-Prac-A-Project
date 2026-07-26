@@ -194,14 +194,31 @@ def save_human_score():
 
 @artifacts_bp.route("/final-prediction", methods=["GET"])
 def get_final_prediction():
+    """Return the locked prediction for the selected run's week."""
     run_id = request.args.get("run_id")
     if not run_id:
         return err("Missing required query param: run_id", 400)
+
     with db_session() as session:
+        run = repo.get_runtime_run(session, str(run_id))
+        if run is None:
+            return err(f"Unknown run_id={run_id!r}", 404)
+
+        owner = run
         row = repo.get_runtime_final_prediction(session, str(run_id))
         if row is None:
-            return err(f"No final prediction for run_id={run_id!r}", 404)
-        return jsonify(row.payload), 200
+            stem = run.week_stem or week_stem(run.prediction_date)
+            owner = repo.get_runtime_run_with_final_prediction_for_week(session, stem)
+            if owner is not None and owner.run_id is not None:
+                row = repo.get_runtime_final_prediction(session, owner.run_id)
+
+        if row is None:
+            return err(f"No final prediction for run_id={run_id!r} or its week", 404)
+
+        payload = dict(row.payload)
+        if owner is not None and owner.run_id is not None:
+            payload["runId"] = owner.run_id
+        return jsonify(payload), 200
 
 
 @artifacts_bp.route("/final-prediction", methods=["POST"])

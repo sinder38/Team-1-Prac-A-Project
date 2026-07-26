@@ -519,7 +519,10 @@ export function usePipeline() {
       setFinalPredictions(prev => {
         const next = {
           ...prev,
-          [key]: { ...data.finalPrediction, runId: entry.runId || undefined },
+          [key]: {
+            ...data.finalPrediction,
+            runId: data.finalPrediction.runId || entry.runId || undefined,
+          },
         }
         writeStoredReports(next, FP_STORAGE_KEY)
         return next
