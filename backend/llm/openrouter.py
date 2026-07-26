@@ -41,6 +41,14 @@ HUMAN_LLM_DIR = REPO_ROOT / "data" / "llm"
 
 DEFAULT_CONFIG = BASE_DIR / "pipeline.toml"
 
+SYSTEM_INSTRUCTION = (
+    "You are a strict financial data formatter. "
+    "You MUST output exactly the requested keys in PLAIN TEXT format, separated by colons. "
+    "DO NOT OUTPUT JSON FORMAT. "
+    "For index ranges, you MUST strictly use the word 'to' (e.g., -1.5 to 2.0). "
+    "Do NOT wrap your response in markdown code blocks."
+)
+
 def _get_retry_delay(attempt: int) -> int:
     """Get delay time in seconds inbetween LLM API requests"""
     return 10 + 2**attempt
@@ -92,21 +100,13 @@ class OpenRouterAgent(BaseLLMAgent):
     def query(self, prompt: str) -> str:
         """Send prompt to OpenRouter. Retry on failure; raise if all retries are exhausted.
         Does NO parsing or sanitization — that is base_llm's responsibility."""
-        system_instruction = (
-            "You are a strict financial data formatter. "
-            "You MUST output exactly the requested keys in PLAIN TEXT format, separated by colons. "
-            "DO NOT OUTPUT JSON FORMAT. "
-            "For index ranges, you MUST strictly use the word 'to' (e.g., -1.5 to 2.0). "
-            "Do NOT wrap your response in markdown code blocks."
-        )
-
         for attempt in range(self.max_retries):
             try:
                 print(f"[{self.model_name}] OpenRouter request (attempt {attempt + 1}/{self.max_retries})...")
                 response = self.client.chat.completions.create(
                     model=self.model_id,
                     messages=[
-                        {"role": "system", "content": system_instruction},
+                        {"role": "system", "content": SYSTEM_INSTRUCTION},
                         {"role": "user", "content": prompt},
                     ],
                     temperature=0.2,
@@ -126,6 +126,53 @@ class OpenRouterAgent(BaseLLMAgent):
                 time.sleep(_get_retry_delay(attempt))
 
         return ""  # unreachable (loop always returns or raises); kept for type-checkers
+
+
+class OllamaAgent(BaseLLMAgent):
+    """Talks to a local Ollama server via its OpenAI-compatible endpoint.
+    No API key required; used for local testing without burning OpenRouter credits."""
+
+    def __init__(self, model_name: str, model_id: str, max_retries: int = 3, base_url: str | None = None):
+        self.model_name = model_name
+        self.model_id = model_id
+        self.max_retries = max_retries
+
+        host = base_url or os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        timeout = float(os.getenv("OLLAMA_TIMEOUT", "600"))
+        self.client = OpenAI(base_url=f"{host.rstrip('/')}/v1", api_key="ollama", timeout=timeout)
+
+    def query(self, prompt: str) -> str:
+        for attempt in range(self.max_retries):
+            try:
+                print(f"[{self.model_name}] Ollama request (attempt {attempt + 1}/{self.max_retries})...")
+                response = self.client.chat.completions.create(
+                    model=self.model_id,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_INSTRUCTION},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.2,
+                )
+                if not response.choices or not response.choices[0].message.content:
+                    raise RuntimeError(f"[{self.model_name}] Empty response from provider.")
+                return response.choices[0].message.content
+            except Exception as e:
+                print(f"[{self.model_name}] Ollama call failed: {e}", file=sys.stderr)
+                if attempt == self.max_retries - 1:
+                    raise RuntimeError(
+                        f"[{self.model_name}] Exhausted all {self.max_retries} Ollama retries. "
+                        f"Is Ollama running (`ollama serve`) and is '{self.model_id}' pulled (`ollama pull {self.model_id}`)?"
+                    ) from e
+                time.sleep(_get_retry_delay(attempt))
+        return ""
+
+
+def build_agent(entry: LLMModelEntry, max_retries: int) -> BaseLLMAgent:
+    if entry.provider == "ollama":
+        return OllamaAgent(model_name=entry.label, model_id=entry.id, max_retries=max_retries)
+    if entry.provider == "openrouter":
+        return OpenRouterAgent(model_name=entry.label, model_id=entry.id, max_retries=max_retries)
+    raise ValueError(f"Unknown LLM provider '{entry.provider}' for model '{entry.label}'.")
 
 
 if __name__ == "__main__":
