@@ -421,5 +421,9 @@ export function usePipeline() {
     runNext,
     resetRun,
     completeReview,
+    exportArtifacts,
+    exporting,
+    exportStatus,
+    canExport,
   }
 }
