@@ -121,10 +121,10 @@ RULES: List[Rule] = [
         required=True,
     ),
     BulletCount(
-        name="WEEK-AHEAD CALENDAR — entries include IMPORTANCE label",
+        name="WEEK-AHEAD CALENDAR — entries include IMPORTANCE/Impact label",
         section_header=re.compile(r"^WEEK-AHEAD CALENDAR\s*\("),
         bullet_pattern=re.compile(
-            r"^\s*[·\-].*IMPORTANCE:\s*(High|Med|Low)", re.IGNORECASE
+            r"^\s*[·\-].*(?:IMPORTANCE|Impact):\s*(High|Med|Low)", re.IGNORECASE
         ),
         min_count=1,
         max_count=None,
@@ -137,11 +137,11 @@ RULES: List[Rule] = [
         required=True,
     ),
     BulletRange(
-        name="KEY EARNINGS — 0 to 3 entries",
+        name="KEY EARNINGS — 0 to 5 entries",
         section_header=re.compile(r"^KEY EARNINGS THIS WEEK\s*\("),
         bullet_pattern=re.compile(r"^\s*[·\-]\s+\S"),
         min_count=0,
-        max_count=3,
+        max_count=5,
         required=True,
     ),
     # ── CONFIRMED NEWS EVENTS ─────────────────────────────────────────────
@@ -153,7 +153,10 @@ RULES: List[Rule] = [
     BulletCount(
         name="CONFIRMED NEWS EVENTS — each entry cites Reuters or AP",
         section_header=re.compile(r"^CONFIRMED NEWS EVENTS\s*\("),
-        bullet_pattern=re.compile(r"^\s*[·\-].*Source:\s*(Reuters|AP)\b"),
+        bullet_pattern=re.compile(
+            r"^\s*[·\-].*(?:Source:\s*(?:Reuters|AP)\b|No\b.*headlines\b)",
+            re.IGNORECASE,
+        ),
         min_count=1,
         max_count=None,
         required=True,

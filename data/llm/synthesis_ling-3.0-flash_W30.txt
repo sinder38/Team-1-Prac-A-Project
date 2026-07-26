@@ -1,0 +1,17 @@
+# LLM Agent Output — Ling 3.0 Flash — Week of 2026-07-25
+
+1. Weekly Regime: Bearish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Technical indicators show all three indexes (SPX, NDX, IWM) in a bearish trend with prices below both 8-day and 21-day EMAs.
+   - The upcoming Fed decision on July 29 and high-impact economic releases (Core PCE, GDP) create event risk, with a 66% probability of a hold and a hawkish tilt.
+   - Last week's sector performance showed strength in Energy and Utilities but weakness in Consumer Discretionary and Communication, indicating mixed market breadth.
+4. Key Contradictions:
+   - The technical agent signals a bearish trend for all indexes, while the almanac agent signals a bullish seasonal bias for Technology (XLK), which is a major component of NDX.
+   - The macro agent assigns a neutral bias with a hold likely, but the technical and almanac agents suggest bearish pressure, creating uncertainty about the net direction.
+5. Invalidation Conditions: A decisive hawkish FOMC statement or strong upward revision in GDP or Core PCE would invalidate the bearish/neutral technical setup, while a dovish hold or positive earnings surprise could invalidate the bearish bias.
+6. Predicted % move — SPX: -1.5% to 0.5%
+   Predicted % move — NDX: -2.5% to 0.5%
+   Predicted % move — IWM: -1.5% to 0.5%
+7. Plain-English brief: All three major indexes are in a bearish technical trend, and the week ahead features the Fed decision and major earnings reports, which could trigger volatility. The prediction is for a bearish to flat bias with downside risk to key support levels, but a neutral macro stance and potential tech sector strength cap the downside.
+8. Disclaimer: This is not financial advice.

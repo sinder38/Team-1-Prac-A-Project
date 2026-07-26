@@ -1,0 +1,17 @@
+# LLM Agent Output — Gemma 4 26B A4B It — Week of 2026-07-25
+
+1. Weekly Regime: Bearish
+2. Confidence Score: Medium
+3. Key Supporting Evidence:
+   - Technical analysis for SPX, NDX, and IWM shows a bearish trend bias with all three indices closing lower last week.
+   - Macro environment is characterized by rising 10-year yields and a rising US Dollar, which typically pressures equities.
+   - Major tech earnings (MSFT, META) are scheduled for July 29, adding volatility risk to the Nasdaq.
+4. Key Contradictions:
+   - Seasonal technology sector bias is bullish, which may support the NDX despite technical bearishness.
+   - Macro bias is neutral, potentially offsetting the technical bearish signals.
+5. Invalidation Conditions: A decisive move in yields, the dollar, or inflation expectations.
+6. Predicted % move — SPX: -2.5% to 0.5%
+   Predicted % move — NDX: -4.0% to 0.0%
+   Predicted % move — IWM: -2.0% to 0.8%
+7. Plain-English brief: The market shows a bearish technical trend across major indices, compounded by rising interest rates and a strong dollar. While tech seasonality is bullish, upcoming high-impact earnings and the Fed interest rate decision on July 29 create significant volatility risk.
+8. Disclaimer: This is not financial advice.
