@@ -314,21 +314,26 @@ Source: {SOURCE_NOTE}
         m = re.search(r"Week of (\d{1,2})[–-](\d{1,2}) ([A-Z][a-z]+) (\d{4})", text)
         if m:
             pred = date(int(m.group(4)), mdp._MONTH_MAP.get(m.group(3)[:3].lower(), 6), int(m.group(1)))
+        elif prediction_date:
+            pred = prediction_date
         else:
-            pred = prediction_date or date.today()
+            raise ValueError("almanac: could not determine prediction_date")
 
         seasonal_raw = mdp.first(r"ALMANAC SEASONAL BIAS:\s*(\w+)", text)
         confidence_raw = mdp.first(r"PATTERN CONFIDENCE:\s*([A-Za-z–—-]+)", text)
         thesis_raw = mdp.first(r'ALMANAC THESIS:\s*"(.+?)"', text) or ""
         pattern_label = mdp.first(r"SPECIFIC WEEK PATTERN \(([^)]+)\)", text) or ""
 
-        # monthly_bias: look for "MONTH: (month)" and infer from known data
+        seasonal_bias = Bias(mdp.norm_bias(seasonal_raw or ""))
+
+        # monthly_bias: fall back to seasonal when not explicitly stated
         month_match = re.search(r"MONTH:\s*([A-Z][a-z]+)", text)
-        monthly = "Mixed"
         if month_match:
             mn = month_match.group(1)[:3].lower()
             monthly_map = {"may": "Mixed", "jun": "Bearish", "jul": "Mixed", "dec": "Bullish"}
-            monthly = monthly_map.get(mn, "Mixed")
+            monthly_bias = Bias(monthly_map.get(mn, mdp.norm_bias(seasonal_raw or "")))
+        else:
+            monthly_bias = seasonal_bias
 
         # sector_signals from "SECTOR SIGNALS:" section
         sectors = []
@@ -350,8 +355,8 @@ Source: {SOURCE_NOTE}
 
         return AlmanacOutput(
             prediction_date=pred,
-            monthly_bias=Bias(monthly),
-            seasonal_bias=Bias(mdp.norm_bias(seasonal_raw or "")),
+            monthly_bias=monthly_bias,
+            seasonal_bias=seasonal_bias,
             confidence=Confidence(mdp.norm_confidence(confidence_raw or "")),
             thesis=thesis_raw,
             weekly_pattern=pattern_label,
