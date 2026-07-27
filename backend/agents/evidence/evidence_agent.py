@@ -12,7 +12,6 @@ from typing import cast
 
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from core.base import BaseAgent
 from agents.evidence.data_sources import (

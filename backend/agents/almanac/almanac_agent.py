@@ -17,7 +17,6 @@ from pathlib import Path
 
 # This lets the file run directly from the command line without installing the
 # backend package first. It points Python at the backend/ folder.
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from agents.almanac.almanac_data import MONTHLY_STATS, SECTOR_WINDOWS, SOURCE_NOTE
 from agents.almanac.almanac_data import WEEKLY_PATTERNS
