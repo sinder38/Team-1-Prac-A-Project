@@ -20,7 +20,6 @@ from pathlib import Path
 
 # === Absolute path injection ===
 BASE_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(BASE_DIR))
 
 from openai import OpenAI  # type: ignore
 from dotenv import load_dotenv, find_dotenv  # type: ignore

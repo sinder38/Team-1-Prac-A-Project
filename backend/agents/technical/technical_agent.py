@@ -16,7 +16,6 @@ from typing import Final, Literal, NamedTuple, TypeAlias, cast
 import pandas as pd
 import yfinance as yf
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from core.base import BaseAgent
 from core.schemas import Bias, Confidence, InstrumentTechnical, TechnicalOutput
