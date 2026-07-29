@@ -14,13 +14,15 @@ actuals_week = "auto"
 
 [llm]
 models = [
-    {id = "nvidia/nemotron-3-super-120b-a12b:free"},
-    # {id = "tencent/hy3:free"}, # No longer is free
-{id = "inclusionai/ling-3.0-flash:free"},
-    # {id = "openai/gpt-oss-120b:free"},
-    # {id = "google/gemma-4-31b-it:free"},
-    {id = "gemma-4-26b-a4b-it:free"},
-    {id = "poolside/laguna-m.1:free"},
+    # {id = "tencent/hy3:free"},                    name = "Tencent Hy3"}, # No longer is free 
+    # {id = "openai/gpt-oss-120b:free"},            name = "OpenAI gpt-oss-120b"},
+    # {id = "google/gemma-4-31b-it:free"},          name = "Google Gemma 4 31B"},
+    #{id = "poolside/laguna-m.1:free"},             name = "Poolside Laguna M.1"},
+    {id = "nvidia/nemotron-3-super-120b-a12b:free", name = "NVIDIA Nemotron 3 Super 120B"},
+    {id = "inclusionai/ling-3.0-flash:free",        name = "InclusionAI Ling 3.0 Flash"},
+    {id = "gemma-4-26b-a4b-it:free",                name = "Google Gemma 4 26B A4B"},
+    {id = "openai/gpt-oss-20b:free",                name = "OpenAI gpt-oss-20b"},
+    {id = "poolside/laguna-xs-2.1:free",            name = "Poolside Laguna XS 2.1"},
 
 ]
 max_retries = 5
