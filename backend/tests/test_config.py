@@ -63,7 +63,7 @@ def test_load_config_missing_pipeline_section(tmp_path):
 [stages]
 almanac = true
 [llm]
-models = [{id = "openai/gpt-oss-120b:free"}]
+models = [{id = "openai/gpt-oss-20b:free"}]
 """)
     with pytest.raises(ValidationError):
         load_config(toml)
@@ -110,7 +110,7 @@ technical = false
 macro = false
 evidence = false
 [llm]
-models = [{id = "openai/gpt-oss-120b:free"}]
+models = [{id = "openai/gpt-oss-20b:free"}]
 max_retries = 3
 """)
     config = load_config(toml)
