@@ -27,5 +27,5 @@ models = [
     # minutes per prompt without a GPU.
     {slug = "llama3.2-3b", id = "llama3.2:3b", provider = "ollama"},
     {slug = "qwen2.5-0.5b", id = "qwen2.5:1.5b", provider = "ollama"},
-    {slug = "smollm2-1.7b", id = "smollm2:1.7b", provider = "ollama"},
+    {slug = "smollm2-1.7b", id = "smollm2:1.7b", provider = "ollama"}
 ]
