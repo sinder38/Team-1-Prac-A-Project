@@ -25,7 +25,7 @@ Team 1 is building a weekly market-intelligence system for SPX, NDX, and IWM pre
 
 It collects market data, runs Almanac, Macro, Technical, and Evidence agents, compares LLM reasoning, applies human review, locks a prediction, and evaluates the result through the Delta Engine.
 
-The local development pipeline uses Ollama with `llama3.2:3b`. The automated CI pipeline uses Nemotron 3 Super, InclusionAI Ling 3.0 Flash, Gemma 4 26B A4B, and Laguna M.1 through OpenRouter.
+The local development pipeline uses Ollama with `llama3.2:3b`. The automated CI pipeline uses Nvidia Nemotron 3 Super, InclusionAI Ling 3.0 Flash, Google Gemma 4 26B A4B, OpenAI gpt-oss-20b, and Poolside Laguna XS 2.1 through OpenRouter.
 
 > **Week 8 status:** the automated pipeline, Flask API, React dashboard, multi-LLM comparison, and Delta Engine are available. Human Score submission and persistence remain in progress.  
 > See the [full development status](https://github.com/sinder38/Team-1-Prac-A-Project/wiki/Development-Status).
