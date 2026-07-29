@@ -67,7 +67,15 @@ export default function App() {
         finalPrediction={pipeline.finalPrediction}
       />
     ),
-    charts: <ChartsPage />,
+    charts: (
+      <ChartsPage
+        predictionDate={pipeline.predictionDate}
+        week={pipeline.selectedWeek}
+        technical={pipeline.outputs.technical}
+        macro={pipeline.outputs.macro}
+        finalPrediction={pipeline.finalPrediction}
+      />
+    ),
     logs: (
       <LogsPage
         pipeline={pipeline.pipeline}

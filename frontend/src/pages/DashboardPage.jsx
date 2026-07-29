@@ -3,7 +3,7 @@
  */
 import PropTypes from 'prop-types'
 import { PipelineController } from '../components/pipeline'
-import { AgentOutputsGrid } from '../components/agents'
+import { AgentOutputsGrid, EvidenceGallery } from '../components/agents'
 import {
   ReviewForm,
   HumanScoreReportCard,
@@ -47,6 +47,8 @@ export default function DashboardPage({
       )}
 
       <AgentOutputsGrid outputs={outputs} />
+
+      <EvidenceGallery week={week} />
 
       {showTeamReports && (
         <section className="mx-4 pb-6 pt-2">

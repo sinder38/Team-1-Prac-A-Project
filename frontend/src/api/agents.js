@@ -31,6 +31,7 @@ function technicalCard(t) {
   const inst = t.instruments?.SPX || Object.values(t.instruments || {})[0] || {}
   return {
     agent: 'Technical Agent',
+    instruments: t.instruments || null,
     metrics: [
       { label: 'Instrument', value: 'S&P 500 (SPX)' },
       { label: 'Last Close', value: String(inst.last_close) },
@@ -52,6 +53,13 @@ function technicalCard(t) {
 function macroCard(m) {
   return {
     agent: 'Macro Agent',
+    fed_rate: m.fed_rate,
+    yield_10y: m.yield_10y,
+    yield_10y_direction: m.yield_10y_direction,
+    wti_oil: m.wti_oil,
+    gold: m.gold,
+    dxy: m.dxy,
+    macro_bias: m.macro_bias,
     metrics: [
       { label: 'Fed Rate', value: m.fed_rate },
       { label: '10Y Yield', value: `${m.yield_10y}% — ${m.yield_10y_direction}` },
@@ -155,6 +163,23 @@ export async function getHumanScore({ stem, runId } = {}) {
   }
   if (!stem) throw new Error('stem or runId is required')
   return getJson(`/artifacts/human-score?stem=${encodeURIComponent(stem)}`)
+}
+
+/** Finviz PNGs for a week stem. */
+export async function getEvidenceImages(stem) {
+  if (!stem) return []
+  const data = await getJson(`/artifacts/evidence-images?stem=${encodeURIComponent(stem)}`)
+  return Array.isArray(data.images) ? data.images : []
+}
+
+/** Weekly moves from actuals_{stem}.md. */
+export async function getActuals(stem) {
+  if (!stem) return { stem: null, assets: {} }
+  const data = await getJson(`/artifacts/actuals?stem=${encodeURIComponent(stem)}`)
+  return {
+    stem: data.stem || stem,
+    assets: data.assets && typeof data.assets === 'object' ? data.assets : {},
+  }
 }
 
 export async function getAgentOutputs({

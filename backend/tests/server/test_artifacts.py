@@ -398,3 +398,58 @@ def test_runtime_final_prediction_roundtrip(client, app, tmp_path, monkeypatch):
         json={"run_id": "run-fp-2", "report": report},
     )
     assert conflict.status_code == 409
+
+
+def test_list_evidence_images(client, tmp_path, monkeypatch):
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    (evidence / "finviz_1W_2026_W25.png").write_bytes(b"\x89PNG\r\n\x1a\nfake")
+    (evidence / "finviz_sectors_5D_2026_W25.png").write_bytes(b"\x89PNG\r\n\x1a\nfake")
+    (evidence / "notes.txt").write_text("ignore")
+    monkeypatch.setattr("server.artifacts._EVIDENCE_DIR", evidence)
+
+    resp = client.get("/artifacts/evidence-images?stem=W25")
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data["stem"] == "W25"
+    assert len(data["images"]) == 2
+    names = {img["name"] for img in data["images"]}
+    assert names == {"finviz_1W_2026_W25.png", "finviz_sectors_5D_2026_W25.png"}
+    assert all(img["url"].startswith("/artifacts/evidence-file/") for img in data["images"])
+
+    file_resp = client.get("/artifacts/evidence-file/finviz_1W_2026_W25.png")
+    assert file_resp.status_code == 200
+
+    bad = client.get("/artifacts/evidence-file/../secrets.txt")
+    assert bad.status_code == 400
+
+
+def test_get_actuals_missing_file(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("server.artifacts._EVIDENCE_DIR", tmp_path)
+    resp = client.get("/artifacts/actuals?stem=W99")
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data["stem"] == "W99"
+    assert data["assets"] == {}
+
+
+def test_get_actuals_parses_markdown(client, tmp_path, monkeypatch):
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    (evidence / "actuals_W25.md").write_text(
+        """
+| What | Short name | Close | Change |
+|------|------------|-------|--------|
+| S&P 500 | SPX | 5000 | **Down 1.55%** |
+| Nasdaq 100 | NDX | 18000 | **Down 4.13%** |
+| Russell 2000 | IWM | 200 | **Down 0.66%** |
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("server.artifacts._EVIDENCE_DIR", evidence)
+
+    resp = client.get("/artifacts/actuals?stem=W25")
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data["assets"]["SPX"]["move_pct"] == -1.55
+    assert data["assets"]["NDX"]["move_pct"] == -4.13
