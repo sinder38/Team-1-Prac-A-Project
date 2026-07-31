@@ -1,9 +1,9 @@
 /**
- * Home page: run the pipeline stage by stage and see agent results.
+ * Dashboard: pipeline controls, week snapshot, reports, agents, evidence.
  */
 import PropTypes from 'prop-types'
 import { PipelineController } from '../components/pipeline'
-import { AgentOutputsGrid, EvidenceGallery } from '../components/agents'
+import { AgentOutputsGrid, EvidenceGallery, WeekSummaryStrip } from '../components/agents'
 import {
   ReviewForm,
   HumanScoreReportCard,
@@ -25,53 +25,32 @@ export default function DashboardPage({
   const week = weekPicker?.selectedWeek || pipeline?.week || '—'
   const predictionDate = weekPicker?.predictionDate || pipeline?.predictionDate
   const showTeamReports = Boolean(humanScoreReport || finalPrediction)
+  const hasOutputs = Boolean(
+    outputs?.almanac || outputs?.macro || outputs?.technical || outputs?.llmComparison,
+  )
+  const readingMode = (hasOutputs || showTeamReports) && !controls.isRunning
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="flex-1 overflow-auto pb-6">
       <PipelineController
         pipeline={pipeline}
         controls={controls}
         onNavigate={onNavigate}
         weekPicker={weekPicker}
+        defaultCollapsed={readingMode}
       />
 
-      {controls.aiComplete && !controls.allDone && !humanScoreReport && (
-        <div className="mx-4 mt-4">
-          <ReviewForm
-            outputs={outputs}
-            week={week}
-            aiComplete={controls.aiComplete}
-            onComplete={onCompleteReview}
-          />
-        </div>
-      )}
-
-      <AgentOutputsGrid outputs={outputs} />
-
-      <EvidenceGallery week={week} />
+      <WeekSummaryStrip week={week} outputs={outputs} finalPrediction={finalPrediction} />
 
       {showTeamReports && (
-        <section className="mx-4 pb-6 pt-2">
+        <section className="mx-4 pb-2 pt-4">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
             {humanScoreReport && (
               <div className="min-w-0">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-900">Human Score Report</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Team assessment for {week}</p>
-                </div>
                 <HumanScoreReportCard report={humanScoreReport} />
               </div>
             )}
-
             <div className="min-w-0">
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-900">Final Prediction</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {finalPrediction
-                    ? `Locked consensus brief for ${week}`
-                    : `File the Team1 brief for ${week}`}
-                </p>
-              </div>
               {finalPrediction ? (
                 <FinalPredictionReportCard report={finalPrediction} />
               ) : (
@@ -86,6 +65,20 @@ export default function DashboardPage({
           </div>
         </section>
       )}
+
+      {controls.aiComplete && !controls.allDone && !humanScoreReport && (
+        <div className="mx-4 mt-4">
+          <ReviewForm
+            outputs={outputs}
+            week={week}
+            aiComplete={controls.aiComplete}
+            onComplete={onCompleteReview}
+          />
+        </div>
+      )}
+
+      <AgentOutputsGrid outputs={outputs} />
+      <EvidenceGallery week={week} />
     </div>
   )
 }

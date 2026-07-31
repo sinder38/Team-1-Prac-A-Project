@@ -9,6 +9,7 @@ export const emptyAgentOutputs = {
 }
 
 export const defaultCalibration = {
+  totalAccuracy: 0,
   currentAccuracy: 0,
   rangeAccuracy: 0,
   weeklyTrend: [],

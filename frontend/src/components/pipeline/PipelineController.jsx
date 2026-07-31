@@ -2,6 +2,7 @@
  * Manual pipeline control — the human runs each stage one at a time.
  * Stages 1-4 have a Run button; stage 5 (Human Score) is filled in on the Dashboard.
  */
+import { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   Play,
@@ -13,6 +14,7 @@ import {
   ScrollText,
   BarChart3,
   FileDown,
+  ChevronDown,
 } from 'lucide-react'
 import WeekPicker from './WeekPicker'
 import { ErrorBanner } from '../common'
@@ -31,7 +33,7 @@ function StageIcon({ status, locked }) {
   if (status === 'success') return <CheckCircle2 className="w-5 h-5 text-green-600" />
   if (status === 'error') return <AlertCircle className="w-5 h-5 text-red-600" />
   if (status === 'in-progress') return <Clock className="w-5 h-5 text-blue-600 animate-spin" />
-  if (locked) return <Lock className="w-4 h-4 text-gray-300" />
+  if (locked) return <Lock className="w-4 h-4 text-gray-400" />
   return <span className="text-xs font-medium text-gray-400">—</span>
 }
 
@@ -140,7 +142,13 @@ LlmModelControls.propTypes = {
   disabled: PropTypes.bool,
 }
 
-export default function PipelineController({ pipeline, controls, weekPicker, onNavigate }) {
+export default function PipelineController({
+  pipeline,
+  controls,
+  weekPicker,
+  onNavigate,
+  defaultCollapsed = false,
+}) {
   const {
     doneCount,
     isRunning,
@@ -148,7 +156,6 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
     aiStages,
     error,
     clearError,
-    runStage,
     runNext,
     resetRun,
     availableModels = [],
@@ -162,6 +169,12 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
     canExport = false,
   } = controls
   const stages = pipeline.stages
+  const weekKey = weekPicker?.selectedWeek || weekPicker?.predictionDate || ''
+  const [stagesOpen, setStagesOpen] = useState(!defaultCollapsed)
+
+  useEffect(() => {
+    setStagesOpen(!defaultCollapsed || isRunning)
+  }, [defaultCollapsed, weekKey, isRunning])
 
   const statusLabel = isRunning ? 'Running' : allDone ? 'Complete' : doneCount > 0 ? 'In progress' : 'Idle'
   const statusTone = isRunning ? 'running' : allDone ? 'done' : 'idle'
@@ -169,7 +182,7 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
   const showRunNext = doneCount < aiStages
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-md mx-4 mt-4 px-4 py-4 md:px-6">
+    <div className="bg-white border border-gray-200 rounded-xl shadow-md mx-4 mt-4 px-4 py-4 md:px-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
@@ -183,7 +196,7 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             {exportArtifacts && (
               <button
                 onClick={exportArtifacts}
@@ -218,6 +231,15 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
                 {isRunning ? 'Running…' : `Run stage ${doneCount + 1}`}
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setStagesOpen(open => !open)}
+              className="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50"
+              aria-expanded={stagesOpen}
+            >
+              {stagesOpen ? 'Hide stages' : 'Show stages'}
+              <ChevronDown className={`w-4 h-4 transition-transform ${stagesOpen ? 'rotate-180' : ''}`} />
+            </button>
           </div>
         </div>
 
@@ -249,93 +271,86 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
         </div>
       )}
 
-      <div className="mt-5 space-y-2">
-        {stages.map((stage, i) => {
-          const isNext = i === doneCount && !isRunning && i < aiStages
-          const isHumanStage = i === aiStages
-          const locked = i > doneCount
-          const tone =
-            stage.status === 'success' ? 'done'
-            : stage.status === 'in-progress' ? 'running'
-            : stage.status === 'error' ? 'error'
-            : 'idle'
-          const label =
-            stage.status === 'success' ? 'Done'
-            : stage.status === 'in-progress' ? 'Running'
-            : locked ? 'Locked'
-            : 'Pending'
+      {stagesOpen && (
+        <>
+          <div className="mt-5 space-y-2">
+            {stages.map((stage, i) => {
+              const isNext = i === doneCount && !isRunning && i < aiStages
+              const locked = i > doneCount
+              const tone =
+                stage.status === 'success' ? 'done'
+                : stage.status === 'in-progress' ? 'running'
+                : stage.status === 'error' ? 'error'
+                : 'idle'
+              const label =
+                stage.status === 'success' ? 'Done'
+                : stage.status === 'in-progress' ? 'Running'
+                : locked ? 'Locked'
+                : 'Pending'
 
-          return (
-            <div
-              key={stage.id}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-md border ${
-                stage.status === 'in-progress' ? 'border-blue-200 bg-blue-50/40'
-                : stage.status === 'success' ? 'border-green-100 bg-green-50/30'
-                : 'border-gray-100 bg-white'
-              }`}
-            >
-              <div className="w-6 flex justify-center shrink-0">
-                <StageIcon status={stage.status} locked={locked} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">
-                    {i + 1}. {stage.name}
-                  </span>
-                  <StatusBadge label={label} tone={tone} />
+              return (
+                <div
+                  key={stage.id}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${
+                    stage.status === 'in-progress' ? 'border-blue-200 bg-blue-50/40'
+                    : stage.status === 'success' ? 'border-green-100 bg-green-50/30'
+                    : 'border-gray-100 bg-white'
+                  }`}
+                >
+                  <div className="w-6 flex justify-center shrink-0">
+                    <StageIcon status={stage.status} locked={locked} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900">
+                        {i + 1}. {stage.name}
+                      </span>
+                      <StatusBadge label={label} tone={tone} />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{stage.description}</p>
+                    {i === LLM_STAGE_INDEX && (
+                      <LlmModelControls
+                        providerMode={providerMode}
+                        setProviderMode={setProviderMode}
+                        availableModels={availableModels}
+                        selectedModels={selectedModels}
+                        toggleModel={toggleModel}
+                        disabled={isRunning || stage.status === 'success'}
+                      />
+                    )}
+                  </div>
+
+                  <div className="shrink-0">
+                    {stage.status === 'success' ? (
+                      <span className="text-xs text-green-600 font-medium">✓</span>
+                    ) : isNext ? (
+                      <span className="text-xs font-medium text-blue-700">Up next</span>
+                    ) : null}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">{stage.description}</p>
-                {i === LLM_STAGE_INDEX && (
-                  <LlmModelControls
-                    providerMode={providerMode}
-                    setProviderMode={setProviderMode}
-                    availableModels={availableModels}
-                    selectedModels={selectedModels}
-                    toggleModel={toggleModel}
-                    disabled={isRunning || stage.status === 'success'}
-                  />
-                )}
-              </div>
+              )
+            })}
+          </div>
 
-              <div className="shrink-0">
-                {stage.status === 'success' ? (
-                  <span className="text-xs text-green-600 font-medium">✓</span>
-                ) : isHumanStage ? null : (
-                  <button
-                    onClick={() => runStage(i)}
-                    disabled={!isNext || (i === LLM_STAGE_INDEX && selectedModels.length === 0)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md ${
-                      isNext && !(i === LLM_STAGE_INDEX && selectedModels.length === 0)
-                        ? 'bg-gray-900 text-white hover:bg-gray-800'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {stage.status === 'in-progress' ? 'Running…' : 'Run'}
-                  </button>
-                )}
-              </div>
+          {onNavigate && (
+            <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
+              <button
+                onClick={() => onNavigate('logs')}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50"
+              >
+                <ScrollText className="w-3.5 h-3.5" />
+                View Logs
+              </button>
+              <button
+                onClick={() => onNavigate('calibration')}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                Calibration
+              </button>
             </div>
-          )
-        })}
-      </div>
-
-      {onNavigate && (
-        <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
-          <button
-            onClick={() => onNavigate('logs')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50"
-          >
-            <ScrollText className="w-3.5 h-3.5" />
-            View Logs
-          </button>
-          <button
-            onClick={() => onNavigate('calibration')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50"
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            Calibration
-          </button>
-        </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -352,6 +367,7 @@ StageIcon.propTypes = {
 }
 
 PipelineController.propTypes = {
+  defaultCollapsed: PropTypes.bool,
   pipeline: PropTypes.shape({
     stages: PropTypes.array.isRequired,
     accuracy: PropTypes.number,
@@ -363,7 +379,6 @@ PipelineController.propTypes = {
     aiStages: PropTypes.number,
     error: PropTypes.string,
     clearError: PropTypes.func,
-    runStage: PropTypes.func,
     runNext: PropTypes.func,
     resetRun: PropTypes.func,
     availableModels: PropTypes.array,

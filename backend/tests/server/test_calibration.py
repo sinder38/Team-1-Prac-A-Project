@@ -57,6 +57,8 @@ def test_build_calibration_payload_maps_real_delta_data():
 
     assert payload["currentAccuracy"] == 71.4
     assert payload["rangeAccuracy"] == 50.0
+    # (2+3)+(1+2) hits / (3+4)+(3+3) attempts = 8/13
+    assert payload["totalAccuracy"] == 61.5
     assert payload["latestDirectionAccuracy"] == 75.0
     assert payload["sectorCoverage"] == 1
     assert payload["suggestedWeights"]["technical"] == 30.0

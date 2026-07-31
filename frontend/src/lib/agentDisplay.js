@@ -1,10 +1,10 @@
 /**
- * Turn raw agent API data into clean card content (bias, trimmed metrics).
+ * Turn raw agent API data into clean card content (bias, metrics, highlight tokens).
  */
 import { classifyBias, DIRECTIONS } from './bias'
 
-const MAX_VALUE = 90
-const MAX_METRICS = 4
+const MAX_VALUE = 220
+const MAX_METRICS = 10
 const SKIP_LABELS = /^quick note$/i
 
 const BIAS_PATTERNS = {
@@ -19,10 +19,32 @@ const CONFIDENCE_PATTERNS = {
   technical: /CONFIDENCE:\s*(\w+)/i,
 }
 
+// Percentages, bias/confidence words, common tickers — capturing group keeps matches in split().
+const HIGHLIGHT_RE =
+  /(\b\d+(?:\.\d+)?%|[+-]\d+(?:\.\d+)?%|\b(?:Bullish|Bearish|Neutral|Hawkish|Dovish|Mixed|Binary[- ]risk)\b|\b(?:High|Medium|Low(?:-Medium)?)\b|\b(?:SPX|NDX|IWM|DXY|WTI|FOMC)\b)/gi
+
 function trimValue(text) {
-  const value = (text || '').trim()
+  const value = String(text ?? '').trim()
   if (value.length <= MAX_VALUE) return value
   return `${value.slice(0, MAX_VALUE - 1)}…`
+}
+
+function tokenKind(token) {
+  if (/%/.test(token)) return 'pct'
+  if (/^(Bullish|Bearish|Neutral|Hawkish|Dovish|Mixed|Binary)/i.test(token)) return 'bias'
+  if (/^(High|Medium|Low)/i.test(token)) return 'conf'
+  if (/^(SPX|NDX|IWM|DXY|WTI|FOMC)$/i.test(token)) return 'ticker'
+  return 'text'
+}
+
+/** Split agent text into { kind, text } segments for light syntax highlighting. */
+export function tokenizeHighlight(text) {
+  const src = String(text ?? '')
+  if (!src) return []
+  return src.split(HIGHLIGHT_RE).filter(Boolean).map(part => ({
+    kind: tokenKind(part),
+    text: part,
+  }))
 }
 
 export function biasBadgeClass(tone) {
@@ -41,12 +63,9 @@ export function prepareAgentCard(id, data) {
   const confidence = confMatch ? confMatch[1].trim() : null
 
   const metrics = (data.metrics || [])
-    .filter(m => m?.label && m?.value)
-    .filter(m => !SKIP_LABELS.test(m.label.trim()))
-    .map(m => ({
-      label: m.label.trim(),
-      value: trimValue(m.value),
-    }))
+    .filter(m => m?.label && m?.value != null && String(m.value).trim() !== '')
+    .filter(m => !SKIP_LABELS.test(String(m.label).trim()))
+    .map(m => ({ label: String(m.label).trim(), value: trimValue(m.value) }))
     .slice(0, MAX_METRICS)
 
   const headline = metrics[0] || null

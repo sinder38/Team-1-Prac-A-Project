@@ -14,7 +14,7 @@ export const NAV_ITEMS = [
 export const PAGE_TITLES = {
   dashboard: { section: 'Dashboard', page: 'Overview' },
   charts: { section: 'Charts', page: 'Market Charts' },
-  logs: { section: 'Logs', page: 'Execution Logs' },
+  logs: { section: 'Logs', page: 'Run status' },
   calibration: { section: 'Calibration', page: 'Accuracy Tracker' },
   settings: { section: 'About', page: 'About' },
 }

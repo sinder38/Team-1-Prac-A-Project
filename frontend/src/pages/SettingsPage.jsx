@@ -2,11 +2,11 @@
  * About — what the app is, how the pipeline runs, where data comes from.
  */
 import PropTypes from 'prop-types'
-import { Activity, Database, GitBranch, Layers } from 'lucide-react'
+import { Activity, Database, GitBranch, Layers, Moon } from 'lucide-react'
 
 function Card({ icon: Icon, title, children }) {
   return (
-    <section className="bg-white border border-gray-200 rounded-lg shadow-md p-4 md:p-5">
+    <section className="bg-white border border-gray-200 rounded-xl shadow-md p-4 md:p-5">
       <div className="flex items-center gap-2 mb-3">
         <Icon className="w-4 h-4 text-gray-500 shrink-0" />
         <h3 className="text-sm font-medium text-gray-900">{title}</h3>
@@ -89,6 +89,18 @@ export default function SettingsPage() {
               range accuracy over scored weeks
             </li>
           </ul>
+        </Card>
+
+        <Card icon={Moon} title="Theme">
+          <p>
+            Light and dark themes toggle from the moon/sun control at the bottom of
+            the left nav. The choice is saved in this browser and restored on reload.
+          </p>
+          <p>
+            Page and week also sync into the URL (
+            <code className="text-xs bg-gray-100 px-1 rounded">?page=&amp;week=</code>
+            ) so you can share or bookmark a view.
+          </p>
         </Card>
       </div>
     </div>

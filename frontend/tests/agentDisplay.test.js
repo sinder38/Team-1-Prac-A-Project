@@ -1,13 +1,8 @@
 /**
  * Tests for agent-card preparation (src/lib/agentDisplay.js).
- *
- * prepareAgentCard turns a raw agent API payload into the trimmed content the
- * card renders: parsed bias + confidence, a headline metric, and a capped list
- * of detail metrics. We verify parsing, the empty/no-data guard, and that empty
- * metrics are dropped and the list is capped.
  */
 import { describe, it, expect } from 'vitest'
-import { prepareAgentCard, biasBadgeClass } from '../src/lib/agentDisplay'
+import { prepareAgentCard, biasBadgeClass, tokenizeHighlight } from '../src/lib/agentDisplay'
 import { DIRECTIONS } from '../src/lib/bias'
 
 describe('prepareAgentCard', () => {
@@ -32,7 +27,7 @@ describe('prepareAgentCard', () => {
     expect(card.details).toHaveLength(1)
   })
 
-  it('drops empty metrics and caps the list', () => {
+  it('drops empty metrics and keeps up to ten', () => {
     const card = prepareAgentCard('macro', {
       agent: 'Macro Agent',
       rawData: '',
@@ -43,12 +38,31 @@ describe('prepareAgentCard', () => {
         { label: 'D', value: '4' },
         { label: 'E', value: '5' },
         { label: 'F', value: '6' },
+        { label: 'G', value: '7' },
       ],
     })
-    // 'B' dropped (empty), list capped at 4 → headline + 3 details.
-    expect(card.details.length).toBeLessThanOrEqual(3)
+    // 'B' dropped (empty); six remain → headline + 5 details.
+    expect(card.headline.label).toBe('A')
+    expect(card.details).toHaveLength(5)
     expect(card.bias).toBeNull()
     expect(card.biasTone).toBe(DIRECTIONS.NEUTRAL)
+  })
+})
+
+describe('tokenizeHighlight', () => {
+  it('tags percentages, bias words, and tickers', () => {
+    const tokens = tokenizeHighlight('SPX +1.2% Bullish Medium')
+    const kinds = tokens.map(t => t.kind)
+    expect(kinds).toContain('ticker')
+    expect(kinds).toContain('pct')
+    expect(kinds).toContain('bias')
+    expect(kinds).toContain('conf')
+    expect(tokens.find(t => t.kind === 'pct')?.text).toBe('+1.2%')
+  })
+
+  it('returns empty for blank input', () => {
+    expect(tokenizeHighlight('')).toEqual([])
+    expect(tokenizeHighlight(null)).toEqual([])
   })
 })
 
