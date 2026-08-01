@@ -66,7 +66,7 @@ def _date_from_md(text: str) -> date | None:
 
 def _strip_md_link(text: str) -> str:
     """'[name](url)' -> 'name'; leaves plain text unchanged."""
-    return re.sub(r"^\[(.*?)\]\(.*?\)$", r"\1", text.strip())
+    return re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text.strip())
 
 
 def _commodity(text: str, pattern: str) -> "CommodityData":
