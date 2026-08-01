@@ -45,12 +45,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           BRANCH="pipeline/artifacts-$(date -u +%Y-%m-%d)-${{ github.run_id }}"
           git checkout -b "$BRANCH"
-          git add ../data/almanac/ ../data/technical/ ../data/evidence/ ../data/llm/ ../data/macro/
+          git add ../data/almanac/ ../data/technical/ ../data/evidence/ ../data/llm/ ../data/macro/ ../data/qa
           shopt -s nullglob
-          delta_artifacts=(../data/qa/delta_*.md ../data/outputs/delta/*)
-          if [ ${#delta_artifacts[@]} -gt 0 ]; then
-            git add "${delta_artifacts[@]}"
-          fi
           if git diff --cached --quiet; then
             echo "No new artifacts to commit."
             exit 0
