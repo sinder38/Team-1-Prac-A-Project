@@ -49,6 +49,7 @@ class TechnicalOutput:
     prediction_date: date
     instruments: dict[str, InstrumentTechnical]  # expected keys: "SPX", "NDX", "IWM"
     agent_type: str = "technical"
+    horizon_days: int = 7
 
 
 @dataclass
@@ -68,6 +69,7 @@ class AlmanacOutput:
     weekly_pattern: str = ""
     sector_signals: list[SectorSignal] = field(default_factory=list)
     agent_type: str = "almanac"
+    horizon_days: int = 7
 
 
 @dataclass
@@ -114,6 +116,7 @@ class MacroOutput:
     key_earnings: list[str] = field(default_factory=list)
     confirmed_news: list[str] = field(default_factory=list)
     agent_type: str = "macro"
+    horizon_days: int = 7
 
 
 @dataclass

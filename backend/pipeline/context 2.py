@@ -14,6 +14,7 @@ from core.schemas import (
 @dataclass
 class PipelineContext:
     prediction_date: date
+    horizon_days: int = 7
     almanac: AlmanacOutput | None = None
     technical: TechnicalOutput | None = None
     macro: MacroOutput | None = None
