@@ -11,10 +11,12 @@ import {
   SettingsPage,
 } from '../pages'
 import { usePipeline } from '../hooks/usePipeline'
+import { useAuth } from '../hooks/useAuth'
 
 export default function App() {
   const [page, setPage] = useState('dashboard')
   const pipeline = usePipeline()
+  const auth = useAuth()
 
   const weekPicker = {
     predictionDate: pipeline.predictionDate,
@@ -51,6 +53,7 @@ export default function App() {
     providerMode: pipeline.providerMode,
     setProviderMode: pipeline.setProviderMode,
     toggleModel: pipeline.toggleModel,
+    canEdit: auth.isAuthenticated,
   }
 
   const pages = {
@@ -87,7 +90,7 @@ export default function App() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 px-4 pt-4">
-        <TopHeader page={page} />
+        <TopHeader page={page} auth={auth} />
         {pages[page] || pages.dashboard}
       </div>
     </div>

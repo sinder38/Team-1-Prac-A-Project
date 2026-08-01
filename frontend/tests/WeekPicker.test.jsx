@@ -2,7 +2,7 @@
  * WeekPicker lists every run per week as run_01 / run_02 and keeps a new-run option.
  */
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import WeekPicker from '../src/components/pipeline/WeekPicker'
 
@@ -45,14 +45,15 @@ describe('WeekPicker', () => {
       />,
     )
 
-    const labels = screen.getAllByRole('option').map(o => o.textContent)
+    const runPicker = screen.getByLabelText('Saved run')
+    const labels = within(runPicker).getAllByRole('option').map(o => o.textContent)
     expect(labels).toEqual([
       '2026-W28',
       '2026-W29 · run_01',
       '2026-W29 · run_02',
       '2026-W31 · new',
     ])
-    expect(screen.getByRole('combobox')).toHaveValue('run:2026-W29:run-bbb')
+    expect(runPicker).toHaveValue('run:2026-W29:run-bbb')
     expect(screen.getByText('run_02')).toBeInTheDocument()
   })
 
@@ -80,10 +81,11 @@ describe('WeekPicker', () => {
       />,
     )
 
-    const labels = screen.getAllByRole('option').map(o => o.textContent)
+    const runPicker = screen.getByLabelText('Saved run')
+    const labels = within(runPicker).getAllByRole('option').map(o => o.textContent)
     expect(labels).toContain('2026-W30 · run_01')
     expect(labels).toContain('2026-W30 · new')
-    expect(screen.getByRole('combobox')).toHaveValue('new:2026-W30')
+    expect(runPicker).toHaveValue('new:2026-W30')
   })
 
   it('selecting the new week calls onDateChange, not onWeekSelect', async () => {
@@ -104,7 +106,7 @@ describe('WeekPicker', () => {
       />,
     )
 
-    await userEvent.selectOptions(screen.getByRole('combobox'), 'new:2026-W30')
+    await userEvent.selectOptions(screen.getByLabelText('Saved run'), 'new:2026-W30')
 
     expect(onDateChange).toHaveBeenCalledWith('2026-07-20')
     expect(onWeekSelect).not.toHaveBeenCalled()
@@ -126,10 +128,45 @@ describe('WeekPicker', () => {
       />,
     )
 
-    await userEvent.selectOptions(screen.getByRole('combobox'), 'run:2026-W29:run-aaa')
+    await userEvent.selectOptions(
+      screen.getByLabelText('Saved run'),
+      'run:2026-W29:run-aaa',
+    )
 
     expect(onWeekSelect).toHaveBeenCalledWith(
       expect.objectContaining({ week: '2026-W29', runId: 'run-aaa' }),
     )
+  })
+
+  it('keeps saved runs available in read-only mode', async () => {
+    const onDateChange = vi.fn()
+    const onWeekSelect = vi.fn()
+
+    render(
+      <WeekPicker
+        predictionDate="2026-07-20"
+        selectedWeek="2026-W30"
+        savedWeeks={savedWeeks}
+        mode="new"
+        newWeek="2026-W30"
+        newPredictionDate="2026-07-20"
+        onDateChange={onDateChange}
+        onWeekSelect={onWeekSelect}
+        readOnly
+      />,
+    )
+
+    expect(screen.getByDisplayValue('2026-07-20')).toBeDisabled()
+    expect(screen.getByLabelText('Prediction horizon')).toBeDisabled()
+    expect(screen.getByRole('option', { name: '2026-W30 · new' })).toBeDisabled()
+
+    await userEvent.selectOptions(
+      screen.getByLabelText('Saved run'),
+      'run:2026-W29:run-aaa',
+    )
+    expect(onWeekSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ runId: 'run-aaa' }),
+    )
+    expect(onDateChange).not.toHaveBeenCalled()
   })
 })

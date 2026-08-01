@@ -35,7 +35,7 @@ export default function DashboardPage({
         weekPicker={weekPicker}
       />
 
-      {controls.aiComplete && !controls.allDone && !humanScoreReport && (
+      {controls.canEdit && controls.aiComplete && !controls.allDone && !humanScoreReport && (
         <div className="mx-4 mt-4">
           <ReviewForm
             outputs={outputs}
@@ -61,26 +61,28 @@ export default function DashboardPage({
               </div>
             )}
 
-            <div className="min-w-0">
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-900">Final Prediction</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {finalPrediction
-                    ? `Locked consensus brief for ${week}`
-                    : `File the Team1 brief for ${week}`}
-                </p>
+            {(finalPrediction || controls.canEdit) && (
+              <div className="min-w-0">
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-900">Final Prediction</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {finalPrediction
+                      ? `Locked consensus brief for ${week}`
+                      : `File the Team1 brief for ${week}`}
+                  </p>
+                </div>
+                {finalPrediction ? (
+                  <FinalPredictionReportCard report={finalPrediction} />
+                ) : (
+                  <FinalPredictionForm
+                    week={week}
+                    predictionDate={predictionDate}
+                    hsrReady={Boolean(humanScoreReport)}
+                    onComplete={onCompleteFinalPrediction}
+                  />
+                )}
               </div>
-              {finalPrediction ? (
-                <FinalPredictionReportCard report={finalPrediction} />
-              ) : (
-                <FinalPredictionForm
-                  week={week}
-                  predictionDate={predictionDate}
-                  hsrReady={Boolean(humanScoreReport)}
-                  onComplete={onCompleteFinalPrediction}
-                />
-              )}
-            </div>
+            )}
           </div>
         </section>
       )}

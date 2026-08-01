@@ -3,8 +3,9 @@
  */
 import PropTypes from 'prop-types'
 import { PAGE_TITLES } from '../../lib/constants'
+import { AuthControl } from '../auth'
 
-export default function TopHeader({ page = 'dashboard' }) {
+export default function TopHeader({ page = 'dashboard', auth }) {
   const { section, page: title } = PAGE_TITLES[page] || PAGE_TITLES.dashboard
 
   return (
@@ -13,11 +14,17 @@ export default function TopHeader({ page = 'dashboard' }) {
         <span className="hidden sm:inline">{section} / </span>
         <span className="text-gray-900 font-medium">{title}</span>
       </div>
-      <span className="text-xs text-gray-400">Market Intelligence · Team 1</span>
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="hidden md:inline text-xs text-gray-400">
+          Market Intelligence · Team 1
+        </span>
+        {auth && <AuthControl auth={auth} />}
+      </div>
     </header>
   )
 }
 
 TopHeader.propTypes = {
   page: PropTypes.string,
+  auth: PropTypes.object,
 }

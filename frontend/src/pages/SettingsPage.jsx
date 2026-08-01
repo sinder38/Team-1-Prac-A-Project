@@ -1,6 +1,5 @@
 /**
- * About page — app info and data-source notice. No user account or login
- * (this is a static, single-user demo with no server).
+ * About page — app info and data-source notice.
  */
 import PropTypes from 'prop-types'
 import { Info, Database, GitBranch } from 'lucide-react'
@@ -33,10 +32,10 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Card icon={Info} title="No accounts">
+      <Card icon={Info} title="Access">
         <p>
-          This is a single-user, browser-only tool — there is no login, no server,
-          and no client/account separation. Everything runs locally in your browser.
+          Results are available to everyone. The configured administrator signs in
+          to run the pipeline and edit team reports.
         </p>
       </Card>
 

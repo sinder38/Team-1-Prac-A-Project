@@ -55,6 +55,7 @@ export default function WeekPicker({
   horizonDays = 7,
   onHorizonChange,
   disabled,
+  readOnly = false,
   mode = 'new',
   newWeek: newWeekProp,
   newPredictionDate: newPredictionDateProp,
@@ -115,7 +116,7 @@ export default function WeekPicker({
           type="date"
           value={predictionDate}
           onChange={e => onDateChange(e.target.value)}
-          disabled={disabled}
+          disabled={disabled || readOnly}
           className="px-2 py-1.5 text-sm border border-gray-200 rounded-md bg-white text-gray-900 focus:outline-none focus:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400"
         />
       </div>
@@ -123,7 +124,7 @@ export default function WeekPicker({
       <select
         value={horizonDays}
         onChange={e => onHorizonChange?.(Number(e.target.value))}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         aria-label="Prediction horizon"
         className="px-2 py-1.5 text-sm border border-gray-200 rounded-md bg-white text-gray-900 focus:outline-none focus:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400"
       >
@@ -135,6 +136,7 @@ export default function WeekPicker({
 
 
       <select
+        aria-label="Saved run"
         value={selectValue}
         onChange={e => {
           const hit = options.find(o => o.value === e.target.value)
@@ -146,7 +148,7 @@ export default function WeekPicker({
         className="px-2 py-1.5 text-sm border border-gray-200 rounded-md bg-white text-gray-900 focus:outline-none focus:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400"
       >
         {options.map(o => (
-          <option key={o.value} value={o.value}>
+          <option key={o.value} value={o.value} disabled={readOnly && o.kind === 'new'}>
             {o.label}
           </option>
         ))}
@@ -175,6 +177,7 @@ WeekPicker.propTypes = {
   horizonDays: PropTypes.number,
   onHorizonChange: PropTypes.func,
   disabled: PropTypes.bool,
+  readOnly: PropTypes.bool,
   mode: PropTypes.oneOf(['new', 'archive']),
   newWeek: PropTypes.string,
   newPredictionDate: PropTypes.string,
