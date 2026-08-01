@@ -172,7 +172,9 @@ def test_list_weeks_across_stems(client, app):
     # W28 run, then two W29 runs; the newest (by created_at) wins for its week.
     seed_runtime_run(app, run_id="run-aaa", prediction_date=date(2026, 7, 10))  # W28
     seed_runtime_run(app, run_id="run-bbb", prediction_date=date(2026, 7, 16))  # W29
-    seed_runtime_run(app, run_id="run-ccc", prediction_date=date(2026, 7, 16))  # W29 newer
+    seed_runtime_run(
+        app, run_id="run-ccc", prediction_date=date(2026, 7, 16)
+    )  # W29 newer
 
     resp = client.get("/artifacts/weeks")
     assert resp.status_code == 200
@@ -275,7 +277,13 @@ def test_runtime_human_score_roundtrip(client, app):
         "form": {
             "humanCall": "Neutral-Bullish",
             "confidence": "Medium",
-            "scores": {"technical": 1, "almanac": 1, "macro": 1, "aiAgreement": 0, "wildCard": 0},
+            "scores": {
+                "technical": 1,
+                "almanac": 1,
+                "macro": 1,
+                "aiAgreement": 0,
+                "wildCard": 0,
+            },
         },
     }
 
@@ -336,7 +344,11 @@ def test_runtime_final_prediction_roundtrip(client, app, tmp_path, monkeypatch):
         "form": {
             "regime": "Bearish with medium uncertainty.",
             "assets": {
-                "spx": {"direction": "FLAT-DOWN", "range": "-2% to +1%", "confidence": "MEDIUM"},
+                "spx": {
+                    "direction": "FLAT-DOWN",
+                    "range": "-2% to +1%",
+                    "confidence": "MEDIUM",
+                },
             },
             "leadingSector": "Energy",
             "laggingSector": "Tech",
@@ -381,7 +393,7 @@ def test_runtime_final_prediction_roundtrip(client, app, tmp_path, monkeypatch):
     assert data["form"]["regime"] == "Bearish with medium uncertainty."
     assert data["week"] == "2026-W30"
 
-    # Same run may re-submit; a second run in the same week may not.
+    # Same run may re-submit.
     again = client.post(
         "/artifacts/final-prediction",
         json={"run_id": "run-fp-1", "report": report},
@@ -389,12 +401,22 @@ def test_runtime_final_prediction_roundtrip(client, app, tmp_path, monkeypatch):
     assert again.status_code == 200
 
     seed_runtime_run(app, run_id="run-fp-2", prediction_date=date(2026, 7, 20))
-    restored = client.get("/artifacts/final-prediction?run_id=run-fp-2")
-    assert restored.status_code == 200
-    assert restored.get_json()["runId"] == "run-fp-1"
+    missing_second_run = client.get("/artifacts/final-prediction?run_id=run-fp-2")
+    assert missing_second_run.status_code == 404
 
-    conflict = client.post(
+    second_report = {
+        **report,
+        "form": {**report["form"], "regime": "Bullish for the second run."},
+    }
+    saved_second_run = client.post(
         "/artifacts/final-prediction",
-        json={"run_id": "run-fp-2", "report": report},
+        json={"run_id": "run-fp-2", "report": second_report},
     )
-    assert conflict.status_code == 409
+    assert saved_second_run.status_code == 200
+
+    first = client.get("/artifacts/final-prediction?run_id=run-fp-1")
+    second = client.get("/artifacts/final-prediction?run_id=run-fp-2")
+    assert first.get_json()["form"]["regime"] == "Bearish with medium uncertainty."
+    assert first.get_json()["runId"] == "run-fp-1"
+    assert second.get_json()["form"]["regime"] == "Bullish for the second run."
+    assert second.get_json()["runId"] == "run-fp-2"

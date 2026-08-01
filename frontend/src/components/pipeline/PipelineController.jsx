@@ -160,13 +160,14 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
     exporting = false,
     exportStatus,
     canExport = false,
+    canEdit = false,
   } = controls
   const stages = pipeline.stages
 
   const statusLabel = isRunning ? 'Running' : allDone ? 'Complete' : doneCount > 0 ? 'In progress' : 'Idle'
   const statusTone = isRunning ? 'running' : allDone ? 'done' : 'idle'
   const blockedByModels = doneCount === LLM_STAGE_INDEX && selectedModels.length === 0
-  const showRunNext = doneCount < aiStages
+  const showRunNext = canEdit && doneCount < aiStages
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-md mx-4 mt-4 px-4 py-4 md:px-6">
@@ -184,7 +185,7 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {exportArtifacts && (
+            {canEdit && exportArtifacts && (
               <button
                 onClick={exportArtifacts}
                 disabled={!canExport}
@@ -195,14 +196,16 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
                 {exporting ? 'Exporting…' : 'Export .md'}
               </button>
             )}
-            <button
-              onClick={resetRun}
-              disabled={isRunning || doneCount === 0}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:text-gray-300 disabled:hover:bg-white"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset
-            </button>
+            {canEdit && (
+              <button
+                onClick={resetRun}
+                disabled={isRunning || doneCount === 0}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:text-gray-300 disabled:hover:bg-white"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset
+              </button>
+            )}
             {showRunNext && (
               <button
                 onClick={runNext}
@@ -221,7 +224,7 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
           </div>
         </div>
 
-        <WeekPicker {...weekPicker} disabled={isRunning} />
+        <WeekPicker {...weekPicker} disabled={isRunning} readOnly={!canEdit} />
       </div>
 
       {error && (
@@ -292,7 +295,7 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
                     availableModels={availableModels}
                     selectedModels={selectedModels}
                     toggleModel={toggleModel}
-                    disabled={isRunning || stage.status === 'success'}
+                    disabled={!canEdit || isRunning || stage.status === 'success'}
                   />
                 )}
               </div>
@@ -300,7 +303,7 @@ export default function PipelineController({ pipeline, controls, weekPicker, onN
               <div className="shrink-0">
                 {stage.status === 'success' ? (
                   <span className="text-xs text-green-600 font-medium">✓</span>
-                ) : isHumanStage ? null : (
+                ) : isHumanStage || !canEdit ? null : (
                   <button
                     onClick={() => runStage(i)}
                     disabled={!isNext || (i === LLM_STAGE_INDEX && selectedModels.length === 0)}
@@ -379,6 +382,7 @@ PipelineController.propTypes = {
       files: PropTypes.array,
     }),
     canExport: PropTypes.bool,
+    canEdit: PropTypes.bool,
   }).isRequired,
   weekPicker: PropTypes.object,
   onNavigate: PropTypes.func,

@@ -6,7 +6,8 @@ from datetime import date
 from pathlib import Path
 
 from agents.delta.models import DeltaReport, WeekAccuracy
-from server.db import export, repository as repo
+from server.db import export
+from server.db import repository as repo
 from tests.server.conftest import (
     app_session,
     seed_agent_output,
@@ -79,8 +80,8 @@ def test_post_export_stem_no_write(archive_client):
 
     # Archive weeks have no per-model LLM outputs stored, so no synthesis files.
     files = {a["filename"] for a in data["artifacts"]}
-    assert f"llm_comparison_W25.md" in files
-    assert f"human_score_W25.md" in files
+    assert "llm_comparison_W25.md" in files
+    assert "human_score_W25.md" in files
     assert not any(f.startswith("synthesis_") for f in files)
 
 
@@ -94,7 +95,7 @@ def test_post_export_requires_target(archive_client):
     assert resp.status_code == 400
 
 
-def test_post_export_runtime_run_synthesis_and_comparison(app):
+def test_post_export_runtime_run_synthesis_and_comparison(app, client):
     """A live run with per-model LLM outputs exports synthesis + comparison."""
     pred = date(2026, 6, 21)
     seed_agent_output(
@@ -127,8 +128,7 @@ def test_post_export_runtime_run_synthesis_and_comparison(app):
         payload=_llm_payload("Poolside Laguna M.1"),
     )
 
-    with app.test_client() as c:
-        resp = c.post("/export", json={"run_id": "run-x", "write": False})
+    resp = client.post("/export", json={"run_id": "run-x", "write": False})
     assert resp.status_code == 200
     data = json.loads(resp.data)
     files = {a["filename"] for a in data["artifacts"]}
@@ -139,17 +139,21 @@ def test_post_export_runtime_run_synthesis_and_comparison(app):
     assert not any(f.startswith("human_score_") for f in files)
 
     synth = next(
-        a["markdown"] for a in data["artifacts"] if a["filename"] == "synthesis_gemma_W25.txt"
+        a["markdown"]
+        for a in data["artifacts"]
+        if a["filename"] == "synthesis_gemma_W25.txt"
     )
     assert "LLM Agent Output — Google Gemma 4 31B" in synth
     comparison = next(
-        a["markdown"] for a in data["artifacts"] if a["filename"] == "llm_comparison_W25.md"
+        a["markdown"]
+        for a in data["artifacts"]
+        if a["filename"] == "llm_comparison_W25.md"
     )
     assert "Google Gemma 4 31B" in comparison
     assert "Poolside Laguna M.1" in comparison
 
 
-def test_post_export_includes_final_prediction(app):
+def test_post_export_includes_final_prediction(app, client):
     """A runtime run with a stored final prediction exports the Team1 brief."""
     from datetime import date as _date
 
@@ -167,8 +171,7 @@ def test_post_export_includes_final_prediction(app):
         assert run is not None
         repo.upsert_final_prediction(session, run, report)
 
-    with app.test_client() as c:
-        resp = c.post("/export", json={"run_id": "run-fp", "write": False})
+    resp = client.post("/export", json={"run_id": "run-fp", "write": False})
     assert resp.status_code == 200
     arts = json.loads(resp.data)["artifacts"]
     fp = next(a for a in arts if a["agent_type"] == "final_prediction")
@@ -176,9 +179,12 @@ def test_post_export_includes_final_prediction(app):
     assert "CONSENSUS BRIEF" in fp["markdown"]
     assert fp["markdown"].endswith("\n")
 
-def test_post_export_includes_delta_report_from_sqlite(app):
+
+def test_post_export_includes_delta_report_from_sqlite(app, client):
     """The export endpoint renders a stored Delta report as Markdown."""
-    prediction_date = date(2026, 6, 21)
+    # The W26 run scores the previous W25 prediction. The exported filename
+    # must follow the report's prediction week, not the containing run's week.
+    prediction_date = date(2026, 6, 22)
     seed_runtime_run(app, run_id="run-delta", prediction_date=prediction_date)
 
     with app_session(app) as session:
@@ -192,9 +198,7 @@ def test_post_export_includes_delta_report_from_sqlite(app):
             payload=_delta_payload(),
         )
 
-    response = app.test_client().post(
-        "/export", json={"run_id": "run-delta", "write": False}
-    )
+    response = client.post("/export", json={"run_id": "run-delta", "write": False})
 
     assert response.status_code == 200
     artifacts = response.get_json()["artifacts"]
@@ -206,7 +210,7 @@ def test_post_export_includes_delta_report_from_sqlite(app):
 
 def test_write_delta_report_to_markdown_file(app, tmp_path):
     """The Delta artifact is written under the QA directory."""
-    prediction_date = date(2026, 6, 21)
+    prediction_date = date(2026, 6, 22)
     seed_runtime_run(app, run_id="run-delta-file", prediction_date=prediction_date)
 
     with app_session(app) as session:
@@ -223,20 +227,21 @@ def test_write_delta_report_to_markdown_file(app, tmp_path):
         written = export.write_artifacts(artifacts, data_dir=tmp_path)
 
     assert str(tmp_path / "qa" / "delta_W25.md") in written
-    assert (tmp_path / "qa" / "delta_W25.md").read_text(encoding="utf-8").startswith(
-        "# delta_W25.md"
+    assert (
+        (tmp_path / "qa" / "delta_W25.md")
+        .read_text(encoding="utf-8")
+        .startswith("# delta_W25.md")
     )
 
 
 def test_write_artifacts_to_tmp(archive_app, tmp_path):
     from server.db.context import db_session
 
-    with archive_app.app_context():
-        with db_session() as session:
-            run = repo.get_archive_run(session, "W25")
-            assert run is not None
-            artifacts = export.build_run_artifacts(session, run)
-            written = export.write_artifacts(artifacts, data_dir=tmp_path)
+    with archive_app.app_context(), db_session() as session:
+        run = repo.get_archive_run(session, "W25")
+        assert run is not None
+        artifacts = export.build_run_artifacts(session, run)
+        written = export.write_artifacts(artifacts, data_dir=tmp_path)
 
     # Paths may use / or \ depending on OS — compare basenames only.
     names = {Path(p).name for p in written}

@@ -17,7 +17,13 @@ StageIcon.propTypes = {
 }
 
 export default function LogsPage({ pipeline, controls, week, predictionDate }) {
-  const { isRunning, allDone, aiStages, doneCount, runNext } = controls
+  const { isRunning, allDone, aiStages, doneCount, runNext, canEdit } = controls
+  let statusMessage = 'Read only'
+  if (allDone) {
+    statusMessage = 'Run complete'
+  } else if (doneCount >= aiStages) {
+    statusMessage = canEdit ? 'AI stages done - submit Human Score' : 'AI stages done'
+  }
 
   return (
     <div className="flex-1 overflow-auto p-4 md:p-6 space-y-4">
@@ -30,7 +36,7 @@ export default function LogsPage({ pipeline, controls, week, predictionDate }) {
           </p>
         </div>
         <div className="flex gap-2">
-          {doneCount < aiStages ? (
+          {canEdit && doneCount < aiStages ? (
             <button
               onClick={runNext}
               disabled={isRunning}
@@ -45,7 +51,7 @@ export default function LogsPage({ pipeline, controls, week, predictionDate }) {
             </button>
           ) : (
             <span className="flex items-center gap-2 px-3 py-2 text-sm text-gray-500">
-              {allDone ? 'Run complete' : 'AI stages done — submit Human Score'}
+              {statusMessage}
             </span>
           )}
         </div>

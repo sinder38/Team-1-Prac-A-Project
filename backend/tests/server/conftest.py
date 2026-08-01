@@ -22,12 +22,28 @@ from server import create_app
 from server.db import repository as repo
 from server.db.context import db_session
 
+TEST_USERNAME = "test-admin"
+TEST_PASSWORD = "test-password"
+
 
 def _make_app(tmp_path, *, load_file_data: bool, name: str = "test.db") -> Flask:
     db_url = f"sqlite:///{tmp_path / name}"
     app = create_app(db_url, load_file_data=load_file_data)
-    app.config["TESTING"] = True
+    app.config.update(
+        TESTING=True,
+        SECRET_KEY="test-secret-key",
+        AUTH_USERNAME=TEST_USERNAME,
+        AUTH_PASSWORD=TEST_PASSWORD,
+    )
     return app
+
+
+def _log_in(client) -> None:
+    response = client.post(
+        "/auth/login",
+        json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+    )
+    assert response.status_code == 200
 
 
 @pytest.fixture
@@ -38,6 +54,13 @@ def app(tmp_path) -> Flask:
 
 @pytest.fixture
 def client(app):
+    with app.test_client() as c:
+        _log_in(c)
+        yield c
+
+
+@pytest.fixture
+def anonymous_client(app):
     with app.test_client() as c:
         yield c
 
@@ -51,6 +74,7 @@ def archive_app(tmp_path) -> Flask:
 @pytest.fixture
 def archive_client(archive_app):
     with archive_app.test_client() as c:
+        _log_in(c)
         yield c
 
 
@@ -60,9 +84,8 @@ def archive_client(archive_app):
 @contextmanager
 def app_session(app: Flask) -> Iterator:
     """Open an app context + a committing db_session for seeding."""
-    with app.app_context():
-        with db_session() as session:
-            yield session
+    with app.app_context(), db_session() as session:
+        yield session
 
 
 def seed_agent_output(
