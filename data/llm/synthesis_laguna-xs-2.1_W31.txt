@@ -1,0 +1,17 @@
+# LLM Agent Output — Poolside Laguna XS 2.1 — Week of 2026-08-01
+
+1. Weekly Regime: Uncertain
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - SPX closed up 1.05% last week with EMA crossover still neutral, key support at 7313.92 and resistance at 7581.5
+   - Almanac shows historically bearish seasonal pattern for August with 19 of last 28 first trading days of August falling
+   - Macro environment neutral with key NFP data on August 7, DXY falling -1.65%, oil down -5.20%, gold down -0.45%
+4. Key Contradictions:
+   - Technical indicators show SPX/NDX with neutral bias while IWM shows bearish bias, creating mixed directional signals
+   - Almanac sector signals show Technology bullish (supports NDX) while Financials, Materials, Energy, Gold all bearish creating conflicting sector dynamics
+5. Invalidation Conditions: A decisive move in yields, the dollar, or inflation expectations would invalidate the neutral macro read
+6. Predicted % move — SPX: -1.5% to 2.0%
+   Predicted % move — NDX: -3.0% to 1.5%
+   Predicted % move — IWM: -2.0% to 1.5%
+7. Plain-English brief: The market faces mixed signals heading into August with seasonal weakness historically favoring downside, but recent week showed gains across all three indices. Technicals are neutral to slightly bearish while macro data points remain balanced ahead of key employment data. Expect range-bound trading with potential for volatility around the NFP release.
+8. Disclaimer: This is not financial advice.
