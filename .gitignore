@@ -4,6 +4,7 @@
 .env.*
 !.env.example
 !.gitignore
+!.dockerignore
 
 # Python
 __pycache__
