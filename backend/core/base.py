@@ -4,7 +4,7 @@ from dataclasses import asdict
 from datetime import date
 from typing import Generic, TypeVar, Union
 
-from agents.schemas import AlmanacOutput, EvidenceOutput, LLMOutput, MacroOutput, TechnicalOutput
+from core.schemas import AlmanacOutput, EvidenceOutput, LLMOutput, MacroOutput, TechnicalOutput
 
 AgentOutput = Union[TechnicalOutput, AlmanacOutput, MacroOutput, LLMOutput, EvidenceOutput]
 

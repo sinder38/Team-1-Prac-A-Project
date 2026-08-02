@@ -2,7 +2,7 @@ import json
 from datetime import date
 from unittest.mock import patch
 
-from agents.schemas import (
+from core.schemas import (
     AlmanacOutput, Bias, Confidence,
     TechnicalOutput, InstrumentTechnical,
     MacroOutput, MacroBias, CommodityData,
@@ -148,7 +148,7 @@ def test_post_evidence_no_horizon(client):
 
 
 def test_post_llm_missing_agent_artifacts(client):
-    from agents.pipeline.config import LLMModelEntry
+    from pipeline.config import LLMModelEntry
 
     # No agent artifacts seeded for this run_id, so the LLM stage should 404.
     with patch.dict(

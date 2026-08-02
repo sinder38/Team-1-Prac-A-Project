@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import BadRequest
 
-from agents.io import week_stem
+from core.io import week_stem
 from server.db import export, repository as repo
 from server.db.context import db_session
 from server.utils import err

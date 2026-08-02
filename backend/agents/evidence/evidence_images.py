@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 from agents.evidence.generate_charts import EvidenceChartRenderer, render_evidence_charts
-from agents.io import week_stem
+from core.io import week_stem
 
 if TYPE_CHECKING:
     from agents.evidence.models import EvidenceSnapshot
