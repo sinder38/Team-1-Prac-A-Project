@@ -284,8 +284,8 @@ if __name__ == "__main__":
             output = agent.run(prediction_date)
 
             FileSaver(OUTPUTS_LLM_DIR / entry.slug).save(_serialize(output), f"{iso_t}.json")
-            FileSaver(HUMAN_LLM_DIR).save(agent.render_md(output, prediction_date), f"synthesis_{entry.slug}_{human_t}.txt")
-
+          # FileSaver(HUMAN_LLM_DIR).save(agent.render_md(output, prediction_date), f"synthesis_{entry.slug}_{human_t}.txt")
+            FileSaver(HUMAN_LLM_DIR).save(agent.render_md(output),f"synthesis_{entry.slug}_{human_t}.txt",)
             rows_by_slug[entry.slug] = _row(output)
             print(f"✅ {entry.label}: outputs saved.")
 
