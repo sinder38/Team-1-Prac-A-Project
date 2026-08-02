@@ -93,8 +93,9 @@ export default function SettingsPage() {
 
         <Card icon={Moon} title="Theme">
           <p>
-            Light and dark themes toggle from the moon/sun control at the bottom of
-            the left nav. The choice is saved in this browser and restored on reload.
+            Defaults to your system light/dark preference. Toggle from the moon/sun
+            control at the bottom of the left nav — that choice is saved in this
+            browser and restored on reload.
           </p>
           <p>
             Page and week also sync into the URL (

@@ -1,8 +1,7 @@
 /**
  * Pipeline state for the app — the human runs each stage manually.
- * Stages 1-4 are run from the Dashboard; stage 5 (Human Score) is completed
- * by submitting the report on the Dashboard. Stages 1-2 call the real backend
- * (see src/api/pipeline.js and src/api/agents.js). HSR is stored per run_id.
+ * Stages 1-4 run from the Dashboard; stage 5 (Human Score) and stage 6
+ * (Final Prediction) are completed via Dashboard forms. HSR / FP stored per run_id.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
@@ -30,10 +29,13 @@ import {
   exampleSavedWeekPipeline,
   exampleStages,
   isExampleWeek,
+  PIPELINE_STAGE_IDS,
+  stageCountThrough,
 } from '../lib/exampleData'
 
-const TOTAL_STAGES = 5
-const AI_STAGES = 4 // stages 1-4 run automatically per click; stage 5 is the human report
+const TOTAL_STAGES = 6
+const AI_STAGES = 4 // stages 1-4: Run button; 5 = HSR, 6 = Final Prediction
+const HSR_DONE = stageCountThrough(PIPELINE_STAGE_IDS.HUMAN_SCORE)
 const HSR_STORAGE_KEY = 'humanScoreReports'
 const FP_STORAGE_KEY = 'finalPredictions'
 const DEFAULT_PROVIDER_MODE = 'ollama'
@@ -408,7 +410,7 @@ export function usePipeline() {
     }
   }
 
-  // Completing the human report marks the final stage done and persists by run_id.
+  // Completing the human report marks stage 5 done; Final Prediction is still pending.
   async function completeReview(form) {
     if (!form) return
     const report = {
@@ -432,16 +434,13 @@ export function usePipeline() {
     }
 
     const stageLog = getStageLogs(AI_STAGES)
-    const finishedAt = new Date().toISOString()
     const key = hsrKey({ runId })
     setLogs(prev => [...prev, ...stageLog.start, ...stageLog.done])
     setPipeline(prev => ({
       ...prev,
       isRunning: false,
       currentStage: AI_STAGES,
-      stages: exampleStages(TOTAL_STAGES, -1, prev.stages),
-      accuracy: DEMO_FINAL_ACCURACY,
-      lastRun: finishedAt,
+      stages: exampleStages(HSR_DONE, -1, prev.stages),
       week: currentWeek,
       predictionDate,
     }))
@@ -476,7 +475,20 @@ export function usePipeline() {
       setError(errorMessage(err, 'Could not save final prediction'))
       throw err
     }
+    const stageLog = getStageLogs(HSR_DONE)
+    const finishedAt = new Date().toISOString()
     const key = hsrKey({ runId })
+    setLogs(prev => [...prev, ...stageLog.start, ...stageLog.done])
+    setPipeline(prev => ({
+      ...prev,
+      isRunning: false,
+      currentStage: HSR_DONE,
+      stages: exampleStages(TOTAL_STAGES, -1, prev.stages),
+      accuracy: DEMO_FINAL_ACCURACY,
+      lastRun: finishedAt,
+      week: currentWeek,
+      predictionDate,
+    }))
     setSelectedWeek(currentWeek)
     setSelectedRunId(runId)
     setWeekPickerMode('archive')
@@ -531,8 +543,7 @@ export function usePipeline() {
     }
   }
 
-  // Selecting a saved week/run loads outputs. Only mark stages finished that have
-  // real artifacts — calibration (4) and human score (5) stay pending until run.
+  // Selecting a saved week/run loads outputs. Only mark stages that have artifacts.
   async function onWeekSelect(entry) {
     setError(null)
     setWeekPickerMode('archive')

@@ -63,7 +63,11 @@ export default function LogsPage({ pipeline, controls, week, predictionDate, onN
             </button>
           ) : (
             <span className="flex items-center gap-2 px-3 py-2 text-sm text-gray-500">
-              {allDone ? 'Run complete' : 'AI stages done — submit Human Score'}
+              {allDone
+                ? 'Run complete'
+                : doneCount === aiStages
+                  ? 'AI stages done — submit Human Score'
+                  : 'Human Score done — submit Final Prediction'}
             </span>
           )}
           {blockedByModels && (

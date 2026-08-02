@@ -19,9 +19,9 @@ const CONFIDENCE_PATTERNS = {
   technical: /CONFIDENCE:\s*(\w+)/i,
 }
 
-// Percentages, bias/confidence words, common tickers — capturing group keeps matches in split().
+// Raw-output only: percentages + direction words (no tickers / confidence levels).
 const HIGHLIGHT_RE =
-  /(\b\d+(?:\.\d+)?%|[+-]\d+(?:\.\d+)?%|\b(?:Bullish|Bearish|Neutral|Hawkish|Dovish|Mixed|Binary[- ]risk)\b|\b(?:High|Medium|Low(?:-Medium)?)\b|\b(?:SPX|NDX|IWM|DXY|WTI|FOMC)\b)/gi
+  /(\b\d+(?:\.\d+)?%|[+-]\d+(?:\.\d+)?%|\b(?:Bullish|Bearish|Neutral|Hawkish|Dovish|Mixed|Binary[- ]risk)\b)/gi
 
 function trimValue(text) {
   const value = String(text ?? '').trim()
@@ -32,12 +32,10 @@ function trimValue(text) {
 function tokenKind(token) {
   if (/%/.test(token)) return 'pct'
   if (/^(Bullish|Bearish|Neutral|Hawkish|Dovish|Mixed|Binary)/i.test(token)) return 'bias'
-  if (/^(High|Medium|Low)/i.test(token)) return 'conf'
-  if (/^(SPX|NDX|IWM|DXY|WTI|FOMC)$/i.test(token)) return 'ticker'
   return 'text'
 }
 
-/** Split agent text into { kind, text } segments for light syntax highlighting. */
+/** Split raw agent text into { kind, text } segments for light highlighting. */
 export function tokenizeHighlight(text) {
   const src = String(text ?? '')
   if (!src) return []

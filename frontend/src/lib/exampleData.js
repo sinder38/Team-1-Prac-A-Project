@@ -153,6 +153,7 @@ export const PIPELINE_STAGE_IDS = Object.freeze({
   LLM: 'stage-3',
   DELTA: 'stage-4',
   HUMAN_SCORE: 'stage-5',
+  FINAL_PREDICTION: 'stage-6',
 })
 
 const STAGE_DEFS = [
@@ -161,6 +162,7 @@ const STAGE_DEFS = [
   { id: PIPELINE_STAGE_IDS.LLM, name: 'LLM API Calls', description: 'Query the selected LLMs and build the comparison' },
   { id: PIPELINE_STAGE_IDS.DELTA, name: 'Previous Week Delta', description: 'Review the previous locked prediction and create a prescription' },
   { id: PIPELINE_STAGE_IDS.HUMAN_SCORE, name: 'Human Score', description: 'Fill in and submit the human score report' },
+  { id: PIPELINE_STAGE_IDS.FINAL_PREDICTION, name: 'Final Prediction', description: 'Lock the Team1 consensus brief for the week' },
 ]
 
 /** Return the number of stages up to and including the given stage. */
@@ -193,7 +195,11 @@ export const STAGE_LOGS = [
   },
   {
     start: ['[stage 5] awaiting human score...'],
-    done: ['[stage 5] human score submitted. run complete.'],
+    done: ['[stage 5] human score submitted.'],
+  },
+  {
+    start: ['[stage 6] awaiting final prediction...'],
+    done: ['[stage 6] final prediction locked. run complete.'],
   },
 ]
 

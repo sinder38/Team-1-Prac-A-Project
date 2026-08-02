@@ -50,14 +50,16 @@ describe('prepareAgentCard', () => {
 })
 
 describe('tokenizeHighlight', () => {
-  it('tags percentages, bias words, and tickers', () => {
+  it('tags percentages and bias words only', () => {
     const tokens = tokenizeHighlight('SPX +1.2% Bullish Medium')
     const kinds = tokens.map(t => t.kind)
-    expect(kinds).toContain('ticker')
     expect(kinds).toContain('pct')
     expect(kinds).toContain('bias')
-    expect(kinds).toContain('conf')
+    expect(kinds).not.toContain('ticker')
+    expect(kinds).not.toContain('conf')
     expect(tokens.find(t => t.kind === 'pct')?.text).toBe('+1.2%')
+    expect(tokens.some(t => t.kind === 'text' && t.text.includes('SPX'))).toBe(true)
+    expect(tokens.some(t => t.kind === 'text' && t.text.includes('Medium'))).toBe(true)
   })
 
   it('returns empty for blank input', () => {

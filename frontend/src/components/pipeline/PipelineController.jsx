@@ -1,6 +1,6 @@
 /**
  * Manual pipeline control — the human runs each stage one at a time.
- * Stages 1-4 have a Run button; stage 5 (Human Score) is filled in on the Dashboard.
+ * Stages 1-4: Run button. Stages 5–6 (Human Score, Final Prediction): Dashboard forms.
  */
 import { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
@@ -275,7 +275,7 @@ export default function PipelineController({
         <>
           <div className="mt-5 space-y-2">
             {stages.map((stage, i) => {
-              const isNext = i === doneCount && !isRunning && i < aiStages
+              const isNext = i === doneCount && !isRunning && !allDone
               const locked = i > doneCount
               const tone =
                 stage.status === 'success' ? 'done'
@@ -324,7 +324,9 @@ export default function PipelineController({
                     {stage.status === 'success' ? (
                       <span className="text-xs text-green-600 font-medium">✓</span>
                     ) : isNext ? (
-                      <span className="text-xs font-medium text-blue-700">Up next</span>
+                      <span className="text-xs font-medium text-blue-700">
+                        {i < aiStages ? 'Up next' : 'Fill on Dashboard'}
+                      </span>
                     ) : null}
                   </div>
                 </div>

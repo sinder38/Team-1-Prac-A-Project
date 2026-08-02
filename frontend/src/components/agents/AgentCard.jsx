@@ -26,23 +26,28 @@ const ICON_BG = {
   technical: 'bg-emerald-100 text-emerald-700',
 }
 
-const TOKEN_CLASS = {
-  pct: 'text-violet-700 font-semibold',
-  bias: 'text-gray-900 font-semibold',
-  conf: 'text-sky-800 font-medium',
-  ticker: 'text-teal-800 font-semibold',
-  text: '',
+function highlightClass({ kind, text }) {
+  if (kind === 'pct') {
+    return String(text).trimStart().startsWith('-')
+      ? 'text-red-600 font-semibold'
+      : 'text-green-600 font-semibold'
+  }
+  if (kind === 'bias') {
+    if (/bearish|hawkish/i.test(text)) return 'text-red-600 font-semibold'
+    if (/bullish|dovish/i.test(text)) return 'text-green-600 font-semibold'
+  }
+  return undefined
 }
 
-function HighlightedText({ text }) {
+function HighlightedRaw({ text }) {
   return tokenizeHighlight(text).map((tok, i) => (
-    <span key={i} className={TOKEN_CLASS[tok.kind] || undefined}>
+    <span key={i} className={highlightClass(tok)}>
       {tok.text}
     </span>
   ))
 }
 
-HighlightedText.propTypes = {
+HighlightedRaw.propTypes = {
   text: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 }
 
@@ -51,7 +56,7 @@ function MetricRow({ label, value }) {
     <div className="py-2 border-b border-gray-100 last:border-0">
       <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400">{label}</p>
       <p className="text-sm text-gray-800 mt-0.5 leading-snug whitespace-pre-wrap break-words">
-        <HighlightedText text={value} />
+        {value}
       </p>
     </div>
   )
@@ -127,7 +132,7 @@ export default function AgentCard({ id, data, open, onToggle }) {
               {card.headline.label}
             </p>
             <p className="text-base font-semibold text-gray-900 mt-0.5 leading-snug whitespace-pre-wrap break-words">
-              <HighlightedText text={card.headline.value} />
+              {card.headline.value}
             </p>
           </div>
         )}
@@ -151,7 +156,7 @@ export default function AgentCard({ id, data, open, onToggle }) {
         </button>
         {open && (
           <pre className="mt-2 p-3 bg-white border border-gray-200 rounded-lg text-[11px] leading-relaxed text-gray-700 overflow-auto max-h-[32rem] whitespace-pre-wrap break-words font-mono">
-            <HighlightedText text={card.rawData} />
+            <HighlightedRaw text={card.rawData} />
           </pre>
         )}
       </div>

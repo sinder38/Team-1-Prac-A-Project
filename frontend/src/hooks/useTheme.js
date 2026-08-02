@@ -1,9 +1,19 @@
 /**
- * Persist light/dark on <html data-theme>. Light keeps default Tailwind styles.
+ * Persist light/dark on <html data-theme>.
+ * No saved choice → follow OS prefers-color-scheme.
  */
 import { useEffect, useState } from 'react'
 
 export const THEME_KEY = 'mi-theme'
+
+function systemTheme() {
+  try {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark'
+  } catch {
+    /* ignore */
+  }
+  return 'light'
+}
 
 export function readTheme() {
   try {
@@ -12,7 +22,7 @@ export function readTheme() {
   } catch {
     /* private mode / blocked storage */
   }
-  return 'light'
+  return systemTheme()
 }
 
 export function applyTheme(theme) {
@@ -31,15 +41,19 @@ export function useTheme() {
 
   useEffect(() => {
     applyTheme(theme)
-    try {
-      localStorage.setItem(THEME_KEY, theme)
-    } catch {
-      /* ignore */
-    }
   }, [theme])
 
-  return {
-    theme,
-    toggleTheme: () => setTheme(t => (t === 'dark' ? 'light' : 'dark')),
+  function toggleTheme() {
+    setTheme(prev => {
+      const next = prev === 'dark' ? 'light' : 'dark'
+      try {
+        localStorage.setItem(THEME_KEY, next)
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
   }
+
+  return { theme, toggleTheme }
 }

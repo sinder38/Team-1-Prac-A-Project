@@ -64,6 +64,7 @@ describe('usePipeline history restore', () => {
       'idle',
       'idle',
       'idle',
+      'idle',
     ])
   })
 
@@ -110,6 +111,18 @@ describe('usePipeline history restore', () => {
       expect.objectContaining({ runId: 'restored-run' }),
     )
     expect(result.current.doneCount).toBe(5)
+    expect(result.current.allDone).toBe(false)
+
+    api.submitFinalPrediction.mockResolvedValue({ ok: true })
+    await act(async () => {
+      await result.current.completeFinalPrediction({
+        regime: 'Neutral',
+        narrative: 'Range-bound week',
+      })
+    })
+    expect(api.submitFinalPrediction).toHaveBeenCalled()
+    expect(result.current.doneCount).toBe(6)
+    expect(result.current.allDone).toBe(true)
   })
 
   it('loads the week prediction owned by another run', async () => {
