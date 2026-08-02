@@ -178,6 +178,27 @@ def validate_week_pair(prediction_week: str, actuals_week: str) -> None:
         )
 
 
+def artifact_week(prediction_week: str, actuals_week: str | None) -> str:
+    """Return the week label used to file Delta artifacts.
+
+    A Delta report belongs to the pipeline run that produced it, and that run
+    is identified by the completed actuals week (all sibling artifacts of the
+    same run, such as actuals, agent reports, and the LLM comparison,
+    carry that label).
+    When ``actuals_week`` is missing or malformed (legacy payloads predate the
+    field), fall back to the week after the prediction, which is the same
+    value by construction. Only when neither label can be resolved is a
+    ``ValueError`` raised, because then there is no safe name to write under.
+    """
+    if actuals_week:
+        try:
+            return plain_week(actuals_week)
+        except ValueError:
+            # Fall through to the derived label instead of failing the run.
+            pass
+    return next_week(prediction_week)
+
+
 def _prediction_json_rows(data: Any) -> list[dict[str, Any]]:
     if isinstance(data, list):
         rows: list[dict[str, Any]] = []
