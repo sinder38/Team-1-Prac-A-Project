@@ -111,21 +111,18 @@ describe('usePipeline history restore', () => {
       expect.objectContaining({ runId: 'restored-run' }),
     )
     expect(result.current.doneCount).toBe(5)
-    expect(result.current.allDone).toBe(false)
+    expect(result.current.savedWeeks).toEqual([
+      expect.objectContaining({
+        runId: 'restored-run',
+        createdAt: expect.any(String),
+      }),
+    ])
 
-    api.submitFinalPrediction.mockResolvedValue({ ok: true })
-    await act(async () => {
-      await result.current.completeFinalPrediction({
-        regime: 'Neutral',
-        narrative: 'Range-bound week',
-      })
-    })
-    expect(api.submitFinalPrediction).toHaveBeenCalled()
-    expect(result.current.doneCount).toBe(6)
-    expect(result.current.allDone).toBe(true)
+    const storedReports = JSON.parse(sessionStorage.getItem('humanScoreReports'))
+    expect(storedReports['run:restored-run'].createdAt).toEqual(expect.any(String))
   })
 
-  it('loads the week prediction owned by another run', async () => {
+  it('does not load a final prediction owned by another run', async () => {
     api.getAgentOutputs.mockResolvedValue({
       almanac: { agent: 'Almanac Agent' },
       macro: { agent: 'Macro Agent' },
@@ -157,8 +154,6 @@ describe('usePipeline history restore', () => {
       })
     })
 
-    expect(result.current.finalPrediction).toEqual(
-      expect.objectContaining({ runId: 'prediction-owner' }),
-    )
+    expect(result.current.finalPrediction).toBeNull()
   })
 })

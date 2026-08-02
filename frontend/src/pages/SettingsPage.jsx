@@ -1,5 +1,5 @@
 /**
- * About — what the app is, how the pipeline runs, where data comes from.
+ * About page — app info and data-source notice.
  */
 import PropTypes from 'prop-types'
 import { Activity, Database, GitBranch, Layers, Moon } from 'lucide-react'
@@ -32,18 +32,22 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card icon={Activity} title="What this is">
-          <p>
-            A weekly market-intelligence control panel: pull data, run Almanac /
-            Macro / Technical agents, query LLMs, lock a Final Prediction, then
-            score against actuals.
-          </p>
-          <p>
-            Single-user local tool — no accounts or multi-tenant login. React UI
-            talks to a Flask backend on your machine.
-          </p>
-        </Card>
+      <Card icon={Info} title="Access">
+        <p>
+          Results are available to everyone. The configured administrator signs in
+          to run the pipeline and edit team reports.
+        </p>
+      </Card>
+
+      <Card icon={Database} title="Example data">
+        <p>
+          Charts and agent outputs use bundled example data so the UI is fully
+          viewable without a backend. See{' '}
+          <code className="text-xs bg-gray-100 px-1 rounded">src/lib/exampleData.js</code>{' '}
+          and the stubs in{' '}
+          <code className="text-xs bg-gray-100 px-1 rounded">src/api/</code>.
+        </p>
+      </Card>
 
         <Card icon={GitBranch} title="Pipeline">
           <p>

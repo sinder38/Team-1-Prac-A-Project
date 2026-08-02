@@ -8,12 +8,12 @@
 
 <br>
 
-![Status](https://img.shields.io/badge/status-active_development-3fb950?style=flat-square&labelColor=161b22)
-![Progress](https://img.shields.io/badge/progress-Week_8-58a6ff?style=flat-square&labelColor=161b22)
-![Assets](https://img.shields.io/badge/tracked_assets-9-d29922?style=flat-square&labelColor=161b22)
-![LLMs](https://img.shields.io/badge/CI_LLMs-4-bc8cff?style=flat-square&labelColor=161b22)
-![Backend](https://img.shields.io/badge/backend-Python_%7C_Flask-3776ab?style=flat-square&labelColor=161b22)
-![Frontend](https://img.shields.io/badge/frontend-React_%7C_Vite-61dafb?style=flat-square&labelColor=161b22)
+![Status](https://img.shields.io/badge/Status-Active_Development-3fb950?style=flat-square&labelColor=161b22)
+![Progress](https://img.shields.io/badge/Progress-Week_9-58a6ff?style=flat-square&labelColor=161b22)
+![Assets](https://img.shields.io/badge/Tracked_Assets-9-d29922?style=flat-square&labelColor=161b22)
+![LLMs](https://img.shields.io/badge/CI_LLM_Models-5-bc8cff?style=flat-square&labelColor=161b22)
+![Backend](https://img.shields.io/badge/Backend-Python_%7C_Flask-3776ab?style=flat-square&labelColor=161b22)
+![Frontend](https://img.shields.io/badge/Frontend-React_%7C_Vite-61dafb?style=flat-square&labelColor=161b22)
 
 </div>
 
@@ -25,7 +25,7 @@ Team 1 is building a weekly market-intelligence system for SPX, NDX, and IWM pre
 
 It collects market data, runs Almanac, Macro, Technical, and Evidence agents, compares LLM reasoning, applies human review, locks a prediction, and evaluates the result through the Delta Engine.
 
-The local development pipeline uses Ollama with `llama3.2:3b`. The automated CI pipeline uses Nemotron 3 Super, InclusionAI Ling 3.0 Flash, Gemma 4 26B A4B, and Laguna M.1 through OpenRouter.
+The local development pipeline uses Ollama with `llama3.2:3b`. The automated CI pipeline uses Nvidia Nemotron 3 Super, InclusionAI Ling 3.0 Flash, Google Gemma 4 26B A4B, OpenAI gpt-oss-20b, and Poolside Laguna XS 2.1 through OpenRouter.
 
 > **Week 8 status:** the automated pipeline, Flask API, React dashboard, multi-LLM comparison, and Delta Engine are available. Human Score submission and persistence remain in progress.  
 > See the [full development status](https://github.com/sinder38/Team-1-Prac-A-Project/wiki/Development-Status).

@@ -185,11 +185,18 @@ def test_list_models(client):
     assert all("key" in m and "name" in m and "provider" in m for m in models)
     keys = {m["key"] for m in models}
     # server.toml exposes both Local (ollama) and Real API (openrouter).
+    # Slugs are unified with the CI auto-derivation (2026-07 model rotation).
     assert "llama3.2-3b" in keys
-    assert "nemotron" in keys
+    assert "nemotron-3-super-120b-a12b" in keys
+    # Rotation guard: new models present, delisted ones gone.
+    assert {"gpt-oss-20b", "laguna-xs-2.1"} <= keys
+    assert not {"gpt-oss-120b", "laguna-m.1", "gptoss", "laguna"} & keys
     by_key = {m["key"]: m["provider"] for m in models}
     assert by_key["llama3.2-3b"] == "ollama"
-    assert by_key["nemotron"] == "openrouter"
+    # Also pins the provider default: openrouter entries omit `provider`
+    # in server.toml and rely on LLMModelEntry's default.
+    assert by_key["nemotron-3-super-120b-a12b"] == "openrouter"
+    assert by_key["gpt-oss-20b"] == "openrouter"
 
 
 # --- POST /stages/human ------------------------------------------------------

@@ -11,30 +11,12 @@ import {
   SettingsPage,
 } from '../pages'
 import { usePipeline } from '../hooks/usePipeline'
-import { useTheme } from '../hooks/useTheme'
-import { readPageFromUrl, syncUrl } from '../lib/appRoute'
+import { useAuth } from '../hooks/useAuth'
 
 export default function App() {
   const [page, setPage] = useState(readPageFromUrl)
   const pipeline = usePipeline()
-  const { theme, toggleTheme } = useTheme()
-
-  let status = 'idle'
-  let statusLabel = 'Idle'
-  if (pipeline.isRunning) {
-    status = 'running'
-    statusLabel = 'Running'
-  } else if (pipeline.allDone) {
-    status = 'complete'
-    statusLabel = 'Complete'
-  } else if (pipeline.doneCount > 0) {
-    status = 'progress'
-    statusLabel = 'In progress'
-  }
-
-  useEffect(() => {
-    syncUrl({ page, week: pipeline.selectedWeek })
-  }, [page, pipeline.selectedWeek])
+  const auth = useAuth()
 
   const weekPicker = {
     predictionDate: pipeline.predictionDate,
@@ -71,6 +53,7 @@ export default function App() {
     providerMode: pipeline.providerMode,
     setProviderMode: pipeline.setProviderMode,
     toggleModel: pipeline.toggleModel,
+    canEdit: auth.isAuthenticated,
   }
 
   const pages = {
@@ -121,13 +104,7 @@ export default function App() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 px-4 pt-4">
-        <TopHeader
-          page={page}
-          week={pipeline.selectedWeek}
-          runId={pipeline.runId || pipeline.pipeline?.id}
-          status={status}
-          statusLabel={statusLabel}
-        />
+        <TopHeader page={page} auth={auth} />
         {pages[page] || pages.dashboard}
       </div>
     </div>

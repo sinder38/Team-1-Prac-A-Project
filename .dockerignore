@@ -1,0 +1,19 @@
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+.git
+.github
+frontend/dist
+frontend/docs
+presentations
+sprints
+tasks
+
+# Runtime-only data
+data/predictions.db
+data/outputs
+
+# Never bake secrets into an image
+backend/.env

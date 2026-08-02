@@ -10,12 +10,15 @@ evidence  = true
 [llm]
 models = [
     # Production testing with OpenRouter
-    # {id = "nvidia/nemotron-3-super-120b-a12b:free"},
-    # {id = "tencent/hy3:free"}, # No longer is free
-    # # {id = "openai/gpt-oss-120b:free"},
-    # {id = "google/gemma-4-31b-it:free"},
-    # {id = "poolside/laguna-m.1:free"},
-    # {id = "gemma-4-26b-a4b-it:free"},
+    # {id = "tencent/hy3:free",           name = "Tencent Hy3"},          # no longer free
+    # {id = "openai/gpt-oss-120b:free",   name = "OpenAI gpt-oss-120b"},  # delisted 2026-07
+    # {id = "google/gemma-4-31b-it:free", name = "Google Gemma 4 31B"},   # superseded by 26B A4B
+    # {id = "poolside/laguna-m.1:free",   name = "Poolside Laguna M.1"},  # delisted 2026-07
+    # {id = "nvidia/nemotron-3-super-120b-a12b:free", name = "NVIDIA Nemotron 3 Super 120B"},
+    # {id = "inclusionai/ling-3.0-flash:free",        name = "InclusionAI Ling 3.0 Flash"},
+    # {id = "gemma-4-26b-a4b-it:free",                name = "Google Gemma 4 26B A4B"},
+    # {id = "openai/gpt-oss-20b:free",                name = "OpenAI gpt-oss-20b"},
+    # {id = "poolside/laguna-xs-2.1:free",            name = "Poolside Laguna XS 2.1"},
 
     # For local testing with Ollama. llama3.2:3b is small enough to run at usable
     # speed on CPU; llama3.1 (8B) takes minutes per prompt without a GPU.

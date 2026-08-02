@@ -138,7 +138,6 @@ def get_runs():
     )
 
 
-
 @artifacts_bp.route("/run-status", methods=["GET"])
 def get_run_status():
     """Return persisted pipeline progress for one runtime run."""
@@ -271,7 +270,7 @@ def save_human_score():
 
 @artifacts_bp.route("/final-prediction", methods=["GET"])
 def get_final_prediction():
-    """Return the locked prediction for the selected run's week."""
+    """Return the locked prediction for one runtime run."""
     run_id = request.args.get("run_id")
     if not run_id:
         return err("Missing required query param: run_id", 400)
@@ -281,48 +280,30 @@ def get_final_prediction():
         if run is None:
             return err(f"Unknown run_id={run_id!r}", 404)
 
-        owner = run
         row = repo.get_runtime_final_prediction(session, str(run_id))
         if row is None:
-            stem = run.week_stem or week_stem(run.prediction_date)
-            owner = repo.get_runtime_run_with_final_prediction_for_week(session, stem)
-            if owner is not None and owner.run_id is not None:
-                row = repo.get_runtime_final_prediction(session, owner.run_id)
-
-        if row is None:
-            return err(f"No final prediction for run_id={run_id!r} or its week", 404)
+            return err(f"No final prediction for run_id={run_id!r}", 404)
 
         payload = dict(row.payload)
-        if owner is not None and owner.run_id is not None:
-            payload["runId"] = owner.run_id
+        payload["runId"] = str(run_id)
         return jsonify(payload), 200
 
 
 @artifacts_bp.route("/final-prediction", methods=["POST"])
 def save_final_prediction():
-    """Persist the final prediction on a runtime run (DB only"""
+    """Persist the final prediction on a runtime run (DB only)."""
     body = request.get_json(silent=True) or {}
     run_id = body.get("run_id")
     report = body.get("report")
     if not run_id or not isinstance(report, Mapping):
         return err("Body must include run_id and report", 400)
 
-    payload = dict(report)
-
     with db_session() as session:
         run = repo.get_runtime_run(session, str(run_id))
         if run is None:
             return err(f"Unknown run_id={run_id!r}", 404)
-        stem = run.week_stem or week_stem(run.prediction_date)
-        # One locked Team1 brief per week (delta reads a single file). Same run
-        # may re-submit; a different run for the same week is rejected.
-        owner = repo.get_runtime_run_with_final_prediction_for_week(session, stem)
-        if owner is not None and owner.run_id != run.run_id:
-            return err(
-                f"Week {stem} already has a final prediction "
-                f"from run_id={owner.run_id!r}",
-                409,
-            )
+        payload = dict(report)
+        payload["runId"] = str(run_id)
         repo.upsert_final_prediction(session, run, payload)
 
     return jsonify({"ok": True, "run_id": run_id}), 200
@@ -391,10 +372,9 @@ def _saved_artifact_response(
         else:
             data = repo.get_agent_payload(session, run_id, agent_type)
     if data is None:
-        return err(
-            f"Artifact not found: {agent_type} for run_id={run_id!r}", 404
-        )
+        return err(f"Artifact not found: {agent_type} for run_id={run_id!r}", 404)
     return jsonify(data), 200
+
 
 # Past weeks include generated JSON runs and older Markdown archives.
 def _normalize_week_stem(raw: str | None) -> tuple[str | None, tuple | None]:

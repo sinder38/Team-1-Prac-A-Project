@@ -79,7 +79,7 @@ function hsrKey({ runId, week } = {}) {
 function lookupHsr(reports, { runId, week, allowWeekFallback = false } = {}) {
   if (!reports) return null
   const byRun = runId ? reports[hsrKey({ runId })] : null
-  if (byRun) return byRun
+  if (byRun && (!byRun.runId || byRun.runId === runId)) return byRun
   // Week keys are for markdown archives only — never leak onto a runtime run.
   if (!allowWeekFallback) return null
   if (week && reports[week]) return reports[week]
@@ -99,6 +99,7 @@ function mergeSavedWeeks(apiWeeks, storedReports) {
         predictionDate: report.predictionDate ?? todayIso(),
         runId,
         source: runId ? 'run' : 'archive',
+        createdAt: report.createdAt || null,
       })
     }
   }
@@ -434,6 +435,8 @@ export function usePipeline() {
     }
 
     const stageLog = getStageLogs(AI_STAGES)
+    const finishedAt = new Date().toISOString()
+    const cachedReport = { ...report, createdAt: finishedAt }
     const key = hsrKey({ runId })
     setLogs(prev => [...prev, ...stageLog.start, ...stageLog.done])
     setPipeline(prev => ({
@@ -448,15 +451,26 @@ export function usePipeline() {
     setSelectedRunId(runId)
     setWeekPickerMode('archive')
     setHumanScoreReports(prev => {
-      const next = { ...prev, [key]: report }
+      const next = { ...prev, [key]: cachedReport }
       writeStoredReports(next)
       return next
     })
     setSavedWeeks(prev =>
       prev.some(w => w.week === currentWeek && w.runId === runId)
         ? prev
-        : [...prev, { week: currentWeek, predictionDate, runId, source: 'run' }].sort((a, b) =>
-            a.week.localeCompare(b.week) || String(a.runId || '').localeCompare(String(b.runId || '')),
+        : [
+            ...prev,
+            {
+              week: currentWeek,
+              predictionDate,
+              runId,
+              source: 'run',
+              createdAt: finishedAt,
+            },
+          ].sort(
+            (a, b) =>
+              a.week.localeCompare(b.week) ||
+              String(a.runId || '').localeCompare(String(b.runId || '')),
           ),
     )
   }
@@ -528,7 +542,11 @@ export function usePipeline() {
         return next
       })
     }
-    if (data.finalPrediction) {
+    const predictionMatchesRun =
+      !entry.runId ||
+      !data.finalPrediction?.runId ||
+      data.finalPrediction.runId === entry.runId
+    if (data.finalPrediction && predictionMatchesRun) {
       setFinalPredictions(prev => {
         const next = {
           ...prev,
