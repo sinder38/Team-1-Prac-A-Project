@@ -11,7 +11,7 @@
 ![Status](https://img.shields.io/badge/Status-Active_Development-3fb950?style=flat-square&labelColor=161b22)
 ![Progress](https://img.shields.io/badge/Progress-Week_9-58a6ff?style=flat-square&labelColor=161b22)
 ![Assets](https://img.shields.io/badge/Tracked_Assets-9-d29922?style=flat-square&labelColor=161b22)
-![LLMs](https://img.shields.io/badge/CI_LLM_Models-5-bc8cff?style=flat-square&labelColor=161b22)
+![LLMs](https://img.shields.io/badge/CI_LLM_Models-5-bc8cff?style=flat-square&labelColor=161b22&logo=openrouter)
 ![Local LLM](https://img.shields.io/badge/Local_LLM-Ollama-ffffff?style=flat-square&labelColor=161b22&logo=ollama&logoColor=white)
 ![Backend](https://img.shields.io/badge/Backend-Python_%7C_Flask-3776ab?style=flat-square&labelColor=161b22)
 ![Frontend](https://img.shields.io/badge/Frontend-React_%7C_Vite-61dafb?style=flat-square&labelColor=161b22)
