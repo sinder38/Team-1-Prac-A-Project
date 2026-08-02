@@ -16,16 +16,16 @@ models = [
     # {slug = "gpt-oss-120b",             id = "openai/gpt-oss-120b:free",                name = "OpenAI gpt-oss-120b"}   # delisted 2026-07
     # {slug = "gemma-4-31b-it",           id = "google/gemma-4-31b-it:free",              name = "Google Gemma 4 31B"}    # superseded by 26B A4B (W29)
     # {slug = "laguna-m.1",               id = "poolside/laguna-m.1:free",                name = "Poolside Laguna M.1"}   # delisted 2026-07
-    {slug = "nemotron-3-super-120b-a12b", id = "nvidia/nemotron-3-super-120b-a12b:free",  name = "NVIDIA Nemotron 3 Super 120B"},
-    {slug = "ling-3.0-flash",             id = "inclusionai/ling-3.0-flash:free",         name = "InclusionAI Ling 3.0 Flash"},
-    {slug = "gemma-4-26b-a4b-it",         id = "gemma-4-26b-a4b-it:free",                 name = "Google Gemma 4 26B A4B"},
-    {slug = "gpt-oss-20b",                id = "openai/gpt-oss-20b:free",                 name = "OpenAI gpt-oss-20b"},
-    {slug = "laguna-xs-2.1",              id = "poolside/laguna-xs-2.1:free",             name = "Poolside Laguna XS 2.1"},
+    {slug = "nemotron-3-super-120b-a12b", id = "nvidia/nemotron-3-super-120b-a12b:free",  name = "NVIDIA Nemotron 3 Super 120B", max_retries = 7},
+    {slug = "ling-3.0-flash",             id = "inclusionai/ling-3.0-flash:free",         name = "InclusionAI Ling 3.0 Flash", max_retries = 4},
+    {slug = "gemma-4-26b-a4b-it",         id = "gemma-4-26b-a4b-it:free",                 name = "Google Gemma 4 26B A4B", max_retries = 6},
+    {slug = "gpt-oss-20b",                id = "openai/gpt-oss-20b:free",                 name = "OpenAI gpt-oss-20b", max_retries = 5},
+    {slug = "laguna-xs-2.1",              id = "poolside/laguna-xs-2.1:free",             name = "Poolside Laguna XS 2.1", max_retires = 4},
 
     # For local testing without OpenRouter (requires `ollama serve` + `ollama pull llama3.2:3b`).
     # llama3.2:3b is small enough to run at usable speed on CPU; llama3.1 (8B) takes
     # minutes per prompt without a GPU.
     {slug = "llama3.2-3b", id = "llama3.2:3b", provider = "ollama"},
-    {slug = "qwen2.5-0.5b", id = "qwen2.5:1.5b", provider = "ollama"},
+    {slug = "qwen2.5-1.5b", id = "qwen2.5:1.5b", provider = "ollama"},
     {slug = "smollm2-1.7b", id = "smollm2:1.7b", provider = "ollama"}
 ]
