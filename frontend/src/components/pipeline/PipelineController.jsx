@@ -318,7 +318,7 @@ export default function PipelineController({
                         availableModels={availableModels}
                         selectedModels={selectedModels}
                         toggleModel={toggleModel}
-                        disabled={isRunning || stage.status === 'success'}
+                        disabled={!canEdit || isRunning || stage.status === 'success'}
                       />
                     )}
                   </div>
@@ -333,36 +333,26 @@ export default function PipelineController({
                     ) : null}
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">{stage.description}</p>
-                {i === LLM_STAGE_INDEX && (
-                  <LlmModelControls
-                    providerMode={providerMode}
-                    setProviderMode={setProviderMode}
-                    availableModels={availableModels}
-                    selectedModels={selectedModels}
-                    toggleModel={toggleModel}
-                    disabled={!canEdit || isRunning || stage.status === 'success'}
-                  />
-                )}
-              </div>
+              )
+            })}
+          </div>
 
-              <div className="shrink-0">
-                {stage.status === 'success' ? (
-                  <span className="text-xs text-green-600 font-medium">✓</span>
-                ) : isHumanStage || !canEdit ? null : (
-                  <button
-                    onClick={() => runStage(i)}
-                    disabled={!isNext || (i === LLM_STAGE_INDEX && selectedModels.length === 0)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md ${
-                      isNext && !(i === LLM_STAGE_INDEX && selectedModels.length === 0)
-                        ? 'bg-gray-900 text-white hover:bg-gray-800'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {stage.status === 'in-progress' ? 'Running…' : 'Run'}
-                  </button>
-                )}
-              </div>
+          {onNavigate && (
+            <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
+              <button
+                onClick={() => onNavigate('logs')}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50"
+              >
+                <ScrollText className="w-3.5 h-3.5" />
+                View Logs
+              </button>
+              <button
+                onClick={() => onNavigate('calibration')}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                Calibration
+              </button>
             </div>
           )}
         </>
