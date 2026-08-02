@@ -25,6 +25,7 @@ from agents.macro.macro_sources import (
     EarningsWhispersCalendar,
     FedWatchSource,
     TradingEconomicsCalendar,
+    MacroFetchError,
 )
 from agents.base import BaseAgent
 from agents.paths import DATA_DIR, OUTPUTS_DIR
@@ -167,16 +168,15 @@ class MacroAgent(BaseAgent):
         try:
             response = requests.get(url, timeout=20)
             response.raise_for_status()
-            observations: list[tuple[date, float]] = []
-            for row in DictReader(StringIO(response.text)):
-                value = row.get(series)
-                if not value or value == ".":
-                    continue
-                observations.append((date.fromisoformat(row["observation_date"]), float(value)))
-            return observations
-        except (requests.RequestException, KeyError, ValueError) as e:
-            print(f"Error fetching {series}: {e}")
-            return []
+        except requests.RequestException as e:
+            raise MacroFetchError(f"Failed to fetch FRED series {series}: {e}") from e
+        observations: list[tuple[date, float]] = []
+        for row in DictReader(StringIO(response.text)):
+            value = row.get(series)
+            if not value or value == ".":
+                continue
+            observations.append((date.fromisoformat(row["observation_date"]), float(value)))
+        return observations
 
     def fetch_fred(self, series: str) -> float | None:
         """Fetch latest observation from FRED without requiring an API key."""
@@ -194,12 +194,9 @@ class MacroAgent(BaseAgent):
         """Get current Fed rate (lower and upper bound)."""
         low = self.fetch_fred("DFEDTARL")
         high = self.fetch_fred("DFEDTARU")
-        if low is not None and high is not None:
-            return f"{low:.2f}%-{high:.2f}%"
-
-        #TODO: Ideally should cause an error instead
-        print("No Fed rate availible! Continuing without it...")
-        return "N/A"
+        if low is None or high is None:
+            raise MacroFetchError("FRED returned no observations for DFEDTARL/DFEDTARU")
+        return f"{low:.2f}%-{high:.2f}%"
 
     def get_yields(self) -> dict:
         """Get Treasury yields: 2-year, 10-year, 30-year."""
@@ -212,35 +209,31 @@ class MacroAgent(BaseAgent):
             "30y": yield_30y if yield_30y is not None else 0.0,
         }
 
-    def latest_price(self, ticker: str) -> float | None:
+    def latest_price(self, ticker: str) -> float:
         """Get latest closing price for a ticker."""
         try:
             price = yf.Ticker(ticker).history(period="5d")["Close"].iloc[-1]
-            return float(price) if pd.notna(price) else None
         except Exception as e:
-            print(f"Error fetching price for {ticker}: {e}")
-            return None
+            raise MacroFetchError(f"Failed to fetch price for {ticker}: {e}") from e
+        if pd.isna(price):
+            raise MacroFetchError(f"yfinance returned no price data for {ticker}")
+        return float(price)
 
     def get_weekly_return(self, ticker: str) -> float:
         """Get weekly return for a single ticker (last close vs 5 trading days ago)."""
         try:
             raw = yf.download(ticker, period="1mo", interval="1d", auto_adjust=True)
-            if raw is None or raw.empty:
-                return 0.0
-            data = raw["Close"]
-            if isinstance(data, pd.Series):
-                data = data.to_frame()
-
-            s = data[ticker].dropna() if isinstance(data, pd.DataFrame) else data.dropna()
-
-            if len(s) >= 6:
-                # Last price vs 5 trading days ago
-                change_pct = (s.iloc[-1] / s.iloc[-6] - 1) * 100
-                return round(change_pct, 4)
-            return 0.0
         except Exception as e:
-            print(f"Error fetching weekly return for {ticker}: {e}")
-            return 0.0
+            raise MacroFetchError(f"Failed to fetch weekly return for {ticker}: {e}") from e
+        if raw is None or raw.empty:
+            raise MacroFetchError(f"yfinance returned no data for {ticker}")
+        data = raw["Close"]
+        if isinstance(data, pd.Series):
+            data = data.to_frame()
+        s = data[ticker].dropna() if isinstance(data, pd.DataFrame) else data.dropna()
+        if len(s) < 6:
+            raise MacroFetchError(f"yfinance returned insufficient trading days for {ticker}")
+        return round((s.iloc[-1] / s.iloc[-6] - 1) * 100, 4)
 
     def fetch_commodity_data(
             self,
@@ -254,7 +247,7 @@ class MacroAgent(BaseAgent):
         weekly_change = self.get_weekly_return(ticker)
 
         return CommodityData(
-            price=round(price, 4) if price is not None else 0.0,
+            price=round(price, 4),
             weekly_change=weekly_change,
             direction=self.direction_from_change(
                 weekly_change,
