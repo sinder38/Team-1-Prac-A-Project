@@ -3,7 +3,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from agents.pipeline.config import (
+from pipeline.config import (
     ArtifactsConfig,
     DeltaConfig,
     LLMConfig,
@@ -11,8 +11,8 @@ from agents.pipeline.config import (
     PipelineSection,
     StagesConfig,
 )
-from agents.pipeline.context import PipelineContext
-from agents.pipeline.stages import run_delta
+from pipeline.context import PipelineContext
+from pipeline.stages import run_delta
 
 PREDICTION = """
 | Asset | Direction | Range | Confidence |

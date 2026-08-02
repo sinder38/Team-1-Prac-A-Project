@@ -1,6 +1,6 @@
 from datetime import date
-from agents.schemas import EvidenceOutput
-from agents.pipeline.context import PipelineContext
+from core.schemas import EvidenceOutput
+from pipeline.context import PipelineContext
 
 
 def test_evidence_output_fields():

@@ -4,9 +4,9 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from agents.almanac.almanac_agent import AlmanacAgent
-from agents.schemas import AlmanacOutput, Bias, Confidence
-from agents.pipeline.context import PipelineContext
-from agents.pipeline.stages import run_almanac
+from core.schemas import AlmanacOutput, Bias, Confidence
+from pipeline.context import PipelineContext
+from pipeline.stages import run_almanac
 
 
 class _FakeConfig:
@@ -123,12 +123,12 @@ REFERENCE_ALMANAC_DIR = REPO_ROOT / "data" / "almanac"
 @pytest.fixture
 def setup_integration(tmp_path, monkeypatch):
     """Fixture to patch output directories to tmp_path so tests do not touch actual outputs."""
-    monkeypatch.setattr("agents.pipeline.stages.REPO_ROOT", tmp_path)
+    monkeypatch.setattr("pipeline.stages.REPO_ROOT", tmp_path)
     try:
-        monkeypatch.setattr("agents.pipeline.stages.DATA_DIR", tmp_path / "data")
+        monkeypatch.setattr("pipeline.stages.DATA_DIR", tmp_path / "data")
     except AttributeError:
         pass
-    monkeypatch.setattr("agents.io.DATA_ROOT", tmp_path / "outputs")
+    monkeypatch.setattr("core.io.DATA_ROOT", tmp_path / "outputs")
     return tmp_path
 
 

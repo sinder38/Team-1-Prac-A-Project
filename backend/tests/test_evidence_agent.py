@@ -15,7 +15,7 @@ from agents.evidence.models import (
     SECTOR_SPECS,
     VIX_SPEC,
 )
-from agents.schemas import EvidenceOutput
+from core.schemas import EvidenceOutput
 
 
 class _FakeMarketDataProvider:

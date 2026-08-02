@@ -21,7 +21,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from agents.delta.parsing import plain_week
-from agents.io import week_stem
+from core.io import week_stem
 from agents.paths import DATA_DIR
 from server.db import render
 from server.db import repository as repo

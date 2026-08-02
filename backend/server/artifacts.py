@@ -3,7 +3,7 @@ from collections.abc import Mapping
 
 from flask import Blueprint, jsonify, request
 
-from agents.io import week_stem
+from core.io import week_stem
 from server.archive import list_all_weeks, load_archive_week, load_human_score
 from server.db import repository as repo
 from server.db.context import db_session

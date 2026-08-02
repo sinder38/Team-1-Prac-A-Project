@@ -11,7 +11,7 @@ def test_pipeline_toml_exists():
 
 
 def test_pipeline_toml_loads_as_valid_config():
-    from agents.pipeline.config import PipelineConfig, load_config
+    from pipeline.config import PipelineConfig, load_config
 
     config = load_config(PIPELINE_TOML)
     assert isinstance(config, PipelineConfig)

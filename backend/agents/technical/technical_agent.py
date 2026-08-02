@@ -17,8 +17,8 @@ import pandas as pd
 import yfinance as yf
 
 from agents import md_parsing as md
-from agents.base import BaseAgent
-from agents.schemas import Bias, Confidence, InstrumentTechnical, TechnicalOutput
+from core.base import BaseAgent
+from core.schemas import Bias, Confidence, InstrumentTechnical, TechnicalOutput
 
 _TICKER_RE = re.compile(r"INSTRUMENT:.*?\(([A-Z]+)\)")
 
@@ -315,7 +315,7 @@ class TechnicalAgent(BaseAgent):
 
 
 if __name__ == "__main__":
-    from agents.io import FileSaver, week_stem
+    from core.io import FileSaver, week_stem
     from agents.paths import DATA_DIR
 
     prediction_date = (

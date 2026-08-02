@@ -16,7 +16,7 @@ from typing import NamedTuple
 
 import pytest
 
-from agents.schemas import Bias, Confidence
+from core.schemas import Bias, Confidence
 from agents.technical.technical_agent import TechnicalAgent
 
 

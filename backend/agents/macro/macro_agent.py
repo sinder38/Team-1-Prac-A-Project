@@ -27,9 +27,9 @@ from agents.macro.macro_sources import (
     TradingEconomicsCalendar,
     MacroFetchError,
 )
-from agents.base import BaseAgent
+from core.base import BaseAgent
 from agents.paths import DATA_DIR, OUTPUTS_DIR
-from agents.schemas import (
+from core.schemas import (
     CalendarEvent,
     CommodityData,
     Confidence,
@@ -67,7 +67,7 @@ def _date_from_md(text: str) -> date | None:
 
 def _strip_md_link(text: str) -> str:
     """'[name](url)' -> 'name'; leaves plain text unchanged."""
-    return re.sub(r"^\[(.*?)\]\(.*?\)$", r"\1", text.strip())
+    return re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text.strip())
 
 
 def _commodity(text: str, pattern: str) -> "CommodityData":

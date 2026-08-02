@@ -17,7 +17,7 @@ from datetime import date
 import pytest
 from flask import Flask
 
-from agents.io import week_stem
+from core.io import week_stem
 from server import create_app
 from server.db import repository as repo
 from server.db.context import db_session
