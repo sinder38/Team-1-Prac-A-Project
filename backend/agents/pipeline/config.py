@@ -9,6 +9,7 @@ class LLMModelEntry(BaseModel):
     slug: str = ""
     name: str = ""
     provider: str = "openrouter"
+    max_retries: int | None = None
 
     @model_validator(mode="after")
     def _fill_derived(self) -> "LLMModelEntry":

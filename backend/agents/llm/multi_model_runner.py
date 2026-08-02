@@ -231,7 +231,8 @@ class OllamaAgent(BaseLLMAgent):
         return ""  # unreachable (loop always returns or raises); kept for type-checkers
 
 
-def build_agent(entry: LLMModelEntry, max_retries: int) -> BaseLLMAgent:
+def build_agent(entry: LLMModelEntry, default_max_retries: int) -> BaseLLMAgent:
+    max_retries = entry.max_retries if entry.max_retries is not None else default_max_retries
     if entry.provider == "ollama":
         return OllamaAgent(model_name=entry.label, model_id=entry.id, max_retries=max_retries)
     if entry.provider == "openrouter":
@@ -280,7 +281,7 @@ if __name__ == "__main__":
         print(f"🤖 {entry.label}  ({entry.id})")
 
         try:
-            agent = build_agent(entry, max_retries=config.llm.max_retries)
+            agent = build_agent(entry, default_max_retries=config.llm.max_retries)
             output = agent.run(prediction_date)
 
             FileSaver(OUTPUTS_LLM_DIR / entry.slug).save(_serialize(output), f"{iso_t}.json")
