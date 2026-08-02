@@ -108,7 +108,7 @@ describe('usePipeline history restore', () => {
     })
 
     expect(api.submitHumanScore).toHaveBeenCalledWith(
-      expect.objectContaining({ runId: 'restored-run' }),
+      expect.objectContaining({ runId: 'restored-run', horizonDays: 7 }),
     )
     expect(result.current.doneCount).toBe(5)
     expect(result.current.savedWeeks).toEqual([
@@ -155,5 +155,84 @@ describe('usePipeline history restore', () => {
     })
 
     expect(result.current.finalPrediction).toBeNull()
+  })
+
+  it('refuses final prediction submit on markdown-only archive', async () => {
+    api.getAgentOutputs.mockResolvedValue({
+      almanac: { agent: 'Almanac Agent' },
+      macro: { agent: 'Macro Agent' },
+      technical: { agent: 'Technical Agent' },
+      llmComparison: { consensus: 'Neutral' },
+      humanScoreReport: { week: '2026-W25', form: {} },
+    })
+
+    const { result } = renderHook(() => usePipeline())
+    await waitFor(() => expect(api.getAvailableWeeks).toHaveBeenCalled())
+
+    await act(async () => {
+      await result.current.onWeekSelect({
+        week: '2026-W25',
+        predictionDate: '2026-06-18',
+        source: 'archive',
+        stem: 'W25',
+      })
+    })
+
+    expect(result.current.canPersistReports).toBe(false)
+    expect(result.current.runId).toBe('archive-W25')
+
+    let err
+    await act(async () => {
+      try {
+        await result.current.completeFinalPrediction({ regime: 'Neutral' })
+      } catch (e) {
+        err = e
+      }
+    })
+
+    expect(err?.message).toMatch(/runtime run/)
+    expect(api.submitFinalPrediction).not.toHaveBeenCalled()
+  })
+
+  it('passes the WeekPicker horizon into human score submit', async () => {
+    api.getAgentOutputs.mockResolvedValue({
+      almanac: { agent: 'Almanac Agent' },
+      macro: { agent: 'Macro Agent' },
+      technical: { agent: 'Technical Agent' },
+      llmComparison: null,
+      humanScoreReport: null,
+    })
+    api.getRunStatus.mockResolvedValue({
+      agentTypes: ['almanac', 'macro', 'technical'],
+      hasLlmOutput: true,
+      hasDeltaReport: true,
+      hasHumanScore: false,
+    })
+    api.submitHumanScore.mockResolvedValue({ ok: true })
+
+    const { result } = renderHook(() => usePipeline())
+    await waitFor(() => expect(api.getAvailableWeeks).toHaveBeenCalled())
+
+    await act(async () => {
+      result.current.setHorizonDays(14)
+      await result.current.onWeekSelect({
+        week: '2026-W25',
+        predictionDate: '2026-06-18',
+        runId: 'horizon-run',
+        source: 'run',
+      })
+    })
+
+    await act(async () => {
+      await result.current.completeReview({
+        scores: {},
+        reasoning: {},
+        evidence: {},
+      })
+    })
+
+    expect(api.submitHumanScore).toHaveBeenCalledWith(
+      expect.objectContaining({ runId: 'horizon-run', horizonDays: 14 }),
+    )
   })
 })

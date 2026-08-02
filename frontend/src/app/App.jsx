@@ -25,6 +25,19 @@ export default function App() {
     syncUrl({ page, week: pipeline.selectedWeek })
   }, [page, pipeline.selectedWeek])
 
+  let status = 'idle'
+  let statusLabel = 'Idle'
+  if (pipeline.isRunning) {
+    status = 'running'
+    statusLabel = 'Running'
+  } else if (pipeline.allDone) {
+    status = 'complete'
+    statusLabel = 'Complete'
+  } else if (pipeline.doneCount > 0) {
+    status = 'progress'
+    statusLabel = 'In progress'
+  }
+
   const weekPicker = {
     predictionDate: pipeline.predictionDate,
     selectedWeek: pipeline.selectedWeek,
@@ -61,6 +74,7 @@ export default function App() {
     setProviderMode: pipeline.setProviderMode,
     toggleModel: pipeline.toggleModel,
     canEdit: auth.isAuthenticated,
+    canPersistReports: pipeline.canPersistReports,
   }
 
   const pages = {
@@ -111,7 +125,14 @@ export default function App() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 px-4 pt-4">
-        <TopHeader page={page} auth={auth} />
+        <TopHeader
+          page={page}
+          week={pipeline.selectedWeek}
+          runId={pipeline.runId || pipeline.pipeline?.id}
+          status={status}
+          statusLabel={statusLabel}
+          auth={auth}
+        />
         {pages[page] || pages.dashboard}
       </div>
     </div>

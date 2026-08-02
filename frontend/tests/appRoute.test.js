@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { readPageFromUrl, syncUrl } from '../src/lib/appRoute'
+import { readPageFromUrl, readWeekFromUrl, syncUrl } from '../src/lib/appRoute'
 
 describe('appRoute', () => {
   beforeEach(() => {
@@ -18,6 +18,16 @@ describe('appRoute', () => {
   it('ignores unknown pages', () => {
     window.history.replaceState(null, '', '/?page=nope')
     expect(readPageFromUrl()).toBe('dashboard')
+  })
+
+  it('reads a valid week from the query string', () => {
+    window.history.replaceState(null, '', '/?week=2026-W29')
+    expect(readWeekFromUrl()).toBe('2026-W29')
+  })
+
+  it('ignores malformed weeks', () => {
+    window.history.replaceState(null, '', '/?week=W29')
+    expect(readWeekFromUrl()).toBeNull()
   })
 
   it('writes page and week into the URL', () => {

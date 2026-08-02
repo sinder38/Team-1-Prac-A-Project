@@ -3,7 +3,7 @@
  */
 import PropTypes from 'prop-types'
 import { PipelineController } from '../components/pipeline'
-import { AgentOutputsGrid, EvidenceGallery } from '../components/agents'
+import { AgentOutputsGrid, EvidenceGallery, WeekSummaryStrip } from '../components/agents'
 import {
   ReviewForm,
   HumanScoreReportCard,
@@ -29,6 +29,7 @@ export default function DashboardPage({
     outputs?.almanac || outputs?.macro || outputs?.technical || outputs?.llmComparison,
   )
   const readingMode = (hasOutputs || showTeamReports) && !controls.isRunning
+  const canPersist = controls.canPersistReports !== false
 
   return (
     <div className="flex-1 overflow-auto pb-6">
@@ -40,7 +41,13 @@ export default function DashboardPage({
         defaultCollapsed={readingMode}
       />
 
-      {controls.canEdit && controls.aiComplete && !controls.allDone && !humanScoreReport && (
+      <WeekSummaryStrip week={week} outputs={outputs} finalPrediction={finalPrediction} />
+
+      {controls.canEdit &&
+        canPersist &&
+        controls.aiComplete &&
+        !controls.allDone &&
+        !humanScoreReport && (
         <div className="mx-4 mt-4">
           <ReviewForm
             outputs={outputs}
@@ -71,6 +78,7 @@ export default function DashboardPage({
                     week={week}
                     predictionDate={predictionDate}
                     hsrReady={Boolean(humanScoreReport)}
+                    canPersist={canPersist}
                     onComplete={onCompleteFinalPrediction}
                   />
                 )}
