@@ -74,4 +74,21 @@ describe('ChartsPage', () => {
     })
     expect(screen.queryByText(/could not load spx/i)).not.toBeInTheDocument()
   })
+
+  it('refetches with the selected range days', async () => {
+    getMarketHistory.mockResolvedValue(SAMPLE)
+    render(<ChartsPage predictionDate="2026-07-13" />)
+
+    await waitFor(() => expect(getMarketHistory).toHaveBeenCalled())
+    getMarketHistory.mockClear()
+
+    await userEvent.click(screen.getByRole('button', { name: '1M' }))
+
+    await waitFor(() => {
+      expect(getMarketHistory).toHaveBeenCalledWith(
+        'SPX',
+        expect.objectContaining({ days: 22, endDate: '2026-07-13' }),
+      )
+    })
+  })
 })
