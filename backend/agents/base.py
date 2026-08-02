@@ -26,9 +26,19 @@ class BaseAgent(ABC, Generic[T]):
         """Return JSON string for output. Override to customize serialization."""
         return json.dumps(asdict(output), indent=2, default=str)
 
+#    @abstractmethod
+#   def render_md(self, output: T, prediction_date: date) -> str:
+#        """Return Markdown string for output. Subclasses implement their own template."""
+#        ...
+
     @abstractmethod
-    def render_md(self, output: T, prediction_date: date) -> str:
-        """Return Markdown string for output. Subclasses implement their own template."""
+    def render_md(self, output: T) -> str:
+        """
+        Return Markdown for the typed output.
+
+        Implementations should read the prediction date from
+        output.prediction_date.
+        """
         ...
 
     @classmethod
