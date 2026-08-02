@@ -1,0 +1,17 @@
+# LLM Agent Output — Google Gemma 4 26B A4B — Week of 2026-08-01
+
+1. Weekly Regime: Neutral
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - Technical analysis shows SPX and NDX in neutral trend bias with low confidence.
+   - Seasonal patterns for the first week of August are historically bearish.
+   - Macro environment is neutral with high-impact Non Farm Payrolls data due August 7.
+4. Key Contradictions:
+   - Seasonal bearishness conflicts with bullish technology sector signals.
+   - Technical neutral bias for SPX/NDX conflicts with bearish seasonal patterns.
+5. Invalidation Conditions: A decisive move in yields, the dollar, or inflation expectations.
+6. Predicted % move — SPX: -1.5% to 1.5%
+   Predicted % move — NDX: -2.0% to 2.0%
+   Predicted % move — IWM: -2.5% to 1.0%
+7. Plain-English brief: The market faces a cautious week due to historically weak early August seasonality and upcoming high-impact employment data, despite neutral technical indicators and bullish tech sector signals.
+8. Disclaimer: This is not financial advice.
