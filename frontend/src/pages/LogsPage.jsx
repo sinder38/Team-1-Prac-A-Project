@@ -5,45 +5,67 @@ import PropTypes from 'prop-types'
 import { CheckCircle2, AlertCircle, Clock, Play } from 'lucide-react'
 import { formatDateTime } from '../lib/date'
 
+const LLM_STAGE_INDEX = 2
+
 function StageIcon({ status }) {
   if (status === 'success') return <CheckCircle2 className="w-4 h-4 text-green-600" />
   if (status === 'error') return <AlertCircle className="w-4 h-4 text-red-600" />
-  if (status === 'in-progress') return <Clock className="w-4 h-4 text-gray-600 animate-spin" />
-  return <Clock className="w-4 h-4 text-gray-300" />
+  if (status === 'in-progress') return <Clock className="w-4 h-4 text-blue-600 animate-spin" />
+  return <Clock className="w-4 h-4 text-gray-400" />
 }
 
 StageIcon.propTypes = {
   status: PropTypes.string,
 }
 
-export default function LogsPage({ pipeline, controls, week, predictionDate }) {
-  const { isRunning, allDone, aiStages, doneCount, runNext, canEdit } = controls
+export default function LogsPage({ pipeline, controls, week, predictionDate, onNavigate }) {
+  const {
+    isRunning,
+    allDone,
+    aiStages,
+    doneCount,
+    runNext,
+    canEdit = false,
+    selectedModels = [],
+  } = controls
+
+  const blockedByModels = doneCount === LLM_STAGE_INDEX && selectedModels.length === 0
+  const canRun = Boolean(canEdit) && doneCount < aiStages && !isRunning && !blockedByModels
+
   let statusMessage = 'Read only'
   if (allDone) {
     statusMessage = 'Run complete'
-  } else if (doneCount >= aiStages) {
+  } else if (doneCount === aiStages) {
     statusMessage = canEdit ? 'AI stages done - submit Human Score' : 'AI stages done'
+  } else if (doneCount > aiStages) {
+    statusMessage = canEdit ? 'Human Score done - submit Final Prediction' : 'Human Score done'
   }
 
   return (
     <div className="flex-1 overflow-auto p-4 md:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Execution Logs</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Run status</h2>
           <p className="text-sm text-gray-500 mt-0.5">
             {week || pipeline.week || '—'}
             {predictionDate ? ` · ${predictionDate}` : ''}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col items-stretch sm:items-end gap-1.5">
           {canEdit && doneCount < aiStages ? (
             <button
+              type="button"
               onClick={runNext}
-              disabled={isRunning}
-              className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md font-medium ${
-                isRunning
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-900 text-white hover:bg-gray-800'
+              disabled={!canRun}
+              title={
+                blockedByModels
+                  ? 'Select at least one LLM model on the Dashboard before running this stage'
+                  : undefined
+              }
+              className={`flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-xl font-medium ${
+                canRun
+                  ? 'bg-gray-900 text-white hover:bg-gray-800'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             >
               <Play className="w-4 h-4" />
@@ -53,6 +75,22 @@ export default function LogsPage({ pipeline, controls, week, predictionDate }) {
             <span className="flex items-center gap-2 px-3 py-2 text-sm text-gray-500">
               {statusMessage}
             </span>
+          )}
+          {blockedByModels && (
+            <p className="text-xs text-amber-800 text-right max-w-xs">
+              LLM stage needs a model.{' '}
+              {onNavigate ? (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('dashboard')}
+                  className="underline font-medium hover:text-amber-950"
+                >
+                  Pick models on Dashboard
+                </button>
+              ) : (
+                'Pick models on Dashboard.'
+              )}
+            </p>
           )}
         </div>
       </div>
@@ -64,29 +102,29 @@ export default function LogsPage({ pipeline, controls, week, predictionDate }) {
           ['Last Run', formatDateTime(pipeline.lastRun)],
           ['Accuracy', pipeline.accuracy ? `${pipeline.accuracy}%` : '—'],
         ].map(([label, value]) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-md shadow-md p-4">
+          <div key={label} className="bg-white border border-gray-200 rounded-xl shadow-md p-4">
             <p className="text-xs text-gray-500 uppercase">{label}</p>
             <p className="text-sm font-medium text-gray-900 mt-1 truncate">{value}</p>
           </div>
         ))}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-md shadow-md overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
         <div className="px-4 py-3">
           <p className="text-xs text-gray-500 uppercase mb-3">Stages</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
             {pipeline.stages.map((stage, i) => (
               <div
                 key={stage.id}
-                className={`px-3 py-2 rounded-md border text-sm ${
+                className={`px-3 py-2 rounded-xl border text-sm text-gray-900 ${
                   stage.status === 'success' ? 'bg-green-50 border-green-200'
                   : stage.status === 'error' ? 'bg-red-50 border-red-200'
-                  : stage.status === 'in-progress' ? 'bg-gray-50 border-gray-400'
+                  : stage.status === 'in-progress' ? 'bg-blue-50 border-blue-200'
                   : 'bg-gray-50 border-gray-200'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">{i + 1}</span>
+                  <span className="text-xs text-gray-500">{i + 1}</span>
                   <StageIcon status={stage.status} />
                   <span className="text-xs font-medium truncate">{stage.name}</span>
                 </div>
@@ -114,4 +152,5 @@ LogsPage.propTypes = {
   controls: PropTypes.object.isRequired,
   week: PropTypes.string,
   predictionDate: PropTypes.string,
+  onNavigate: PropTypes.func,
 }

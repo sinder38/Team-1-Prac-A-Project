@@ -1,17 +1,17 @@
 /**
- * About page — app info and data-source notice.
+ * About page - app info and data-source notice.
  */
 import PropTypes from 'prop-types'
-import { Info, Database, GitBranch } from 'lucide-react'
+import { Database, GitBranch, Info, Layers, Moon } from 'lucide-react'
 
 function Card({ icon: Icon, title, children }) {
   return (
-    <section className="bg-white border border-gray-200 rounded-md shadow-md p-5">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-4 h-4 text-gray-500" />
-        <p className="text-sm font-medium">{title}</p>
+    <section className="bg-white border border-gray-200 rounded-xl shadow-md p-4 md:p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Icon className="w-4 h-4 text-gray-500 shrink-0" />
+        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
       </div>
-      <div className="text-sm text-gray-600 space-y-1">{children}</div>
+      <div className="text-sm text-gray-600 space-y-2 leading-relaxed">{children}</div>
     </section>
   )
 }
@@ -24,11 +24,11 @@ Card.propTypes = {
 
 export default function SettingsPage() {
   return (
-    <div className="flex-1 overflow-auto p-4 md:p-6 space-y-4 max-w-2xl">
+    <div className="flex-1 overflow-auto p-4 md:p-6 space-y-4">
       <div>
         <h2 className="text-lg font-semibold text-gray-900">About</h2>
         <p className="text-sm text-gray-500 mt-0.5">
-          How this dashboard works and where its data comes from
+          Market Intelligence - Team 1 · CP3405 Design Thinking 3
         </p>
       </div>
 
@@ -39,20 +39,63 @@ export default function SettingsPage() {
         </p>
       </Card>
 
-      <Card icon={Database} title="Example data">
+      <Card icon={GitBranch} title="Pipeline">
         <p>
-          Charts and agent outputs use bundled example data so the UI is fully
-          viewable without a backend. See{' '}
-          <code className="text-xs bg-gray-100 px-1 rounded">src/lib/exampleData.js</code>{' '}
-          and the stubs in{' '}
-          <code className="text-xs bg-gray-100 px-1 rounded">src/api/</code>.
+          Stages run one at a time from the Dashboard: data fetch → agents →
+          LLM comparison → previous-week delta → human score / final prediction.
+        </p>
+        <p>
+          Open a past week from the week picker to load archive outputs, charts
+          as-of that date, and weekly actuals when they exist.
         </p>
       </Card>
 
-      <Card icon={GitBranch} title="Pipeline control">
+      <Card icon={Database} title="Data">
         <p>
-          The pipeline is run one stage at a time from the Dashboard — you decide
-          when each step executes. The final stage is your Human Score report.
+          Live prices and chart history come from yfinance via{' '}
+          <code className="text-xs bg-gray-100 px-1 rounded">/market/history</code>.
+          Macro inputs also use FRED where configured.
+        </p>
+        <p>
+          Agent markdown, Finviz evidence PNGs, and{' '}
+          <code className="text-xs bg-gray-100 px-1 rounded">actuals_WXX.md</code>{' '}
+          live under <code className="text-xs bg-gray-100 px-1 rounded">data/</code>{' '}
+          and are served through{' '}
+          <code className="text-xs bg-gray-100 px-1 rounded">/artifacts/*</code>.
+        </p>
+      </Card>
+
+      <Card icon={Layers} title="Pages">
+        <ul className="list-disc pl-4 space-y-1">
+          <li>
+            <span className="font-medium text-gray-800">Dashboard</span> - run the
+            pipeline and review agent / LLM / HSR / Final Prediction cards
+          </li>
+          <li>
+            <span className="font-medium text-gray-800">Charts</span> - OHLC, index
+            compare, macro strip, sector heatmap, pred vs weekly actual
+          </li>
+          <li>
+            <span className="font-medium text-gray-800">Logs</span> - stage status for
+            the current run
+          </li>
+          <li>
+            <span className="font-medium text-gray-800">Calibration</span>
+            {' - direction / range accuracy over scored weeks'}
+          </li>
+        </ul>
+      </Card>
+
+      <Card icon={Moon} title="Theme">
+        <p>
+          Defaults to your system light/dark preference. Toggle from the moon/sun
+          control at the bottom of the left nav - that choice is saved in this
+          browser and restored on reload.
+        </p>
+        <p>
+          Page and week also sync into the URL (
+          <code className="text-xs bg-gray-100 px-1 rounded">?page=&amp;week=</code>
+          ) so you can share or bookmark a view.
         </p>
       </Card>
     </div>

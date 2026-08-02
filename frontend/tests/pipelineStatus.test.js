@@ -17,6 +17,31 @@ describe('completedStagesFromArtifacts', () => {
   it('recognises later persisted artifacts', () => {
     expect(completedStagesFromArtifacts({ llmComparison: {} })).toBe(3)
     expect(completedStagesFromArtifacts({ humanScoreReport: {} })).toBe(5)
+    expect(completedStagesFromArtifacts({ finalPrediction: {} })).toBe(6)
+  })
+
+  it('counts Human Score as 5 and Final Prediction as 6', () => {
+    expect(
+      completedStagesFromArtifacts({
+        almanac: {},
+        macro: {},
+        technical: {},
+        llmComparison: {},
+        deltaReport: {},
+        humanScoreReport: {},
+      }),
+    ).toBe(5)
+    expect(
+      completedStagesFromArtifacts({
+        almanac: {},
+        macro: {},
+        technical: {},
+        llmComparison: {},
+        deltaReport: {},
+        humanScoreReport: {},
+        finalPrediction: {},
+      }),
+    ).toBe(6)
   })
 
   it('keeps an empty saved entry idle', () => {
@@ -36,6 +61,7 @@ describe('exampleSavedWeekPipeline', () => {
     expect(pipeline.stages.map(stage => stage.status)).toEqual([
       'success',
       'success',
+      'idle',
       'idle',
       'idle',
       'idle',

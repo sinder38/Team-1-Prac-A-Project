@@ -6,66 +6,153 @@ import { DEFAULT_HORIZON_DAYS, getLlmModels } from './pipeline'
 import { getFinalPrediction } from './finalPrediction'
 
 const CONFIDENCE_SCORE = { Low: 40, 'Low-Medium': 55, Medium: 65, High: 85 }
+const TECH_ORDER = ['SPX', 'NDX', 'IWM']
+
+function commodityLine(c) {
+  if (!c || c.price == null) return null
+  const change = c.weekly_change != null ? ` (${c.weekly_change}% w/w)` : ''
+  const dir = c.direction ? ` ${c.direction}` : ''
+  return `${c.price}${change}${dir}`
+}
 
 function almanacCard(a) {
+  const sectors = Array.isArray(a.sector_signals) ? a.sector_signals.slice(0, 5) : []
+  const metrics = [
+    { label: 'Thesis', value: a.thesis },
+    { label: 'Seasonal Bias', value: a.seasonal_bias },
+    { label: 'Monthly Bias', value: a.monthly_bias },
+    { label: 'Confidence', value: a.confidence },
+    a.weekly_pattern ? { label: 'Weekly Pattern', value: a.weekly_pattern } : null,
+    ...sectors.map(s => ({
+      label: s.sector,
+      value: `${s.bias}${s.window ? ` — ${s.window}` : ''}`,
+    })),
+  ].filter(Boolean)
+
   return {
     agent: 'Almanac Agent',
-    metrics: [
-      { label: 'Monthly Bias', value: a.monthly_bias },
-      { label: 'Seasonal Bias', value: a.seasonal_bias },
-      { label: 'Thesis', value: a.thesis },
-      ...(a.weekly_pattern ? [{ label: 'Weekly Pattern', value: a.weekly_pattern }] : []),
-    ],
+    metrics,
     rawData: [
       `Almanac Agent Output — ${a.prediction_date}`,
       '',
-      a.thesis,
-      '',
+      `ALMANAC THESIS: "${a.thesis || ''}"`,
+      a.weekly_pattern ? `WEEKLY PATTERN: ${a.weekly_pattern}` : null,
       `ALMANAC SEASONAL BIAS: ${a.seasonal_bias}.`,
-      `PATTERN CONFIDENCE: ${String(a.confidence).toUpperCase()}.`,
-    ].join('\n'),
+      `MONTHLY BIAS: ${a.monthly_bias}.`,
+      `PATTERN CONFIDENCE: ${String(a.confidence || '').toUpperCase()}.`,
+      ...(sectors.length
+        ? ['', 'SECTOR SIGNALS:', ...sectors.map(s => `- ${s.sector}: ${s.bias} (${s.window || '—'})`)]
+        : []),
+    ]
+      .filter(line => line != null)
+      .join('\n'),
   }
 }
 
 function technicalCard(t) {
-  const inst = t.instruments?.SPX || Object.values(t.instruments || {})[0] || {}
-  return {
-    agent: 'Technical Agent',
-    metrics: [
-      { label: 'Instrument', value: 'S&P 500 (SPX)' },
-      { label: 'Last Close', value: String(inst.last_close) },
-      { label: 'EMA (8/21)', value: `${inst.ema_8} / ${inst.ema_21}` },
-      { label: 'Support / Resistance', value: `${inst.key_support} - ${inst.key_resistance}` },
-    ],
-    rawData: [
-      'Technical Agent Output',
-      '',
-      'INSTRUMENT: S&P 500 (SPX)',
+  const instruments = t.instruments || {}
+  const keys = [
+    ...TECH_ORDER.filter(k => instruments[k]),
+    ...Object.keys(instruments).filter(k => !TECH_ORDER.includes(k)),
+  ]
+  const metrics = keys.flatMap(key => {
+    const inst = instruments[key]
+    return [
+      { label: `${key} Close`, value: String(inst.last_close) },
+      { label: `${key} Bias`, value: `${inst.trend_bias} (${inst.confidence})` },
+      { label: `${key} EMA 8/21`, value: `${inst.ema_8} / ${inst.ema_21}` },
+      { label: `${key} S/R`, value: `${inst.key_support} — ${inst.key_resistance}` },
+    ]
+  })
+
+  const rawLines = ['Technical Agent Output', '']
+  for (const key of keys) {
+    const inst = instruments[key]
+    rawLines.push(
+      `INSTRUMENT: ${key}`,
       `LAST CLOSE: ${inst.last_close}`,
-      '',
+      `EMA (8/21): ${inst.ema_8} / ${inst.ema_21}`,
+      `Support / Resistance: ${inst.key_support} — ${inst.key_resistance}`,
       `TECHNICAL BIAS: ${inst.trend_bias}.`,
       `CONFIDENCE: ${inst.confidence}.`,
-    ].join('\n'),
+      '',
+    )
+  }
+
+  return {
+    agent: 'Technical Agent',
+    instruments,
+    metrics,
+    rawData: rawLines.join('\n').trim(),
   }
 }
 
 function macroCard(m) {
+  const fomcBits = [
+    m.next_fomc_date || null,
+    m.hold_probability != null ? `hold ${m.hold_probability}%` : null,
+    m.cut_probability != null ? `cut ${m.cut_probability}%` : null,
+    m.fomc_direction && m.fomc_direction !== 'N/A' ? m.fomc_direction : null,
+  ].filter(Boolean)
+
+  const calendar = Array.isArray(m.week_ahead_calendar) ? m.week_ahead_calendar.slice(0, 8) : []
+  const dxy = commodityLine(m.dxy)
+  const wti = commodityLine(m.wti_oil)
+  const gold = commodityLine(m.gold)
+  const metrics = [
+    { label: 'Primary Driver', value: m.primary_driver },
+    { label: 'Macro Bias', value: m.macro_bias },
+    { label: 'Fed Rate', value: m.fed_rate },
+    {
+      label: '10Y Yield',
+      value: `${m.yield_10y}%${m.yield_10y_direction ? ` — ${m.yield_10y_direction}` : ''}`,
+    },
+    m.yield_2y != null ? { label: '2Y Yield', value: `${m.yield_2y}%` } : null,
+    dxy ? { label: 'DXY', value: dxy } : null,
+    wti ? { label: 'WTI Crude', value: wti } : null,
+    gold ? { label: 'Gold', value: gold } : null,
+    fomcBits.length ? { label: 'FOMC', value: fomcBits.join(' · ') } : null,
+    m.invalidation ? { label: 'Invalidation', value: m.invalidation } : null,
+  ].filter(Boolean)
+
   return {
     agent: 'Macro Agent',
-    metrics: [
-      { label: 'Fed Rate', value: m.fed_rate },
-      { label: '10Y Yield', value: `${m.yield_10y}% — ${m.yield_10y_direction}` },
-      { label: 'WTI Crude', value: `${m.wti_oil?.price} (${m.wti_oil?.weekly_change}% w/w)` },
-      { label: 'Gold', value: `${m.gold?.price} (${m.gold?.weekly_change}% w/w)` },
-    ],
+    fed_rate: m.fed_rate,
+    yield_10y: m.yield_10y,
+    yield_10y_direction: m.yield_10y_direction,
+    wti_oil: m.wti_oil,
+    gold: m.gold,
+    dxy: m.dxy,
+    macro_bias: m.macro_bias,
+    metrics,
     rawData: [
-      'Macro Agent Output',
+      `Macro Agent Output — ${m.prediction_date || ''}`,
       '',
-      m.primary_driver,
+      `Current Fed rate: ${m.fed_rate}`,
+      fomcBits.length ? `Next FOMC: ${fomcBits.join('. ')}` : null,
+      `2-year yield: ${m.yield_2y}%  10-year yield: ${m.yield_10y}%  30-year yield: ${m.yield_30y}%`,
+      m.yield_curve ? `Yield curve: ${m.yield_curve}. 10-year direction: ${m.yield_10y_direction}` : null,
       '',
+      `WTI Crude Oil: ${wti || '—'}`,
+      `Gold: ${gold || '—'}`,
+      `DXY (Dollar): ${dxy || '—'}`,
+      '',
+      ...(calendar.length
+        ? [
+            'WEEK-AHEAD CALENDAR:',
+            ...calendar.map(
+              e => `- ${e.date_label || ''}: ${e.name} [${e.impact}] exp ${e.expected ?? 'N/A'}`,
+            ),
+            '',
+          ]
+        : []),
       `MACRO BIAS: ${m.macro_bias}.`,
+      `PRIMARY DRIVER THIS WEEK: ${m.primary_driver}`,
       `CONFIDENCE: ${m.confidence}.`,
-    ].join('\n'),
+      `INVALIDATION: ${m.invalidation || '—'}`,
+    ]
+      .filter(line => line != null)
+      .join('\n'),
   }
 }
 
@@ -155,6 +242,23 @@ export async function getHumanScore({ stem, runId } = {}) {
   }
   if (!stem) throw new Error('stem or runId is required')
   return getJson(`/artifacts/human-score?stem=${encodeURIComponent(stem)}`)
+}
+
+/** Finviz PNGs for a week stem. */
+export async function getEvidenceImages(stem) {
+  if (!stem) return []
+  const data = await getJson(`/artifacts/evidence-images?stem=${encodeURIComponent(stem)}`)
+  return Array.isArray(data.images) ? data.images : []
+}
+
+/** Weekly moves from actuals_{stem}.md. */
+export async function getActuals(stem) {
+  if (!stem) return { stem: null, assets: {} }
+  const data = await getJson(`/artifacts/actuals?stem=${encodeURIComponent(stem)}`)
+  return {
+    stem: data.stem || stem,
+    assets: data.assets && typeof data.assets === 'object' ? data.assets : {},
+  }
 }
 
 export async function getAgentOutputs({

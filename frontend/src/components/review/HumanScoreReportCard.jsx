@@ -100,7 +100,7 @@ export default function HumanScoreReportCard({ report }) {
                   AI said: {aiSaid[d.key] ?? '—'}
                 </p>
                 {form.reasoning[d.key] && (
-                  <p className="text-sm text-gray-600 mt-2 leading-relaxed line-clamp-3">
+                  <p className="text-sm text-gray-600 mt-2 leading-relaxed max-h-28 overflow-y-auto pr-1">
                     {form.reasoning[d.key]}
                   </p>
                 )}

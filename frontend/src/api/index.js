@@ -10,6 +10,8 @@ export {
   getArchiveOutputs,
   getHumanScore,
   getRunStatus,
+  getEvidenceImages,
+  getActuals,
 } from './agents'
 export { getCalibrationScores } from './calibration'
 export { submitHumanScore, HUMAN_SCORE_DECISION } from './validation'

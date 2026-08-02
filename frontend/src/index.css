@@ -1,13 +1,18 @@
 /**
- * Global styles for the app (Tailwind + scrollbars).
+ * Global styles for the app (Tailwind + scrollbars + optional dark theme).
+ * Light mode = default Tailwind look. Dark overrides only under [data-theme="dark"].
  */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Opera GX / forced-dark browsers still use light form controls */
-:root {
+:root,
+html[data-theme='light'] {
   color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 @layer base {
@@ -15,6 +20,12 @@
   select,
   textarea {
     @apply bg-white text-gray-900;
+  }
+
+  html[data-theme='dark'] input:not([type='checkbox']):not([type='radio']),
+  html[data-theme='dark'] select,
+  html[data-theme='dark'] textarea {
+    @apply bg-zinc-900 text-zinc-100 border-zinc-700;
   }
 }
 
@@ -36,6 +47,207 @@
   background: #9ca3af;
 }
 
+html[data-theme='dark']::-webkit-scrollbar-track,
+html[data-theme='dark'] *::-webkit-scrollbar-track {
+  background: #18181b;
+}
+
+html[data-theme='dark']::-webkit-scrollbar-thumb,
+html[data-theme='dark'] *::-webkit-scrollbar-thumb {
+  background: #52525b;
+}
+
+html[data-theme='dark']::-webkit-scrollbar-thumb:hover,
+html[data-theme='dark'] *::-webkit-scrollbar-thumb:hover {
+  background: #71717a;
+}
+
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
+}
+
+html[data-theme='dark'] body {
+  background-color: #09090b;
+  color: #f4f4f5;
+}
+
+/* Dark palette remap — light mode leaves Tailwind defaults alone. */
+html[data-theme='dark'] .bg-white {
+  background-color: rgb(24 24 27);
+}
+html[data-theme='dark'] .bg-white\/90 {
+  background-color: rgb(24 24 27 / 0.9);
+}
+html[data-theme='dark'] .bg-gray-50,
+html[data-theme='dark'] .bg-gray-50\/50,
+html[data-theme='dark'] .bg-gray-50\/40,
+html[data-theme='dark'] .bg-gray-50\/80,
+html[data-theme='dark'] .bg-gray-50\/30 {
+  background-color: rgb(9 9 11);
+}
+html[data-theme='dark'] .hover\:bg-gray-50:hover,
+html[data-theme='dark'] .hover\:bg-white:hover {
+  background-color: rgb(39 39 42);
+}
+html[data-theme='dark'] .disabled\:hover\:bg-white:hover:disabled {
+  background-color: rgb(24 24 27);
+}
+html[data-theme='dark'] .bg-gray-100 {
+  background-color: rgb(39 39 42);
+}
+html[data-theme='dark'] .hover\:bg-gray-100:hover {
+  background-color: rgb(63 63 70);
+}
+html[data-theme='dark'] .text-gray-900 {
+  color: rgb(244 244 245);
+}
+html[data-theme='dark'] .text-gray-800 {
+  color: rgb(228 228 231);
+}
+html[data-theme='dark'] .text-gray-700 {
+  color: rgb(212 212 216);
+}
+html[data-theme='dark'] .text-gray-600 {
+  color: rgb(161 161 170);
+}
+html[data-theme='dark'] .text-gray-500 {
+  color: rgb(161 161 170);
+}
+html[data-theme='dark'] .text-gray-400 {
+  color: rgb(113 113 122);
+}
+html[data-theme='dark'] .text-gray-300 {
+  color: rgb(161 161 170);
+}
+html[data-theme='dark'] .border-gray-300,
+html[data-theme='dark'] .border-gray-300\/70,
+html[data-theme='dark'] .border-gray-300\/80 {
+  border-color: rgb(82 82 91);
+}
+html[data-theme='dark'] .border-gray-200,
+html[data-theme='dark'] .border-gray-200\/70 {
+  border-color: rgb(63 63 70);
+}
+html[data-theme='dark'] .border-gray-100 {
+  border-color: rgb(39 39 42);
+}
+html[data-theme='dark'] .border-gray-900 {
+  border-color: rgb(212 212 216);
+}
+html[data-theme='dark'] .ring-gray-300\/80 {
+  --tw-ring-color: rgb(82 82 91 / 0.8);
+}
+html[data-theme='dark'] .shadow-md,
+html[data-theme='dark'] .shadow-lg {
+  --tw-shadow-color: rgb(0 0 0 / 0.45);
+}
+
+html[data-theme='dark'] .bg-blue-50\/80 {
+  background-color: rgb(23 37 84 / 0.55);
+}
+html[data-theme='dark'] .bg-amber-50\/80 {
+  background-color: rgb(69 26 3 / 0.45);
+}
+html[data-theme='dark'] .bg-emerald-50\/80 {
+  background-color: rgb(6 78 59 / 0.45);
+}
+html[data-theme='dark'] .bg-violet-50\/80 {
+  background-color: rgb(46 16 101 / 0.45);
+}
+html[data-theme='dark'] .bg-sky-50\/80 {
+  background-color: rgb(12 74 110 / 0.45);
+}
+
+/* Status chips (logs / pipeline) — keep tinted panels dark so light text stays readable */
+html[data-theme='dark'] .bg-green-50,
+html[data-theme='dark'] .bg-green-50\/30 {
+  background-color: rgb(6 78 59 / 0.55);
+}
+html[data-theme='dark'] .border-green-200,
+html[data-theme='dark'] .border-green-100 {
+  border-color: rgb(22 101 52);
+}
+html[data-theme='dark'] .bg-red-50 {
+  background-color: rgb(127 29 29 / 0.5);
+}
+html[data-theme='dark'] .border-red-200,
+html[data-theme='dark'] .border-red-100 {
+  border-color: rgb(153 27 27);
+}
+html[data-theme='dark'] .bg-blue-50,
+html[data-theme='dark'] .bg-blue-50\/40 {
+  background-color: rgb(30 58 138 / 0.5);
+}
+html[data-theme='dark'] .border-blue-200 {
+  border-color: rgb(29 78 216);
+}
+html[data-theme='dark'] .bg-amber-50 {
+  background-color: rgb(69 26 3 / 0.5);
+}
+html[data-theme='dark'] .border-amber-200 {
+  border-color: rgb(180 83 9);
+}
+html[data-theme='dark'] .text-green-600,
+html[data-theme='dark'] .text-green-700 {
+  color: rgb(134 239 172);
+}
+html[data-theme='dark'] .text-red-600,
+html[data-theme='dark'] .text-red-700 {
+  color: rgb(252 165 165);
+}
+html[data-theme='dark'] .text-blue-700 {
+  color: rgb(147 197 253);
+}
+html[data-theme='dark'] .text-amber-700,
+html[data-theme='dark'] .text-amber-800 {
+  color: rgb(253 224 171);
+}
+
+/* Icon chips, charts strip, highlight tokens */
+html[data-theme='dark'] .bg-blue-100 {
+  background-color: rgb(30 58 138 / 0.55);
+}
+html[data-theme='dark'] .bg-amber-100 {
+  background-color: rgb(120 53 15 / 0.55);
+}
+html[data-theme='dark'] .bg-emerald-100 {
+  background-color: rgb(6 78 59 / 0.55);
+}
+html[data-theme='dark'] .bg-violet-100 {
+  background-color: rgb(76 29 149 / 0.55);
+}
+html[data-theme='dark'] .bg-sky-100 {
+  background-color: rgb(12 74 110 / 0.55);
+}
+html[data-theme='dark'] .bg-violet-50 {
+  background-color: rgb(46 16 101 / 0.45);
+}
+html[data-theme='dark'] .border-violet-100 {
+  border-color: rgb(91 33 182);
+}
+html[data-theme='dark'] .text-violet-700,
+html[data-theme='dark'] .text-violet-900 {
+  color: rgb(221 214 254);
+}
+html[data-theme='dark'] .text-blue-600 {
+  color: rgb(147 197 253);
+}
+html[data-theme='dark'] .text-sky-700,
+html[data-theme='dark'] .text-sky-800 {
+  color: rgb(125 211 252);
+}
+html[data-theme='dark'] .text-teal-800 {
+  color: rgb(94 234 212);
+}
+html[data-theme='dark'] .text-amber-600 {
+  color: rgb(252 211 77);
+}
+html[data-theme='dark'] .text-emerald-700 {
+  color: rgb(110 231 183);
+}
+html[data-theme='dark'] .text-green-800\/80 {
+  color: rgb(187 247 208 / 0.8);
+}
+html[data-theme='dark'] .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(39 39 42);
 }
