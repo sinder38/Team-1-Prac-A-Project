@@ -7,12 +7,12 @@ import json
 import re
 import sys
 
-from agents.base import BaseAgent
+from core.base import BaseAgent
 from agents.paths import OUTPUTS_DIR
-from agents.schemas import LLMOutput, PredictedRange, Regime, Confidence
+from core.schemas import LLMOutput, PredictedRange, Regime, Confidence
 
 if TYPE_CHECKING:
-    from agents.pipeline.context import PipelineContext
+    from pipeline.context import PipelineContext
 
 
 class BaseLLMAgent(BaseAgent):
@@ -31,7 +31,7 @@ class BaseLLMAgent(BaseAgent):
         (preserves compatibility with multi_model_runner.__main__ standalone mode).
         """
         from dataclasses import asdict
-        from agents.pipeline.context import PipelineContext as _PC
+        from pipeline.context import PipelineContext as _PC
 
         context_blocks = []
 

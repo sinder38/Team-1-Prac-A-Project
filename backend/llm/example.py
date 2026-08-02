@@ -9,7 +9,7 @@ Usage:
 from datetime import date
 import sys
 
-from agents.llm.base_llm import BaseLLMAgent
+from llm.base import BaseLLMAgent
 
 
 class ExampleAgent(BaseLLMAgent):
@@ -30,7 +30,7 @@ class ExampleAgent(BaseLLMAgent):
 
 
 if __name__ == "__main__":
-    from agents.io import FileSaver, week_stem
+    from core.io import FileSaver, week_stem
     from agents.paths import OUTPUTS_DIR
 
     prediction_date = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()

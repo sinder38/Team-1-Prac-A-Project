@@ -12,7 +12,7 @@ import sys
 
 import pandas as pd
 
-from agents.base import BaseAgent
+from core.base import BaseAgent
 from agents.evidence.data_sources import (
     EvidenceMarketDataProvider,
     FredYieldProvider,
@@ -39,9 +39,9 @@ from agents.evidence.evidence_images import (
     EvidenceChartCapturer,
     screenshot_filenames,
 )
-from agents.io import FileSaver, week_stem
+from core.io import FileSaver, week_stem
 from agents.paths import DATA_DIR
-from agents.schemas import EvidenceOutput
+from core.schemas import EvidenceOutput
 
 
 class EvidenceAgent(BaseAgent[EvidenceOutput]):
@@ -154,7 +154,7 @@ class EvidenceAgent(BaseAgent[EvidenceOutput]):
         format, so ``prediction_date`` must be supplied; week is derived from it."""
         if prediction_date is None:
             raise ValueError("evidence: prediction_date is required")
-        from agents.io import week_stem
+        from core.io import week_stem
 
         return EvidenceOutput(
             prediction_date=prediction_date,

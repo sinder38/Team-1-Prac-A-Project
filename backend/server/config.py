@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from agents.pipeline.config import ArtifactsConfig, StageConfig
+from pipeline.config import ArtifactsConfig, StageConfig
 
 
 class DatabaseConfig(BaseModel):

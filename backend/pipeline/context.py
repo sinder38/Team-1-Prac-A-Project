@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from agents.delta.models import DeltaReport
-from agents.schemas import (
+from core.schemas import (
     AlmanacOutput,
     EvidenceOutput,
     LLMOutput,

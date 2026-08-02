@@ -689,7 +689,7 @@ def _week_sort_value(entry: dict) -> str:
 
 
 def _run_entry(run) -> dict:
-    from agents.io import week_stem
+    from core.io import week_stem
 
     stem = run.week_stem or week_stem(run.prediction_date)
     created = run.created_at
