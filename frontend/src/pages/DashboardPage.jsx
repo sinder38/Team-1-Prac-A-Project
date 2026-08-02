@@ -64,14 +64,6 @@ export default function DashboardPage({
 
             {(finalPrediction || controls.canEdit) && (
               <div className="min-w-0">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-900">Final Prediction</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {finalPrediction
-                      ? `Locked consensus brief for ${week}`
-                      : `File the Team1 brief for ${week}`}
-                  </p>
-                </div>
                 {finalPrediction ? (
                   <FinalPredictionReportCard report={finalPrediction} />
                 ) : (
