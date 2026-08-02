@@ -184,3 +184,115 @@
 
 - Continue improving technical knowledge and collaboration on complex development tasks.
 - Make greater use of repository packaging and analysis tools (e.g., Repomix and Gitingest) to better understand the overall project structure and implementation details.
+
+
+
+# Georgii
+
+## What have you completed or contributed so far?
+
+- Deployed the project codebase to **sinder.dev**.
+- Reviewed and merged pull requests.
+- Assigned sprint tasks to team members.
+- Fixed the Delta CI pipeline.
+- Added a frontend check to the CI workflow.
+- Prepared the Product Owner artifacts and sprint documentation.
+
+## Did you face any blockers or challenges?
+
+- Encountered the usual development and coordination challenges, with no major new blockers during the sprint.
+
+## What went well during this sprint?
+
+- The sprint progressed smoothly and was easier to manage compared to previous weeks.
+- The overall product reached a stable and polished state.
+- More team members actively contributed to the project, improving overall team productivity.
+
+## Is there anything we can improve as a team?
+
+- Continue enforcing the pull request guidelines to maintain code quality and consistency.
+- As the team gains more experience, ensure everyone follows the established development and review process more consistently.
+
+
+
+# Oakkar
+
+## What have you completed or contributed so far?
+
+- Worked on the final user interface improvements.
+- Updated charts with the correct week numbers and actual results.
+- Improved the About page.
+- Polished various dashboard components, including the week snapshot, theme, and Final Prediction section.
+- Resolved merge-related issues after synchronizing with the `main` branch to ensure the application built and ran successfully.
+
+## Did you face any blockers or challenges?
+
+- Merge conflicts were the main challenge throughout the sprint.
+- Pulling updates from `main` occasionally introduced issues such as blank pages, duplicate forms, and CI not running on the latest commit.
+- Additional time was required to resolve these issues and restore a stable build.
+
+## What went well during this sprint?
+
+- Once the merge issues were resolved, the application became more cohesive, with the pipeline, scores, charts, and actual results working together correctly.
+- Code reviews helped identify and fix bugs before pull requests were merged, improving the overall quality of the project.
+
+## Is there anything we can improve as a team?
+
+- Check in with teammates more frequently when someone is experiencing difficulties.
+- Continue supporting each other to resolve issues more efficiently and maintain steady sprint progress.
+
+
+
+# Sai Ko
+
+## What have you completed or contributed so far?
+
+- Improved the **TechnicalAgent** regression tests.
+- Successfully reviewed and merged the regression test pull request into the `main` branch (PR #49).
+- Developed regression tests that compare auto-fetched agent output with manual W22 and W23 technical reports, including prices, EMA structure, bias, and confidence.
+- Completed the W31 acceptance criteria for TechnicalAgent regression test coverage.
+
+## Did you face any blockers or challenges?
+
+- Initially waited for the pull request review and merge before the task could be completed.
+- Adjusted the regression tests to fit the project structure after the codebase reorganization.
+- Updated import paths and refined manual versus live-fetch comparisons to ensure stable and reliable test results.
+- Required several iterations to handle tolerances and differences between the W22 and W23 EMA data before the tests were ready to merge.
+
+## What went well during this sprint?
+
+- Successfully completed and merged the regression test implementation into the `main` branch.
+- Review feedback was clear and helped improve the quality of the implementation.
+- Using historical manual reports as a baseline made the regression tests more meaningful and reliable than basic smoke tests.
+
+## Is there anything we can improve as a team?
+
+- Provide faster review and feedback for testing-related pull requests to avoid blocking progress.
+- Maintain clear documentation of regression test expectations, including baseline weeks and validation criteria, so future contributors can extend the test coverage more efficiently.
+
+
+
+# Aeron
+
+## What have you completed or contributed so far?
+
+- Completed the Human Score evaluation.
+- Prepared the Final Prediction for the assigned runs.
+- Worked with teammates to verify and update the project outputs.
+
+## Did you face any blockers or challenges?
+
+- One of the four LLM models (Laguna) intermittently failed due to rate limits, causing inconsistent results across different runs.
+- Accidentally placed the output in the wrong location, which affected the team's workflow.
+- Worked with teammates to identify the issue and corrected the output placement.
+
+## What went well during this sprint?
+
+- Successfully completed the assigned Human Score and Final Prediction tasks.
+- Received feedback from teammates and resolved the output placement issue.
+- Improved understanding of the project's workflow and output requirements through collaboration.
+
+## Is there anything we can improve as a team?
+
+- Discuss a long-term strategy for handling rate limits on free OpenRouter models, such as selecting more stable models or considering a paid tier if the issue continues to affect Stage 3 pipeline runs.
+- Continue reviewing outputs together before submission to reduce mistakes and improve overall accuracy.
