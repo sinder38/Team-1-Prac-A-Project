@@ -92,7 +92,7 @@ def main() -> None:
     # Write comparison table if any LLMs ran
     if rows_by_slug and config.artifacts.save_md:
         from core.io import FileSaver, week_stem
-        from llm.comparison import build_comparison_md
+        from llm.openrouter import build_comparison_md
 
         tag = week_stem(prediction_date)
         comparison_md = build_comparison_md(rows_by_slug, config.llm.models, tag, prediction_date)

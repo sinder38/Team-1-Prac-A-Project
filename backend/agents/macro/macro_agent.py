@@ -66,7 +66,8 @@ def _date_from_md(text: str) -> date | None:
 
 
 def _strip_md_link(text: str) -> str:
-    """'[name](url)' -> 'name'; leaves plain text unchanged."""
+    """'[name](url)' -> 'name'; leaves plain text unchanged.
+    Uses unanchored regex so embedded links like '00 PM: [Event](url)' are stripped."""
     return re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text.strip())
 
 

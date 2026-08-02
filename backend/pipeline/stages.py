@@ -9,7 +9,7 @@ from agents.delta import DeltaAgent
 from agents.evidence.evidence_agent import EvidenceAgent
 from core.io import FileSaver, week_stem
 from llm.openrouter import build_agent
-from llm.comparison import _row
+from llm.openrouter import _row
 from agents.macro.macro_agent import MacroAgent
 from agents.paths import DATA_DIR, REPO_ROOT
 from pipeline.config import LLMModelEntry, StageConfig
