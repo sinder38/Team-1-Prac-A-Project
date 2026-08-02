@@ -6,7 +6,8 @@ from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import BadRequest
 
 from core.io import week_stem
-from server.db import export, repository as repo
+from server.db import export
+from server.db import repository as repo
 from server.db.context import db_session
 from server.utils import err
 
@@ -40,8 +41,14 @@ def post_export():
         if run is None:
             return err("No matching run found", 404)
 
-        artifacts = export.build_run_artifacts(session, run)
-        written = export.write_artifacts(artifacts) if write else []
+        try:
+            artifacts = export.build_run_artifacts(session, run)
+        except ValueError as exc:
+            return err(f"Invalid stored artifact: {exc}", 500)
+        try:
+            written = export.write_artifacts(artifacts) if write else []
+        except FileExistsError as exc:
+            return err(str(exc), 409)
         payload = {
             "run_id": run.run_id,
             "week": run.week_stem or week_stem(run.prediction_date),

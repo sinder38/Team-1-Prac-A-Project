@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from agents.almanac.almanac_agent import AlmanacAgent
 from agents.delta import DeltaAgent
+from agents.delta.parsing import artifact_week
 from agents.evidence.evidence_agent import EvidenceAgent
 from core.io import FileSaver, week_stem
 from llm.openrouter import build_agent
@@ -121,17 +122,21 @@ def run_delta(
         actuals_markdown=actuals_markdown,
     )
     ctx.delta = output
-    week = prediction_week.removeprefix("v")
+    # File the Delta artifacts under the completed actuals week. Every other
+    # artifact of this run (actuals, agent reports, LLM comparison) already
+    # carries that label, so the W31 run must produce delta_W31.*, not the
+    # locked prediction's delta_W30.*. The validated report is the source of
+    # truth for both labels.
+    week = artifact_week(output.prediction_week, output.actuals_week)
+    markdown_path = root / "data" / "qa" / f"delta_{week}.md"
+    json_path = root / "data" / "outputs" / "delta" / f"delta_{week}.json"
+    checked_markdown_path = markdown_path if config.artifacts.save_md else None
+    agent.check_output_paths(output, checked_markdown_path, json_path)
+
     if config.artifacts.save_md:
-        agent.write_markdown(
-            output,
-            root / "data" / "qa" / f"delta_{week}.md",
-        )
+        agent.write_markdown(output, markdown_path)
     # Delta history and future weight suggestions need a structured artifact.
-    agent.write_json(
-        output,
-        root / "data" / "outputs" / "delta" / f"delta_{week}.json",
-    )
+    agent.write_json(output, json_path)
 
 
 def _require_completed_week(
