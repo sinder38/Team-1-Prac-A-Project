@@ -2,8 +2,9 @@
 
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from agents.delta.models import (
     CORE_ASSETS,
@@ -33,6 +34,7 @@ ASSET_ALIASES = {
 FLAT_MOVE_THRESHOLD = 0.05
 
 # TODO: use Agent parsing instead
+
 
 def parse_prediction_file(path: Path) -> dict[str, PredictionRow]:
     """Read a locked prediction from either JSON or Markdown."""
@@ -149,7 +151,8 @@ def plain_week(week: str) -> str:
     cleaned = week.strip()
     if cleaned.lower().startswith("vw"):
         cleaned = cleaned[1:]
-    if not re.fullmatch(r"W\d{2}", cleaned):
+    match = re.fullmatch(r"W(\d{2})", cleaned)
+    if not match or not 1 <= int(match.group(1)) <= 53:
         raise ValueError(f"Invalid week label: {week!r}")
     return cleaned
 
@@ -176,6 +179,29 @@ def validate_week_pair(prediction_week: str, actuals_week: str) -> None:
             f"{plain_week(prediction_week)} can only be scored against "
             f"{expected} actuals, not {plain_week(actuals_week)}."
         )
+
+
+def artifact_week(prediction_week: str, actuals_week: object | None) -> str:
+    """Return the week label used to file Delta artifacts.
+
+    A Delta report belongs to the pipeline run that produced it, and that run
+    is identified by the completed actuals week (all sibling artifacts of the
+    same run, such as actuals, agent reports, and the LLM comparison,
+    carry that label).
+    When ``actuals_week`` is missing (legacy payloads predate the field), fall
+    back to the week after the prediction. Reject an explicit malformed or
+    mismatched value so the filename cannot disagree with the report body.
+    """
+    fallback = next_week(prediction_week)
+    if actuals_week is None:
+        return fallback
+    if not isinstance(actuals_week, str):
+        raise TypeError(f"Week label must be a string, not {actuals_week!r}")
+    if not actuals_week.strip():
+        return fallback
+
+    validate_week_pair(prediction_week, actuals_week)
+    return plain_week(actuals_week)
 
 
 def _prediction_json_rows(data: Any) -> list[dict[str, Any]]:

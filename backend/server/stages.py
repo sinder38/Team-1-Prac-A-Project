@@ -235,6 +235,8 @@ def post_delta():
             actuals_markdown=actuals_markdown,
             now=generated_at,
         )
+    except FileExistsError as exc:
+        return err(str(exc), 409)
     except FileNotFoundError as exc:
         return err(str(exc), 404)
     except ValueError as exc:

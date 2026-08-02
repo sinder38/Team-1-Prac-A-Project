@@ -82,3 +82,26 @@ def test_post_delta_reports_missing_evidence(client):
 
     assert response.status_code == 404
     assert "Evidence artifact not found" in response.get_json()["error"]
+
+
+def test_post_delta_reports_output_collision(client, app):
+    seed_agent_output(
+        app,
+        run_id="run-conflict",
+        prediction_date=date(2026, 7, 13),
+        agent_type="evidence",
+        payload={"content": "# Completed actuals"},
+        horizon_days=None,
+    )
+
+    with patch(
+        "server.stages.run_delta",
+        side_effect=FileExistsError("Delta output belongs to another pair"),
+    ):
+        response = client.post(
+            "/stages/delta",
+            json={"prediction_date": "2026-07-13", "run_id": "run-conflict"},
+        )
+
+    assert response.status_code == 409
+    assert "another pair" in response.get_json()["error"]

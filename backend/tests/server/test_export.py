@@ -5,7 +5,10 @@ from dataclasses import asdict
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from agents.delta.models import DeltaReport, WeekAccuracy
+from agents.delta.parsing import artifact_week, plain_week
 from server.db import export
 from server.db import repository as repo
 from tests.server.conftest import (
@@ -57,6 +60,34 @@ def _delta_payload() -> dict:
         prescription="Review the missed range before the next lock.",
     )
     return asdict(report)
+
+
+@pytest.mark.parametrize("week", ["W00", "W54", "W99"])
+def test_plain_week_rejects_out_of_range_week(week):
+    with pytest.raises(ValueError, match="Invalid week label"):
+        plain_week(week)
+
+
+@pytest.mark.parametrize(
+    "actuals_week",
+    [None, "", "   "],
+)
+def test_artifact_week_falls_back_to_next_prediction_week(actuals_week):
+    assert artifact_week("vW28", actuals_week) == "W29"
+
+
+@pytest.mark.parametrize(
+    "actuals_week",
+    ["not-a-week", "W30", 29, {"week": "W29"}],
+)
+def test_artifact_week_rejects_an_explicit_invalid_week(actuals_week):
+    with pytest.raises((TypeError, ValueError)):
+        artifact_week("vW28", actuals_week)
+
+
+def test_artifact_week_accepts_matching_actuals_and_year_rollover():
+    assert artifact_week("vW28", "W29") == "W29"
+    assert artifact_week("vW53", "W01") == "W01"
 
 
 def test_post_export_stem_no_write(archive_client):
@@ -183,7 +214,7 @@ def test_post_export_includes_final_prediction(app, client):
 def test_post_export_includes_delta_report_from_sqlite(app, client):
     """The export endpoint renders a stored Delta report as Markdown."""
     # The W26 run scores the previous W25 prediction. The exported filename
-    # must follow the report's prediction week, not the containing run's week.
+    # follows the completed actuals week, matching the containing run.
     prediction_date = date(2026, 6, 22)
     seed_runtime_run(app, run_id="run-delta", prediction_date=prediction_date)
 
@@ -203,9 +234,79 @@ def test_post_export_includes_delta_report_from_sqlite(app, client):
     assert response.status_code == 200
     artifacts = response.get_json()["artifacts"]
     delta = next(item for item in artifacts if item["agent_type"] == "delta")
-    assert delta["filename"] == "delta_W25.md"
+    assert delta["filename"] == "delta_W26.md"
     assert "## Current-week summary" in delta["markdown"]
     assert "## Prescription for next sprint" in delta["markdown"]
+
+
+@pytest.mark.parametrize("actuals_week", [None, 26])
+def test_post_export_normalises_legacy_delta_payload(app, client, actuals_week):
+    """A bad actuals label is derived without changing the stored payload."""
+    prediction_date = date(2026, 6, 22)
+    seed_runtime_run(app, run_id="run-delta-legacy", prediction_date=prediction_date)
+    payload = _delta_payload()
+    if actuals_week is None:
+        payload.pop("actuals_week")
+    else:
+        payload["actuals_week"] = actuals_week
+    original_payload = dict(payload)
+
+    with app_session(app) as session:
+        run = repo.get_runtime_run(session, "run-delta-legacy")
+        assert run is not None
+        repo.add_delta_report(
+            session,
+            run,
+            prediction_week="vW25",
+            schema_version=2,
+            payload=payload,
+        )
+
+    response = client.post(
+        "/export",
+        json={"run_id": "run-delta-legacy", "write": False},
+    )
+
+    assert response.status_code == 200
+    artifacts = response.get_json()["artifacts"]
+    delta = next(item for item in artifacts if item["agent_type"] == "delta")
+    assert delta["filename"] == "delta_W26.md"
+    assert delta["markdown"].startswith("# delta_W26.md")
+    assert "- Completed actuals: W26" in delta["markdown"]
+    with app_session(app) as session:
+        run = repo.get_runtime_run(session, "run-delta-legacy")
+        assert run is not None
+        stored = repo.delta_report_for_run(session, run)
+        assert stored is not None
+        assert stored.payload == original_payload
+
+
+def test_export_rejects_a_mismatched_stored_delta_pair(app, client):
+    prediction_date = date(2026, 6, 22)
+    seed_runtime_run(app, run_id="run-delta-mismatch", prediction_date=prediction_date)
+    payload = _delta_payload()
+    payload["actuals_week"] = "W30"
+
+    with app_session(app) as session:
+        run = repo.get_runtime_run(session, "run-delta-mismatch")
+        assert run is not None
+        repo.add_delta_report(
+            session,
+            run,
+            prediction_week="vW25",
+            schema_version=2,
+            payload=payload,
+        )
+
+    response = client.post(
+        "/export",
+        json={"run_id": "run-delta-mismatch", "write": False},
+    )
+
+    assert response.status_code == 500
+    error = response.get_json()["error"]
+    assert "Invalid stored artifact" in error
+    assert "only be scored against W26" in error
 
 
 def test_write_delta_report_to_markdown_file(app, tmp_path):
@@ -226,12 +327,108 @@ def test_write_delta_report_to_markdown_file(app, tmp_path):
         artifacts = export.build_run_artifacts(session, run)
         written = export.write_artifacts(artifacts, data_dir=tmp_path)
 
-    assert str(tmp_path / "qa" / "delta_W25.md") in written
+    assert str(tmp_path / "qa" / "delta_W26.md") in written
     assert (
-        (tmp_path / "qa" / "delta_W25.md")
+        (tmp_path / "qa" / "delta_W26.md")
         .read_text(encoding="utf-8")
-        .startswith("# delta_W25.md")
+        .startswith("# delta_W26.md")
     )
+
+
+def test_write_artifacts_rejects_delta_pair_collision_before_writing(tmp_path):
+    qa_dir = tmp_path / "qa"
+    qa_dir.mkdir()
+    delta_path = qa_dir / "delta_W29.md"
+    existing = "# delta_W29.md\n\n- Locked prediction: vW29\n- Completed actuals: W30\n"
+    delta_path.write_text(existing, encoding="utf-8")
+    artifacts = [
+        {
+            "agent_type": "almanac",
+            "directory": "almanac",
+            "filename": "almanac_agent_W29.md",
+            "markdown": "# Almanac\n",
+        },
+        {
+            "agent_type": "delta",
+            "directory": "qa",
+            "filename": "delta_W29.md",
+            "markdown": (
+                "# delta_W29.md\n\n"
+                "- Locked prediction: vW28\n"
+                "- Completed actuals: W29\n"
+            ),
+        },
+    ]
+
+    with pytest.raises(FileExistsError, match="different Delta prediction pair"):
+        export.write_artifacts(artifacts, data_dir=tmp_path)
+
+    assert delta_path.read_text(encoding="utf-8") == existing
+    assert not (tmp_path / "almanac" / "almanac_agent_W29.md").exists()
+
+
+def test_write_artifacts_rejects_unreadable_delta_pair(tmp_path):
+    qa_dir = tmp_path / "qa"
+    qa_dir.mkdir()
+    delta_path = qa_dir / "delta_W29.md"
+    delta_path.write_text("# Damaged Delta report\n", encoding="utf-8")
+    artifact = {
+        "agent_type": "delta",
+        "directory": "qa",
+        "filename": "delta_W29.md",
+        "markdown": (
+            "# delta_W29.md\n\n- Locked prediction: vW28\n- Completed actuals: W29\n"
+        ),
+    }
+
+    with pytest.raises(FileExistsError, match="different Delta prediction pair"):
+        export.write_artifacts([artifact], data_dir=tmp_path)
+
+    assert delta_path.read_text(encoding="utf-8") == "# Damaged Delta report\n"
+
+
+def test_write_artifacts_allows_same_delta_pair(tmp_path):
+    qa_dir = tmp_path / "qa"
+    qa_dir.mkdir()
+    delta_path = qa_dir / "delta_W29.md"
+    delta_path.write_text(
+        "- Locked prediction: vW28\n- Completed actuals: W29\n",
+        encoding="utf-8",
+    )
+    updated = "# delta_W29.md\n\n- Locked prediction: vW28\n- Completed actuals: W29\n"
+    artifact = {
+        "agent_type": "delta",
+        "directory": "qa",
+        "filename": "delta_W29.md",
+        "markdown": updated,
+    }
+
+    written = export.write_artifacts([artifact], data_dir=tmp_path)
+
+    assert written == [str(delta_path)]
+    assert delta_path.read_text(encoding="utf-8") == updated
+
+
+def test_post_export_returns_conflict_for_delta_pair_collision(
+    app,
+    client,
+    monkeypatch,
+):
+    seed_runtime_run(
+        app,
+        run_id="run-delta-conflict",
+        prediction_date=date(2026, 6, 22),
+    )
+
+    def raise_conflict(_artifacts):
+        raise FileExistsError("Delta report already belongs to another pair")
+
+    monkeypatch.setattr(export, "write_artifacts", raise_conflict)
+
+    response = client.post("/export", json={"run_id": "run-delta-conflict"})
+
+    assert response.status_code == 409
+    assert "another pair" in response.get_json()["error"]
 
 
 def test_write_artifacts_to_tmp(archive_app, tmp_path):

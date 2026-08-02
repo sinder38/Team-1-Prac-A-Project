@@ -8,13 +8,15 @@ from agents.delta.models import (
     WeekAccuracy,
     WeightAdjustment,
 )
-from agents.delta.parsing import plain_week
+from agents.delta.parsing import artifact_week
 from agents.delta.scoring import join_assets, sector_coverage
 
 
 def render_delta_markdown(report: DeltaReport) -> str:
     """Build the complete weekly report one section at a time."""
-    week = plain_week(report.prediction_week)
+    # Title the file after the completed actuals week, the same label the
+    # rest of the run's artifacts use, so the H1 always matches the filename.
+    week = artifact_week(report.prediction_week, report.actuals_week)
 
     # Start with the file identity and the two weeks being compared.
     lines = [

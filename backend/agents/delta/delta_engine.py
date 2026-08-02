@@ -2,7 +2,7 @@
 
 import json
 import re
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
 from agents.delta.models import (
@@ -12,6 +12,7 @@ from agents.delta.models import (
     WeekAccuracy,
 )
 from agents.delta.parsing import (
+    artifact_week,
     next_week,
     parse_actuals_file,
     parse_actuals_markdown,
@@ -113,26 +114,49 @@ class DeltaAgent:
         json_path: Path | None = None,
     ) -> tuple[Path, Path]:
         """Write the human-readable and structured Delta artifacts."""
-        week = plain_week(report.prediction_week)
+        report = _normalise_report_week(report)
+        # Artifacts are filed under the completed actuals week so the Delta
+        # report carries the same W-label as every other artifact of the run.
+        week = artifact_week(report.prediction_week, report.actuals_week)
         markdown_path = markdown_path or (
             self.repo_root / "data" / "qa" / f"delta_{week}.md"
         )
         json_path = json_path or (
             self.repo_root / "data" / "outputs" / "delta" / f"delta_{week}.json"
         )
+
+        # Check both files before writing either one. This prevents a partial
+        # update when an old naming convention already occupies one path.
+        self.check_output_paths(report, markdown_path, json_path)
         return (
             self.write_markdown(report, markdown_path),
             self.write_json(report, json_path),
         )
 
     @staticmethod
+    def check_output_paths(
+        report: DeltaReport,
+        markdown_path: Path | None,
+        json_path: Path,
+    ) -> None:
+        """Check both targets before a pipeline starts writing files."""
+        report = _normalise_report_week(report)
+        if markdown_path is not None:
+            _ensure_matching_pair(report, markdown_path, is_json=False)
+        _ensure_matching_pair(report, json_path, is_json=True)
+
+    @staticmethod
     def write_markdown(report: DeltaReport, path: Path) -> Path:
+        report = _normalise_report_week(report)
+        _ensure_matching_pair(report, path, is_json=False)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(render_delta_markdown(report), encoding="utf-8")
         return path
 
     @staticmethod
     def write_json(report: DeltaReport, path: Path) -> Path:
+        report = _normalise_report_week(report)
+        _ensure_matching_pair(report, path, is_json=True)
         path.parent.mkdir(parents=True, exist_ok=True)
         content = json.dumps(asdict(report), indent=2)
         path.write_text(content, encoding="utf-8")
@@ -228,43 +252,118 @@ class DeltaAgent:
             return dict(BASE_WEIGHTS)
 
         target_number = week_number(target_week)
-        candidates: list[tuple[int, Path]] = []
-        for path in output_dir.glob("delta_W*.json"):
-            match = re.fullmatch(r"delta_W(\d{2})\.json", path.name)
-            if match and int(match.group(1)) < target_number:
-                candidates.append((int(match.group(1)), path))
+        candidates: list[tuple[int, dict[str, float]]] = []
+        for path in sorted(output_dir.glob("delta_W*.json")):
+            if not re.fullmatch(r"delta_W(\d{2})\.json", path.name):
+                continue
+            # The week inside the payload is authoritative. File names have
+            # carried the prediction week historically and the actuals week
+            # today, so trusting the name would double-count or skip reports
+            # in a directory that mixes both conventions.
+            pair_week, weights = _read_suggested_weights(path)
+            if pair_week is None or weights is None:
+                continue
+            if pair_week < target_number:
+                candidates.append((pair_week, weights))
 
-        # Start with the newest earlier report. If it is invalid, continue to
-        # the next one instead of using incomplete weights.
-        for _, path in sorted(candidates, reverse=True):
-            weights = _read_suggested_weights(path)
-            if weights is not None:
-                return weights
-        return dict(BASE_WEIGHTS)
+        # Use the newest strictly-earlier prediction pair. If none is valid,
+        # fall back to the documented base weights instead of guessing.
+        if not candidates:
+            return dict(BASE_WEIGHTS)
+        candidates.sort(key=lambda item: item[0])
+        return candidates[-1][1]
 
 
-def _read_suggested_weights(path: Path) -> dict[str, float] | None:
-    """Read reviewed weights from an earlier structured Delta artifact."""
+def _read_suggested_weights(
+    path: Path,
+) -> tuple[int | None, dict[str, float] | None]:
+    """Read the pair week and reviewed weights from a structured artifact.
+
+    Returns ``(prediction_week_number, weights)``. Either element is ``None``
+    when the file is unreadable, has the wrong schema, or is incomplete, so a
+    single damaged artifact can never poison the weight review.
+    """
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return None, None
         if data.get("schema_version") != 2:
-            return None
+            return None, None
+        pair_week = week_number(str(data["prediction_week"]))
 
         # Use a normal loop here so it is clear which two JSON fields become
         # the key and value in the weights dictionary.
         weights: dict[str, float] = {}
         for item in data.get("weight_adjustments", []):
+            if not isinstance(item, dict):
+                return pair_week, None
             agent = item["agent"]
             suggested_weight = float(item["suggested_weight"])
             weights[agent] = suggested_weight
-    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-        return None
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return None, None
 
     # A partial set could make the total weight incorrect, so only accept a
     # report containing every expected agent.
     if set(weights) != set(AGENT_ORDER):
-        return None
-    return weights
+        return pair_week, None
+    return pair_week, weights
+
+
+def _ensure_matching_pair(
+    report: DeltaReport,
+    path: Path,
+    is_json: bool,
+) -> None:
+    """Refuse to overwrite a Delta file that belongs to another week pair."""
+    if not path.exists():
+        return
+
+    expected = (
+        plain_week(report.prediction_week),
+        artifact_week(report.prediction_week, report.actuals_week),
+    )
+    try:
+        existing = _read_output_pair(path, is_json)
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise FileExistsError(
+            f"Cannot safely overwrite {path}: its Delta week pair is unreadable."
+        ) from exc
+
+    if existing != expected:
+        raise FileExistsError(
+            f"Cannot overwrite {path}: it contains {existing[0]}/{existing[1]}, "
+            f"but the new report is {expected[0]}/{expected[1]}."
+        )
+
+
+def _normalise_report_week(report: DeltaReport) -> DeltaReport:
+    """Fill a missing legacy actuals label before rendering or writing."""
+    actuals_week = artifact_week(report.prediction_week, report.actuals_week)
+    if report.actuals_week == actuals_week:
+        return report
+    return replace(report, actuals_week=actuals_week)
+
+
+def _read_output_pair(path: Path, is_json: bool) -> tuple[str, str]:
+    """Read the prediction and actuals weeks from JSON or Markdown output."""
+    if is_json:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            raise ValueError("Delta JSON must contain an object.")
+        prediction_week = plain_week(str(data["prediction_week"]))
+        actuals_week = plain_week(str(data["actuals_week"]))
+    else:
+        prediction_week = ""
+        actuals_week = ""
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("- Locked prediction:"):
+                prediction_week = plain_week(line.split(":", 1)[1].strip())
+            elif line.startswith("- Completed actuals:"):
+                actuals_week = plain_week(line.split(":", 1)[1].strip())
+
+    validate_week_pair(prediction_week, actuals_week)
+    return prediction_week, actuals_week
 
 
 __all__ = ["DeltaAgent"]

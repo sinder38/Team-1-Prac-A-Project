@@ -20,9 +20,9 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from agents.delta.parsing import plain_week
-from core.io import week_stem
+from agents.delta.parsing import artifact_week, plain_week
 from agents.paths import DATA_DIR
+from core.io import week_stem
 from server.db import render
 from server.db import repository as repo
 from server.db.models import PredictionRun
@@ -95,13 +95,31 @@ def build_run_artifacts(session: Session, run: PredictionRun) -> list[dict]:
 
     delta = repo.delta_report_for_run(session, run)
     if delta:
-        delta_stem = plain_week(delta.prediction_week or "")
+        payload = dict(delta.payload or {})
+        prediction_week = str(
+            delta.prediction_week or payload.get("prediction_week") or ""
+        )
+        try:
+            # Same rule as the writer: file the Delta artifact under the
+            # completed actuals week, deriving it from the prediction week
+            # for legacy payloads that predate the actuals_week field.
+            delta_stem = artifact_week(
+                prediction_week,
+                payload.get("actuals_week"),
+            )
+        except TypeError:
+            # A non-string legacy value is replaced with the week implied by
+            # the stored prediction. A mismatched string is rejected because
+            # its rows may belong to the explicitly stored actuals week.
+            delta_stem = artifact_week(prediction_week, None)
+        payload["prediction_week"] = prediction_week
+        payload["actuals_week"] = delta_stem
         artifacts.append(
             _artifact(
                 "delta",
                 "qa",
                 f"delta_{delta_stem}.md",
-                render.render_delta(delta.payload),
+                render.render_delta(payload),
             )
         )
 
@@ -148,6 +166,8 @@ def _llm_artifacts(
 
 def write_artifacts(artifacts: list[dict], data_dir: Path = DATA_DIR) -> list[str]:
     """Write rendered artifacts to data/<agent>/<filename>. Returns the paths."""
+    _check_delta_conflicts(artifacts, data_dir)
+
     written: list[str] = []
     for art in artifacts:
         out_dir = data_dir / art["directory"]
@@ -156,3 +176,48 @@ def write_artifacts(artifacts: list[dict], data_dir: Path = DATA_DIR) -> list[st
         path.write_text(art["markdown"], encoding="utf-8")
         written.append(str(path))
     return written
+
+
+def _check_delta_conflicts(artifacts: list[dict], data_dir: Path) -> None:
+    """Reject a Delta write that would replace another prediction pair."""
+    for artifact in artifacts:
+        if artifact["agent_type"] != "delta":
+            continue
+
+        path = data_dir / artifact["directory"] / artifact["filename"]
+        if not path.exists():
+            continue
+
+        try:
+            existing_markdown = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise FileExistsError(
+                f"Refusing to overwrite {path}: its Delta prediction pair "
+                "could not be checked."
+            ) from exc
+
+        existing_pair = _delta_pair(existing_markdown)
+        new_pair = _delta_pair(artifact["markdown"])
+        if existing_pair is None or new_pair is None or existing_pair != new_pair:
+            raise FileExistsError(
+                f"Refusing to overwrite {path}: it belongs to a different "
+                "Delta prediction pair."
+            )
+
+
+def _delta_pair(markdown: str) -> tuple[str, str] | None:
+    """Read the prediction and actuals labels from a Delta Markdown report."""
+    prediction_week = ""
+    actuals_week = ""
+    for line in markdown.splitlines():
+        if line.startswith("- Locked prediction:"):
+            prediction_week = line.partition(":")[2].strip()
+        elif line.startswith("- Completed actuals:"):
+            actuals_week = line.partition(":")[2].strip()
+
+    if not prediction_week or not actuals_week:
+        return None
+    try:
+        return plain_week(prediction_week), plain_week(actuals_week)
+    except ValueError:
+        return None
