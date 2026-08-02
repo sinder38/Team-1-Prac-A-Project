@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from agents.almanac.almanac_agent import AlmanacAgent
 from agents.delta import DeltaAgent
+from agents.delta.parsing import artifact_week
 from agents.evidence.evidence_agent import EvidenceAgent
 from agents.io import FileSaver, week_stem
 from agents.llm.multi_model_runner import _row, build_agent
@@ -120,7 +121,12 @@ def run_delta(
         actuals_markdown=actuals_markdown,
     )
     ctx.delta = output
-    week = prediction_week.removeprefix("v")
+    # File the Delta artifacts under the completed actuals week. Every other
+    # artifact of this run (actuals, agent reports, LLM comparison) already
+    # carries that label, so the W31 run must produce delta_W31.*, not the
+    # locked prediction's delta_W30.*. The validated report is the source of
+    # truth for both labels.
+    week = artifact_week(output.prediction_week, output.actuals_week)
     if config.artifacts.save_md:
         agent.write_markdown(
             output,
