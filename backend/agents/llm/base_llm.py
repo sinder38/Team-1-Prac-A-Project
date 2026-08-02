@@ -196,7 +196,27 @@ class BaseLLMAgent(BaseAgent):
         raw = self.query(prompt)
         return self.parse_response(raw, prediction_date)
 
-    def render_md(self, output: LLMOutput, prediction_date: date) -> str:
+    # def render_md(self, output: LLMOutput, prediction_date: date) -> str:
+    #    lines = [
+    #        f"# LLM Agent Output — {self.model_name} — Week of {prediction_date}",
+    #       "",
+    #        f"1. Weekly Regime: {output.weekly_regime.value}",
+    #        f"2. Confidence Score: {output.confidence.value}",
+    #        "3. Key Supporting Evidence:",
+    #        *[f"   - {e}" for e in output.supporting_evidence],
+    #        "4. Key Contradictions:",
+    #        *[f"   - {c}" for c in output.contradictions],
+    #        f"5. Invalidation Conditions: {output.invalidation}",
+    #        f"6. Predicted % move — SPX: {output.spx_range.low}% to {output.spx_range.high}%",
+    #        f"   Predicted % move — NDX: {output.ndx_range.low}% to {output.ndx_range.high}%",
+    #        f"   Predicted % move — IWM: {output.iwm_range.low}% to {output.iwm_range.high}%",
+    #        f"7. Plain-English brief: {output.plain_english}",
+    #        "8. Disclaimer: This is not financial advice.",
+    #   ]
+    #    return "\n".join(lines)
+    def render_md(self, output: LLMOutput) -> str:
+    """Render Markdown using the date stored in the output object."""
+        prediction_date = output.prediction_date
         lines = [
             f"# LLM Agent Output — {self.model_name} — Week of {prediction_date}",
             "",
@@ -207,9 +227,12 @@ class BaseLLMAgent(BaseAgent):
             "4. Key Contradictions:",
             *[f"   - {c}" for c in output.contradictions],
             f"5. Invalidation Conditions: {output.invalidation}",
-            f"6. Predicted % move — SPX: {output.spx_range.low}% to {output.spx_range.high}%",
-            f"   Predicted % move — NDX: {output.ndx_range.low}% to {output.ndx_range.high}%",
-            f"   Predicted % move — IWM: {output.iwm_range.low}% to {output.iwm_range.high}%",
+            f"6. Predicted % move — SPX: "
+            f"{output.spx_range.low}% to {output.spx_range.high}%",
+            f"   Predicted % move — NDX: "
+            f"{output.ndx_range.low}% to {output.ndx_range.high}%",
+            f"   Predicted % move — IWM: "
+            f"{output.iwm_range.low}% to {output.iwm_range.high}%",
             f"7. Plain-English brief: {output.plain_english}",
             "8. Disclaimer: This is not financial advice.",
         ]
