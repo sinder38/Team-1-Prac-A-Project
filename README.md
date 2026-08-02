@@ -38,50 +38,53 @@ The local development pipeline uses Ollama with `llama3.2:3b`. The automated CI 
 
 ### Requirements
 
- - Python 3.12+
- - [`uv`](https://docs.astral.sh/uv/)
- - Node.js and npm
- - API keys listed in `backend/.env.example`
+- Python 3.12+ and [`uv`](https://docs.astral.sh/uv/) — both modes
+- Node.js and npm — backend + frontend run only
+- API keys listed in `backend/.env.example`
+- [Ollama](https://ollama.com) — local models only (`llama3.2:3b` in the
+  default pipeline config); not needed for the CI configuration
 
- - [Ollama](https://ollama.com) - used by the default local config's LLM stage
-   (`llama3.2:3b`); not needed for the CI configuration
-
- ### Backend
+### Setup (once)
 
 ```bash
- cd backend
- cp .env.example .env
- uv sync
-
- # Local pipeline with Ollama (start `ollama serve` first)
- ollama pull llama3.2:3b
- uv run python run_pipeline.py
-
- # Full CI configuration (OpenRouter models; see pipeline.ci.toml)
- uv run python run_pipeline.py --config pipeline.ci.toml
-
- # Flask API
- uv run python run_server.py
+cd backend
+cp .env.example .env   # add the keys you need
+uv sync
 ```
 
-#### Local models
+### Pipeline Run — Generate the Weekly Artifacts (one-shot CLI)
 
-The API server also exposes a few small local models to the frontend's
-Stage 3 picker (see `[llm].models` in `backend/server.toml`). The pipeline
-accepts **any** model Ollama can serve — add an entry to the relevant TOML
-and pull the tag:
+Runs the agents end to end, writes the weekly artifacts under `data/`, and
+exits. No server or browser involved — this is the same entry point the
+scheduled CI job uses.
 
-```toml
-# backend/pipeline.toml or backend/server.toml, under [llm].models
-{id = "qwen2.5:1.5b", slug = "qwen2.5-1.5b", provider = "ollama"},
+```bash
+cd backend
+
+# Local pipeline with Ollama (start `ollama serve` first)
+ollama pull llama3.2:3b
+uv run python run_pipeline.py
+
+# Full CI configuration (OpenRouter models; see pipeline.ci.toml)
+uv run python run_pipeline.py --config pipeline.ci.toml
 ```
 
-`slug` names the synthesis artifacts and defaults to the id **without its
-size tag** (`mistral:7b` → `mistral`), so set it explicitly when the tag
-matters. Run `ollama pull <id>` for each model you enable.
+### Backend + Frontend Run — Interactive Dashboard
 
+Starts the Flask API and the React dashboard, each in its own terminal.
+Stages are triggered from the UI (multi-LLM comparison and human review
+included); results persist to SQLite instead of `data/` files —
+`server.toml` disables file artifacts and ingests the committed archives at
+startup.
 
-### Frontend
+**Terminal 1 — Backend API (port 5000):**
+
+```bash
+cd backend
+uv run python run_server.py
+```
+
+**Terminal 2 — Frontend (port 3000):**
 
 ```bash
 cd frontend
@@ -89,7 +92,26 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000`. The Vite dev server proxies the API routes
+(`/stages`, `/artifacts`, `/calibration`, `/export`, ...) to the Flask API
+on port 5000, so start the backend first.
+
+#### Local Models
+
+The API server also exposes a few small local models to the frontend's
+Stage 3 picker (see `[llm].models` in `backend/server.toml`). The pipeline
+accepts **any** model Ollama can serve — add an entry to the relevant TOML
+and pull the tag:
+
+```toml
+# backend/pipeline.toml (pipeline run) or backend/server.toml (dashboard),
+# under [llm].models
+{id = "qwen2.5:1.5b", slug = "qwen2.5-1.5b", provider = "ollama"},
+```
+
+`slug` names the synthesis artifacts and defaults to the id **without its
+size tag** (`mistral:7b` → `mistral`), so set it explicitly when the tag
+matters. Run `ollama pull <id>` for each model you enable.
 
 See [Setup and Configuration](https://github.com/sinder38/Team-1-Prac-A-Project/wiki/Setup-and-Configuration) for details.
 
