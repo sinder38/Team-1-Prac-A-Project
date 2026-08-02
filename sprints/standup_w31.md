@@ -102,3 +102,85 @@
 
 - Synchronize long-running branches with `main` more frequently to reduce merge conflicts.
 - Carefully review file-move pull requests to ensure they only contain structural changes and do not accidentally revert application logic.
+
+
+
+# Henry (TOBI)
+
+## What have you completed or contributed so far?
+
+- Updated the project Wiki to reflect the latest Week 9 implementation.
+- Updated documentation for the current LLM configurations, local Ollama setup, CI pipeline, Flask backend, system architecture, and Delta Engine.
+- Started working on removing the duplicated `prediction_date` argument from `render_md()`.
+- Updated the shared `BaseAgent` interface, LLM implementation, and multi-model runner so the date is read from `output.prediction_date`.
+
+## Did you face any blockers or challenges?
+
+- The current task affects multiple files, so a small interface change impacts several implementations and call sites.
+- Ensuring all files remain consistent while removing outdated `render_md(output, prediction_date)` calls required careful review.
+- The available task information was limited, so additional code review, discussions with teammates, and the task checklist were needed to understand the full scope.
+
+## What went well during this sprint?
+
+- The Wiki and README are now better organized and accurately reflect the latest project updates.
+- Feedback and the task checklist helped clarify the duplicated `prediction_date` issue and identify the safest implementation approach.
+- Gained a better understanding of how the Base Agent, LLM Agent, and Multi-Model Runner interact with each other.
+
+## Is there anything we can improve as a team?
+
+- Clearly summarize interface, model, or configuration changes in pull request descriptions, especially when they affect multiple related files.
+- Provide sufficient implementation details when assigning tasks to reduce the time spent understanding the required changes.
+- Continue keeping documentation aligned with code changes throughout the sprint.
+
+
+
+# Naing Phone Pyae
+
+## What have you completed or contributed so far?
+
+- Completed two TODO tasks from the repository:
+  - Updated `max_retries` to handle each model independently.
+  - Added error handling to raise an exception if the macro fetch is not completed instead of continuing execution.
+- Contributed to preparing part of the project presentation slides.
+
+## Did you face any blockers or challenges?
+
+- The main challenge was finding new development tasks because most major features had already been completed and were functioning correctly.
+- Focused on smaller improvements and presentation support after the primary development work was finished.
+
+## What went well during this sprint?
+
+- Successfully completed and merged all assigned tasks into the main branch.
+- Contributed to completing the presentation slides with the available project data.
+
+## Is there anything we can improve as a team?
+
+- Hold more technical discussions on implementation approaches and coding challenges.
+- Encourage knowledge sharing among team members to improve technical skills and support smoother collaboration.
+
+
+
+
+# Minghao
+
+## What have you completed or contributed so far?
+
+- Worked on preparing the project presentation.
+- Fixed bugs in the project pipeline.
+- Made minor updates to the README documentation.
+- Helped remind and follow up with team members on their assigned tasks.
+
+## Did you face any blockers or challenges?
+
+- The main challenge was the programming tasks, as they required working with areas that were technically difficult.
+
+## What went well during this sprint?
+
+- Development tasks were completed efficiently.
+- Additional hidden bugs within the pipeline were identified and resolved.
+- The team made steady progress toward preparing the project for the final presentation.
+
+## Is there anything we can improve as a team?
+
+- Continue improving technical knowledge and collaboration on complex development tasks.
+- Make greater use of repository packaging and analysis tools (e.g., Repomix and Gitingest) to better understand the overall project structure and implementation details.
