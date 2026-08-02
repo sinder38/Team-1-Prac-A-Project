@@ -22,7 +22,7 @@ models = [
 
     # For local testing with Ollama. llama3.2:3b is small enough to run at usable
     # speed on CPU; llama3.1 (8B) takes minutes per prompt without a GPU.
-    {id = "llama3.2:3b", slug = "llama3.2-3b", provider = "ollama"},
+    {id = "llama3.2:3b", slug = "llama3.2-3b", provider = "ollama", max_retries = 4},
 ]
 max_retries = 2
 
