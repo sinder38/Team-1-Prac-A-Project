@@ -18,13 +18,27 @@ StageIcon.propTypes = {
   status: PropTypes.string,
 }
 
-export default function LogsPage({ pipeline, controls, week, predictionDate }) {
-  const { isRunning, allDone, aiStages, doneCount, runNext, canEdit } = controls
+export default function LogsPage({ pipeline, controls, week, predictionDate, onNavigate }) {
+  const {
+    isRunning,
+    allDone,
+    aiStages,
+    doneCount,
+    runNext,
+    canEdit = false,
+    selectedModels = [],
+  } = controls
+
+  const blockedByModels = doneCount === LLM_STAGE_INDEX && selectedModels.length === 0
+  const canRun = Boolean(canEdit) && doneCount < aiStages && !isRunning && !blockedByModels
+
   let statusMessage = 'Read only'
   if (allDone) {
     statusMessage = 'Run complete'
-  } else if (doneCount >= aiStages) {
+  } else if (doneCount === aiStages) {
     statusMessage = canEdit ? 'AI stages done - submit Human Score' : 'AI stages done'
+  } else if (doneCount > aiStages) {
+    statusMessage = canEdit ? 'Human Score done - submit Final Prediction' : 'Human Score done'
   }
 
   return (
@@ -37,7 +51,7 @@ export default function LogsPage({ pipeline, controls, week, predictionDate }) {
             {predictionDate ? ` · ${predictionDate}` : ''}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col items-stretch sm:items-end gap-1.5">
           {canEdit && doneCount < aiStages ? (
             <button
               type="button"
@@ -98,7 +112,7 @@ export default function LogsPage({ pipeline, controls, week, predictionDate }) {
       <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
         <div className="px-4 py-3">
           <p className="text-xs text-gray-500 uppercase mb-3">Stages</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
             {pipeline.stages.map((stage, i) => (
               <div
                 key={stage.id}
