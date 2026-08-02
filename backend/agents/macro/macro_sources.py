@@ -95,7 +95,8 @@ EARNINGS_KEYWORD_WEIGHTS = [
 SECTOR_HINTS = [
     (("pep", "pepsico", "wd-40", "seven", "aeon"), "XLP / Consumer Staples"),
     (("delta", "air lines", "hyatt", "jets", "travel", "netflix", "nflx"), "XLY / Travel & Leisure"),
-    (("jpmorgan", "jpm", "bank of america", "bac", "bank", "progressive", "washington federal", "insurance"), "XLF / Financials"),
+    (("jpmorgan", "jpm", "bank of america", "bac", "bank", "progressive", "washington federal", "insurance"),
+     "XLF / Financials"),
     (("j&j", "johnson", "unitedhealth", "unh", "health"), "XLV / Healthcare"),
     (("tata consultancy", "technology", "semiconductor", "software"), "XLK / Technology"),
     (("cintas", "msc industrial", "enerpac", "yaskawa"), "XLI / Industrials"),
@@ -108,6 +109,7 @@ def next_week_window(prediction_date: date) -> tuple[date, date]:
     days_until_next_monday = 7 - prediction_date.weekday()
     start = prediction_date + timedelta(days=days_until_next_monday)
     return start, start + timedelta(days=4)
+
 
 def forward_window(prediction_date: date, horizon_days: int) -> tuple[date, date]:
     if horizon_days <= 7:
@@ -152,6 +154,10 @@ class SourceFetcher:
         return response.json()
 
 
+class MacroFetchError(RuntimeError):
+    """Raised when a macro data source fails to fetch or returns no usable data."""
+
+
 class TradingEconomicsCalendar:
     """Fetch, parse, and rank next-week TradingEconomics calendar events."""
 
@@ -163,11 +169,11 @@ class TradingEconomicsCalendar:
         start_date, end_date = forward_window(prediction_date, horizon_days)
         html_this = self.fetcher.fetch_text(
             TRADING_ECONOMICS_CALENDAR_URL,
-            cookies={"calendar-range": "5", "calendar-importance": "3",},
+            cookies={"calendar-range": "5", "calendar-importance": "3", },
         )
         html_next = self.fetcher.fetch_text(
             TRADING_ECONOMICS_CALENDAR_URL,
-            cookies={"calendar-range": "6", "calendar-importance": "3",},
+            cookies={"calendar-range": "6", "calendar-importance": "3", },
         )
         events = []
         events.extend(self.parse_events(html_this, start_date, end_date))
@@ -301,9 +307,9 @@ class TradingEconomicsCalendar:
     @staticmethod
     def _expected_value(chunk: str) -> str:
         return (
-            TradingEconomicsCalendar._id_value(chunk, "consensus")
-            or TradingEconomicsCalendar._id_value(chunk, "forecast")
-            or "N/A"
+                TradingEconomicsCalendar._id_value(chunk, "consensus")
+                or TradingEconomicsCalendar._id_value(chunk, "forecast")
+                or "N/A"
         )
 
     @staticmethod
@@ -362,8 +368,9 @@ class ConfirmedNewsSource:
 
     def get_ranked_items(self, limit: int = 5) -> list[NewsItem]:
         if not self.api_key:
-            print("Warning: NEWSDATA_API_KEY is not set; confirmed news will be empty.")
-            return []
+            raise MacroFetchError(
+                "NEWSDATA_API_KEY (or NEWS_DATA_API_KEY) is not set; cannot fetch confirmed news."
+            )
 
         items = self._fetch_newsdata_items()
         ranked = sorted(self._dedupe_by_url_or_headline(items), key=lambda item: item.score, reverse=True)
@@ -444,13 +451,11 @@ class ConfirmedNewsSource:
                 )
             except requests.RequestException as exc:
                 print(f"Warning: NewsData.io {section} news unavailable ({exc}); continuing.")
-                continue
             if payload.get("status") == "error":
-                print(
+                raise MacroFetchError(
                     "Warning: NewsData.io returned an error for "
                     f"{section}: {payload.get('message') or payload.get('results')}"
                 )
-                continue
             items.extend(self.parse_newsdata_results(payload, section))
         return items
 
@@ -757,38 +762,29 @@ class FedWatchSource:
     """Runtime FOMC probability source using the no-key cme-fedwatch package."""
 
     def get_pricing(self) -> FomcMarketPricing:
-        try:
-            from cme_fedwatch import get_history, get_probabilities
+        from cme_fedwatch import get_history, get_probabilities
 
-            data = get_probabilities("next")
-            meeting = (data.get("meetings") or [None])[0]
-            if not meeting:
-                raise ValueError("cme-fedwatch returned no upcoming meetings")
+        data = get_probabilities("next")
+        meeting = (data.get("meetings") or [None])[0]
+        if not meeting:
+            raise ValueError("cme-fedwatch returned no upcoming meetings")
 
-            probabilities = meeting.get("probabilities") or {}
-            current_target = data.get("current_target", "")
-            hold_probability = float(probabilities.get(current_target, 0.0))
-            cut_probability = self._cut_probability(probabilities, current_target)
-            direction = self._direction_vs_history(
-                get_history("next", days=10),
-                current_target,
-                probabilities,
-            )
+        probabilities = meeting.get("probabilities") or {}
+        current_target = data.get("current_target", "")
+        hold_probability = float(probabilities.get(current_target, 0.0))
+        cut_probability = self._cut_probability(probabilities, current_target)
+        direction = self._direction_vs_history(
+            get_history("next", days=10),
+            current_target,
+            probabilities,
+        )
 
-            return FomcMarketPricing(
-                next_fomc_date=date.fromisoformat(meeting["date"]),
-                hold_probability=round(hold_probability, 1),
-                cut_probability=round(cut_probability, 1),
-                direction_vs_last_week=direction,
-            )
-        except Exception as exc:
-            print(f"Warning: CME FedWatch probabilities unavailable ({exc}); continuing.")
-            return FomcMarketPricing(
-                next_fomc_date=None,
-                hold_probability=0.0,
-                cut_probability=0.0,
-                direction_vs_last_week="Unavailable",
-            )
+        return FomcMarketPricing(
+            next_fomc_date=date.fromisoformat(meeting["date"]),
+            hold_probability=round(hold_probability, 1),
+            cut_probability=round(cut_probability, 1),
+            direction_vs_last_week=direction,
+        )
 
     @staticmethod
     def _cut_probability(probabilities: dict[str, float], current_target: str) -> float:
@@ -853,8 +849,8 @@ class FedWatchSource:
         current = FedWatchSource._rate_buckets(current_probabilities, current_target)
         previous = FedWatchSource._rate_buckets(prior_probabilities, current_target)
         expected_delta = (
-            FedWatchSource._expected_rate(current_probabilities)
-            - FedWatchSource._expected_rate(prior_probabilities)
+                FedWatchSource._expected_rate(current_probabilities)
+                - FedWatchSource._expected_rate(prior_probabilities)
         )
 
         if expected_delta <= -0.005:
