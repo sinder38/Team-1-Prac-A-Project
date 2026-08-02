@@ -125,7 +125,7 @@ def setup_integration(tmp_path, monkeypatch):
     """Fixture to patch output directories to tmp_path so tests do not touch actual outputs."""
     monkeypatch.setattr("pipeline.stages.REPO_ROOT", tmp_path)
     try:
-        monkeypatch.setattr("agents.pipeline.stages.DATA_DIR", tmp_path / "data")
+        monkeypatch.setattr("pipeline.stages.DATA_DIR", tmp_path / "data")
     except AttributeError:
         pass
     monkeypatch.setattr("core.io.DATA_ROOT", tmp_path / "outputs")
