@@ -3,7 +3,7 @@
  */
 import PropTypes from 'prop-types'
 import { PipelineController } from '../components/pipeline'
-import { AgentOutputsGrid, EvidenceGallery, WeekSummaryStrip } from '../components/agents'
+import { AgentOutputsGrid, EvidenceGallery } from '../components/agents'
 import {
   ReviewForm,
   HumanScoreReportCard,
@@ -80,18 +80,6 @@ export default function DashboardPage({
         </section>
       )}
 
-      {controls.aiComplete && !controls.allDone && !humanScoreReport && (
-        <div className="mx-4 mt-4">
-          <ReviewForm
-            outputs={outputs}
-            week={week}
-            aiComplete={controls.aiComplete}
-            onComplete={onCompleteReview}
-          />
-        </div>
-      )}
-
-      <AgentOutputsGrid outputs={outputs} />
       <EvidenceGallery week={week} />
     </div>
   )
