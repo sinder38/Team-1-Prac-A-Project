@@ -42,9 +42,9 @@ The local development pipeline uses Ollama with `llama3.2:3b`. The automated CI 
  - [`uv`](https://docs.astral.sh/uv/)
  - Node.js and npm
  - API keys listed in `backend/.env.example`
--- Ollama for optional local LLM testing
-+- [Ollama](https://ollama.com) - used by the default local config's LLM stage
-+  (`llama3.2:3b`); not needed for the CI configuration
+
+ - [Ollama](https://ollama.com) - used by the default local config's LLM stage
+   (`llama3.2:3b`); not needed for the CI configuration
 
  ### Backend
 
