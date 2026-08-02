@@ -69,13 +69,19 @@ def build_calibration_payload(
         for item in adjustments
     }
 
+    direction_accuracy = _percentage(all_direction_hits, all_scored_assets)
+    range_accuracy = _percentage(all_range_hits, all_ranged_assets)
+    # Combined hit-rate across both scoring dimensions (sample-weighted).
+    total_accuracy = _percentage(
+        all_direction_hits + all_range_hits,
+        all_scored_assets + all_ranged_assets,
+    )
+
     return {
         "latestWeek": data.get("prediction_week"),
-        "currentAccuracy": _percentage(
-            all_direction_hits,
-            all_scored_assets,
-        ),
-        "rangeAccuracy": _percentage(all_range_hits, all_ranged_assets),
+        "totalAccuracy": total_accuracy,
+        "currentAccuracy": direction_accuracy,
+        "rangeAccuracy": range_accuracy,
         "weeklyTrend": weekly_trend,
         "latestDirectionAccuracy": latest["directionAccuracy"],
         "latestRangeAccuracy": latest["rangeAccuracy"],

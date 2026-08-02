@@ -40,6 +40,7 @@ export default function FinalPredictionForm({
   week = '—',
   predictionDate,
   hsrReady = false,
+  canPersist = true,
   onComplete,
 }) {
   const [form, setForm] = useState(defaultFinalPredictionForm)
@@ -60,7 +61,7 @@ export default function FinalPredictionForm({
     }))
   }
 
-  const canSubmit = hsrReady && isFinalPredictionComplete(form)
+  const canSubmit = canPersist && hsrReady && isFinalPredictionComplete(form)
 
   async function submit() {
     if (!canSubmit) return
@@ -247,11 +248,13 @@ export default function FinalPredictionForm({
             onClick={submit}
             disabled={!canSubmit}
             title={
-              !hsrReady
-                ? 'Submit Human Score first'
-                : !isFinalPredictionComplete(form)
-                  ? 'Fill regime and SPX / NDX / IWM ranges'
-                  : undefined
+              !canPersist
+                ? 'Markdown archive has no runtime run — open a run-* week to save'
+                : !hsrReady
+                  ? 'Submit Human Score first'
+                  : !isFinalPredictionComplete(form)
+                    ? 'Fill regime and SPX / NDX / IWM ranges'
+                    : undefined
             }
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -286,5 +289,6 @@ FinalPredictionForm.propTypes = {
   week: PropTypes.string,
   predictionDate: PropTypes.string,
   hsrReady: PropTypes.bool,
+  canPersist: PropTypes.bool,
   onComplete: PropTypes.func,
 }

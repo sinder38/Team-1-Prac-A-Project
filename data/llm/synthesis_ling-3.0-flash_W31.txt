@@ -1,0 +1,17 @@
+# LLM Agent Output — InclusionAI Ling 3.0 Flash — Week of 2026-08-01
+
+1. Weekly Regime: Neutral
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - VIX dropped 13.94% last week, signaling reduced fear and potential for continued risk-on sentiment.
+   - Seasonal history shows early August weakness (Dow fell 19 of last 28 times on first trading day), creating a cautious setup.
+   - NFP data release on August 7 is the primary macro driver, with expected 91K jobs, which could cause volatility.
+4. Key Contradictions:
+   - Technical trend bias for SPX and NDX is Neutral, while Almanac seasonal bias is Bearish, creating conflicting directional signals.
+   - IWM has a Bearish technical trend bias but last week's actual move was flat (up 0.01%), suggesting underlying resilience despite the bearish setup.
+5. Invalidation Conditions: A decisive move in yields, the dollar, or inflation expectations would invalidate the neutral macro read; also, a strong NFP print could shift the seasonal bearishness.
+6. Predicted % move — SPX: -1.5% to 2.0%
+   Predicted % move — NDX: -1.5% to 3.5%
+   Predicted % move — IWM: -2.0% to 0.5%
+7. Plain-English brief: The market enters August with mixed signals: last week's rally has eased fear (VIX down), but seasonal patterns and upcoming NFP data suggest caution. SPX and NDX are likely to trade in a range with a slight bullish tilt for tech-heavy NDX, while IWM faces bearish pressure and may test support. The week's outcome hinges on the August 7 jobs report.
+8. Disclaimer: This is not financial advice.

@@ -58,19 +58,30 @@ _AGENT_METRICS = {
     "almanac": [
         ("Thesis", r'ALMANAC THESIS:\s*"?(.+?)"?\s*$'),
         ("Seasonal Bias", r"ALMANAC SEASONAL BIAS:\s*(.+?)\.?$"),
-        ("Monthly Bias", r"PATTERN CONFIDENCE:\s*(\w+)"),
+        ("Confidence", r"PATTERN CONFIDENCE:\s*(\w+)"),
+        ("Week Pattern", r"SPECIFIC WEEK PATTERN \((.+?)\)"),
+        ("Technology", r"Technology \(XLK\):.+?Bias:\s*(\w+)"),
+        ("Invalidation", r"INVALIDATION:\s*(.+)$"),
     ],
     "macro": [
         ("Primary Driver", r"PRIMARY DRIVER THIS WEEK:\s*(.+)$"),
+        ("Macro Bias", r"MACRO BIAS:\s*(.+)$"),
         ("Fed Rate", r"Current Fed rate:\s*(.+)$"),
         ("10Y Yield", r"10-year yield:\s*([\d.]+%?)"),
-        ("Macro Bias", r"MACRO BIAS:\s*(.+)$"),
+        ("2Y Yield", r"2-year yield:\s*([\d.]+%?)"),
+        ("DXY", r"DXY \(Dollar\):\s*(.+)$"),
+        ("WTI", r"WTI Crude Oil:\s*(.+)$"),
+        ("FOMC Hold", r"Hold probability:\s*([\d.]+%?)"),
+        ("Invalidation", r"INVALIDATION:\s*(.+)$"),
     ],
     "technical": [
         ("Last Close", r"LAST CLOSE:\s*(.+)$"),
         ("Technical Bias", r"TECHNICAL BIAS:\s*(.+?)\.?$"),
         ("EMA Condition", r"EMA condition:\s*(.+)$"),
+        ("EMA 8/21", r"EMA \(8/21\):\s*(.+)$"),
         ("Key Levels", r"Resistance 1:\s*(.+)$"),
+        ("Support / Resistance", r"Support / Resistance:\s*(.+)$"),
+        ("Confidence", r"CONFIDENCE:\s*(.+?)\.?$"),
     ],
 }
 
@@ -162,7 +173,7 @@ def _extract_metrics(agent: str, text: str) -> list[dict]:
         m = re.search(pattern, text, re.I | re.M)
         if m:
             metrics.append({"label": label, "value": m.group(1).strip().strip('"')})
-    return metrics[:4]
+    return metrics[:10]
 
 
 def _agent_card(agent_key: str, label: str, payload: dict | None) -> dict | None:

@@ -40,7 +40,7 @@ describe('AgentCard', () => {
   it('calls onToggle when the raw-output button is clicked', async () => {
     const onToggle = vi.fn()
     render(<AgentCard id="technical" data={DATA} open={false} onToggle={onToggle} />)
-    await userEvent.click(screen.getByRole('button', { name: /view raw output/i }))
+    await userEvent.click(screen.getByRole('button', { name: /view full raw output/i }))
     expect(onToggle).toHaveBeenCalledTimes(1)
   })
 })

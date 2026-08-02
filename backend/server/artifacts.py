@@ -1,8 +1,11 @@
 import re
 from collections.abc import Mapping
+from pathlib import Path
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_from_directory
 
+from agents.delta.parsing import parse_actuals_file
+from agents.paths import DATA_DIR
 from core.io import week_stem
 from server.archive import list_all_weeks, load_archive_week, load_human_score
 from server.db import repository as repo
@@ -10,6 +13,42 @@ from server.db.context import db_session
 from server.utils import err, parse_date
 
 artifacts_bp = Blueprint("artifacts", __name__, url_prefix="/artifacts")
+
+_EVIDENCE_DIR = DATA_DIR / "evidence"
+_EVIDENCE_FILE_RE = re.compile(r"^finviz_[A-Za-z0-9._-]+\.png$")
+
+
+def _evidence_image_label(name: str) -> str:
+    lower = name.lower()
+    if "sectors" in lower:
+        return "Sector performance (5D)"
+    if "1w" in lower:
+        return "Index performance (1W)"
+    return name
+
+
+@artifacts_bp.route("/actuals", methods=["GET"])
+def get_actuals():
+    """Parse data/evidence/actuals_{stem}.md into { asset: move_pct }."""
+    raw_stem = request.args.get("stem") or request.args.get("week")
+    stem, error = _normalize_week_stem(raw_stem)
+    if error:
+        return error
+
+    path = _EVIDENCE_DIR / f"actuals_{stem}.md"
+    if not path.is_file():
+        return jsonify({"stem": stem, "assets": {}}), 200
+    try:
+        rows = parse_actuals_file(path)
+    except (ValueError, FileNotFoundError) as exc:
+        return err(str(exc), 400)
+    return jsonify({
+        "stem": stem,
+        "assets": {
+            asset: {"move_pct": row.actual_move, "direction": row.actual_direction}
+            for asset, row in rows.items()
+        },
+    }), 200
 
 
 @artifacts_bp.route("/almanac", methods=["GET"])
@@ -118,6 +157,44 @@ def get_run_status():
 @artifacts_bp.route("/weeks", methods=["GET"])
 def list_weeks():
     return jsonify({"weeks": list_all_weeks()}), 200
+
+
+@artifacts_bp.route("/evidence-images", methods=["GET"])
+def list_evidence_images():
+    """Finviz PNGs on disk for a week stem (W30 or 2026-W30)."""
+    raw_stem = request.args.get("stem") or request.args.get("week")
+    stem, error = _normalize_week_stem(raw_stem)
+    if error:
+        return error
+    assert stem is not None
+
+    if not _EVIDENCE_DIR.is_dir():
+        return jsonify({"stem": stem, "images": []}), 200
+
+    images = []
+    for path in sorted(_EVIDENCE_DIR.glob(f"finviz_*_{stem}.png")):
+        if not _EVIDENCE_FILE_RE.fullmatch(path.name):
+            continue
+        images.append(
+            {
+                "name": path.name,
+                "label": _evidence_image_label(path.name),
+                "url": f"/artifacts/evidence-file/{path.name}",
+            }
+        )
+    return jsonify({"stem": stem, "images": images}), 200
+
+
+@artifacts_bp.route("/evidence-file/<path:filename>", methods=["GET"])
+def get_evidence_file(filename: str):
+    """Serve a single evidence PNG (basename only; finviz_*.png)."""
+    name = Path(filename).name
+    if name != filename or not _EVIDENCE_FILE_RE.fullmatch(name):
+        return err("Invalid evidence filename", 400)
+    path = _EVIDENCE_DIR / name
+    if not path.is_file():
+        return err(f"Evidence file not found: {name}", 404)
+    return send_from_directory(_EVIDENCE_DIR, name)
 
 
 @artifacts_bp.route("/archive", methods=["GET"])

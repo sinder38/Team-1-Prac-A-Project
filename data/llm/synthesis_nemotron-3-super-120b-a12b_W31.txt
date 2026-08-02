@@ -1,0 +1,17 @@
+# LLM Agent Output — NVIDIA Nemotron 3 Super 120B — Week of 2026-08-01
+
+1. Weekly Regime: Neutral
+2. Confidence Score: Low-Medium
+3. Key Supporting Evidence:
+   - Last week SPX gained 1.05%, NDX rose 0.52%, IWM was flat at +0.01%.
+   - VIX fell 13.94% indicating reduced fear, while oil dropped 5.20%.
+   - Consumer discretionary sector led with +6.11% gain, showing risk-on sentiment in some areas.
+4. Key Contradictions:
+   - Almanac agent shows a bearish seasonal bias for early August, historically weak.
+   - Technical trend for IWM is bearish with price below both EMAs, suggesting downside pressure.
+5. Invalidation Conditions: A decisive move in yields, the dollar, or inflation expectations would invalidate the neutral macro read.
+6. Predicted % move — SPX: -1.5% to 1.0%
+   Predicted % move — NDX: -2.0% to 1.5%
+   Predicted % move — IWM: -1.0% to 0.5%
+7. Plain-English brief: Expect the market to trade in a narrow range next week with limited upside potential for SPX and NDX, while IWM may face slight downward pressure; overall bias remains neutral given mixed signals from seasonal weakness, neutral macro, and mixed technicals.
+8. Disclaimer: This is not financial advice.

@@ -21,14 +21,16 @@ function LlmEmptyState() {
 }
 
 export default function AgentOutputsGrid({ outputs = {} }) {
-  const [open, setOpen] = useState({ llm: true })
+  const [open, setOpen] = useState({ llm: false })
   const hasAny = AGENT_IDS.some(id => outputs[id])
 
   return (
     <div className="px-4 pb-6 pt-6 space-y-4">
       <div>
         <h3 className="text-sm font-medium text-gray-900">Agent Signals</h3>
-        <p className="text-xs text-gray-500 mt-0.5">Latest outputs from each agent</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Key fields plus full raw output (expand each card)
+        </p>
       </div>
 
       {!hasAny ? (
