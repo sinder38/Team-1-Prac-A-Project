@@ -450,7 +450,7 @@ class ConfirmedNewsSource:
                     },
                 )
             except requests.RequestException as exc:
-                print(f"Warning: NewsData.io {section} news unavailable ({exc}); continuing.")
+                raise MacroFetchError(f"NewsData.io fetch failed for {section}: {exc}") from exc
             if payload.get("status") == "error":
                 raise MacroFetchError(
                     "Warning: NewsData.io returned an error for "

@@ -209,7 +209,7 @@ class MacroAgent(BaseAgent):
             "30y": yield_30y if yield_30y is not None else 0.0,
         }
 
-    def latest_price(self, ticker: str) -> float | None:
+    def latest_price(self, ticker: str) -> float:
         """Get latest closing price for a ticker."""
         try:
             price = yf.Ticker(ticker).history(period="5d")["Close"].iloc[-1]
