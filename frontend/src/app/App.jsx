@@ -12,11 +12,18 @@ import {
 } from '../pages'
 import { usePipeline } from '../hooks/usePipeline'
 import { useAuth } from '../hooks/useAuth'
+import { useTheme } from '../hooks/useTheme'
+import { readPageFromUrl, syncUrl } from '../lib/appRoute'
 
 export default function App() {
   const [page, setPage] = useState(readPageFromUrl)
   const pipeline = usePipeline()
   const auth = useAuth()
+  const { theme, toggleTheme } = useTheme()
+
+  useEffect(() => {
+    syncUrl({ page, week: pipeline.selectedWeek })
+  }, [page, pipeline.selectedWeek])
 
   const weekPicker = {
     predictionDate: pipeline.predictionDate,

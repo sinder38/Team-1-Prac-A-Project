@@ -7,7 +7,6 @@ import { AuthControl } from '../auth'
 
 export default function TopHeader({ page = 'dashboard', auth }) {
   const { section, page: title } = PAGE_TITLES[page] || PAGE_TITLES.dashboard
-  const shortRun = runId && runId.length > 18 ? `${runId.slice(0, 16)}…` : runId
 
   return (
     <header className="w-full min-h-12 rounded-xl border border-gray-200 bg-white shadow-md px-4 md:px-6 py-2.5 flex items-center justify-between gap-3 shrink-0">
