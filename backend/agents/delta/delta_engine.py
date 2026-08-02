@@ -12,6 +12,7 @@ from agents.delta.models import (
     WeekAccuracy,
 )
 from agents.delta.parsing import (
+    artifact_week,
     next_week,
     parse_actuals_file,
     parse_actuals_markdown,
@@ -113,7 +114,9 @@ class DeltaAgent:
         json_path: Path | None = None,
     ) -> tuple[Path, Path]:
         """Write the human-readable and structured Delta artifacts."""
-        week = plain_week(report.prediction_week)
+        # Artifacts are filed under the completed actuals week so the Delta
+        # report carries the same W-label as every other artifact of the run.
+        week = artifact_week(report.prediction_week, report.actuals_week)
         markdown_path = markdown_path or (
             self.repo_root / "data" / "qa" / f"delta_{week}.md"
         )
@@ -228,27 +231,42 @@ class DeltaAgent:
             return dict(BASE_WEIGHTS)
 
         target_number = week_number(target_week)
-        candidates: list[tuple[int, Path]] = []
-        for path in output_dir.glob("delta_W*.json"):
-            match = re.fullmatch(r"delta_W(\d{2})\.json", path.name)
-            if match and int(match.group(1)) < target_number:
-                candidates.append((int(match.group(1)), path))
+        candidates: list[tuple[int, dict[str, float]]] = []
+        for path in sorted(output_dir.glob("delta_W*.json")):
+            if not re.fullmatch(r"delta_W(\d{2})\.json", path.name):
+                continue
+            # The week inside the payload is authoritative. File names have
+            # carried the prediction week historically and the actuals week
+            # today, so trusting the name would double-count or skip reports
+            # in a directory that mixes both conventions.
+            pair_week, weights = _read_suggested_weights(path)
+            if pair_week is None or weights is None:
+                continue
+            if pair_week < target_number:
+                candidates.append((pair_week, weights))
 
-        # Start with the newest earlier report. If it is invalid, continue to
-        # the next one instead of using incomplete weights.
-        for _, path in sorted(candidates, reverse=True):
-            weights = _read_suggested_weights(path)
-            if weights is not None:
-                return weights
-        return dict(BASE_WEIGHTS)
+        # Use the newest strictly-earlier prediction pair. If none is valid,
+        # fall back to the documented base weights instead of guessing.
+        if not candidates:
+            return dict(BASE_WEIGHTS)
+        candidates.sort(key=lambda item: item[0])
+        return candidates[-1][1]
 
 
-def _read_suggested_weights(path: Path) -> dict[str, float] | None:
-    """Read reviewed weights from an earlier structured Delta artifact."""
+def _read_suggested_weights(
+    path: Path,
+) -> tuple[int | None, dict[str, float] | None]:
+    """Read the pair week and reviewed weights from a structured artifact.
+
+    Returns ``(prediction_week_number, weights)``. Either element is ``None``
+    when the file is unreadable, has the wrong schema, or is incomplete, so a
+    single damaged artifact can never poison the weight review.
+    """
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         if data.get("schema_version") != 2:
-            return None
+            return None, None
+        pair_week = week_number(str(data["prediction_week"]))
 
         # Use a normal loop here so it is clear which two JSON fields become
         # the key and value in the weights dictionary.
@@ -257,14 +275,13 @@ def _read_suggested_weights(path: Path) -> dict[str, float] | None:
             agent = item["agent"]
             suggested_weight = float(item["suggested_weight"])
             weights[agent] = suggested_weight
-    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-        return None
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return None, None
 
     # A partial set could make the total weight incorrect, so only accept a
     # report containing every expected agent.
     if set(weights) != set(AGENT_ORDER):
-        return None
-    return weights
-
+        return pair_week, None
+    return pair_week, weights
 
 __all__ = ["DeltaAgent"]
