@@ -203,7 +203,7 @@ def test_post_export_includes_delta_report_from_sqlite(app, client):
     assert response.status_code == 200
     artifacts = response.get_json()["artifacts"]
     delta = next(item for item in artifacts if item["agent_type"] == "delta")
-    assert delta["filename"] == "delta_W25.md"
+    assert delta["filename"] == "delta_W26.md"
     assert "## Current-week summary" in delta["markdown"]
     assert "## Prescription for next sprint" in delta["markdown"]
 
@@ -226,11 +226,11 @@ def test_write_delta_report_to_markdown_file(app, tmp_path):
         artifacts = export.build_run_artifacts(session, run)
         written = export.write_artifacts(artifacts, data_dir=tmp_path)
 
-    assert str(tmp_path / "qa" / "delta_W25.md") in written
+    assert str(tmp_path / "qa" / "delta_W26.md") in written
     assert (
-        (tmp_path / "qa" / "delta_W25.md")
+        (tmp_path / "qa" / "delta_W26.md")
         .read_text(encoding="utf-8")
-        .startswith("# delta_W25.md")
+        .startswith("# delta_W26.md")
     )
 
 
