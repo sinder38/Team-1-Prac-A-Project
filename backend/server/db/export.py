@@ -20,7 +20,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from agents.delta.parsing import plain_week
+from agents.delta.parsing import artifact_week
 from agents.io import week_stem
 from agents.paths import DATA_DIR
 from server.db import render
@@ -95,7 +95,19 @@ def build_run_artifacts(session: Session, run: PredictionRun) -> list[dict]:
 
     delta = repo.delta_report_for_run(session, run)
     if delta:
-        delta_stem = plain_week(delta.prediction_week or "")
+        payload = delta.payload or {}
+        try:
+            # Same rule as the writer: file the Delta artifact under the
+            # completed actuals week, deriving it from the prediction week
+            # for legacy payloads that predate the actuals_week field.
+            delta_stem = artifact_week(
+                str(delta.prediction_week or payload.get("prediction_week") or ""),
+                payload.get("actuals_week"),
+            )
+        except ValueError:
+            # Neither stored label is usable; keep the export alive by
+            # filing the report under the run's own week stem.
+            delta_stem = stem
         artifacts.append(
             _artifact(
                 "delta",
