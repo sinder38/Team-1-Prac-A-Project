@@ -223,7 +223,7 @@ def test_agent_writes_markdown_and_structured_json(tmp_path):
     markdown_path, json_path = agent.write_outputs(report)
     data = json.loads(json_path.read_text(encoding="utf-8"))
 
-    assert markdown_path.name == "delta_W28.md"
+    assert markdown_path.name == "delta_W29.md"
     assert data["schema_version"] == 2
     assert data["prediction_week"] == "vW28"
     assert data["actuals_week"] == "W29"
@@ -240,3 +240,92 @@ def test_report_can_be_rebuilt_from_json(tmp_path):
     restored = DeltaReport.from_dict(json.loads(json_path.read_text(encoding="utf-8")))
 
     assert restored == report
+
+
+def _weights_json(prediction_week: str, actuals_week: str, marker: float) -> str:
+    """A minimal schema-2 payload whose weights identify their source file."""
+    from agents.delta.models import AGENT_ORDER
+
+    remainder = round((1.0 - marker) / (len(AGENT_ORDER) - 1), 6)
+    adjustments = [
+        {"agent": agent, "suggested_weight": marker if index == 0 else remainder}
+        for index, agent in enumerate(AGENT_ORDER)
+    ]
+    return json.dumps(
+        {
+            "schema_version": 2,
+            "prediction_week": prediction_week,
+            "actuals_week": actuals_week,
+            "weight_adjustments": adjustments,
+        }
+    )
+
+
+def test_write_outputs_files_artifacts_under_actuals_week(tmp_path):
+    """The Delta artifact carries the same W-label as the rest of the run."""
+    _write_pair(tmp_path, "W28", "W29", underscore=True)
+    agent = DeltaAgent(repo_root=tmp_path)
+    report = agent.run("vW28", "W29")
+
+    markdown_path, json_path = agent.write_outputs(report)
+
+    assert markdown_path.name == "delta_W29.md"
+    assert json_path.name == "delta_W29.json"
+    markdown = markdown_path.read_text(encoding="utf-8")
+    assert markdown.startswith("# delta_W29.md")
+    assert "- Locked prediction: vW28" in markdown
+    assert "- Completed actuals: W29" in markdown
+
+
+def test_write_outputs_derives_week_when_actuals_label_is_missing(tmp_path):
+    """Legacy payloads without a usable actuals label still file safely."""
+    import dataclasses
+
+    _write_pair(tmp_path, "W28", "W29", underscore=True)
+    agent = DeltaAgent(repo_root=tmp_path)
+    report = agent.run("vW28", "W29")
+    legacy = dataclasses.replace(report, actuals_week="")
+
+    markdown_path, json_path = agent.write_outputs(legacy)
+
+    assert markdown_path.name == "delta_W29.md"
+    assert json_path.name == "delta_W29.json"
+
+
+def test_weights_lookback_trusts_payload_week_over_filename(tmp_path):
+    """Mixed old/new file names must not skip or double-count reports.
+
+    The directory mixes every convention the transition can produce, and the
+    fixture is chosen so filename-keyed and payload-keyed selection disagree:
+
+    * ``delta_W29.json`` - legacy prediction-week name, payload pair vW28.
+    * ``delta_W30.json`` - NEW actuals-week name for the previous pair vW29.
+      Filename-keyed filtering drops it (30 < 30 is false) and would regress
+      the review to the older vW28 weights; payload-keyed filtering keeps it.
+    * ``delta_W31.json`` - stale regeneration of the *current* vW30 pair,
+      which must be excluded as not strictly earlier.
+
+    Marker weights identify which file fed the review: 0.40 (vW29) is
+    correct; 0.25 (vW28) is the filename-keyed regression.
+    """
+    _write_pair(tmp_path, "W30", "W31", underscore=True)
+    output_dir = tmp_path / "data" / "outputs" / "delta"
+    output_dir.mkdir(parents=True)
+    (output_dir / "delta_W29.json").write_text(
+        _weights_json("vW28", "W29", marker=0.25), encoding="utf-8"
+    )
+    (output_dir / "delta_W30.json").write_text(
+        _weights_json("vW29", "W30", marker=0.4), encoding="utf-8"
+    )
+    (output_dir / "delta_W31.json").write_text(
+        _weights_json("vW30", "W31", marker=0.6), encoding="utf-8"
+    )
+
+    report = DeltaAgent(repo_root=tmp_path).run("vW30", "W31")
+
+    # marker=0.4 identifies the vW29 payload as the weights source; the
+    # same-pair stale file (0.6) and the older pair (0.25) must lose.
+    current = {
+        item.agent: item.current_weight for item in report.weight_adjustments
+    }
+    assert current["almanac"] == pytest.approx(0.4)
