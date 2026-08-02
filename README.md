@@ -81,7 +81,7 @@ and pull the tag:
 
 ```toml
 # backend/pipeline.toml or backend/server.toml, under [llm].models
-{id = "qwen2.5-0.5b", slug = "qwen2.5-0.5b", provider = "ollama"},
+{id = "qwen2.5-1.5b", slug = "qwen2.5-1.5b", provider = "ollama"},
 ```
 
 `slug` names the synthesis artifacts and defaults to the id **without its
