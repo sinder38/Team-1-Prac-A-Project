@@ -33,6 +33,9 @@ The local development pipeline uses Ollama with `llama3.2:3b`. The automated CI 
 
 ---
 
+
+## Quick Start
+
 ### Requirements
 
  - Python 3.12+
