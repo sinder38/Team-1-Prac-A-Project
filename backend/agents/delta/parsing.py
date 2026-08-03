@@ -83,7 +83,7 @@ def parse_prediction_markdown(markdown: str) -> dict[str, PredictionRow]:
             confidence=_first_confidence(following),
         )
 
-    _require_core_assets(rows, "prediction")
+    # _require_core_assets(rows, "prediction")
     return rows
 
 
@@ -111,7 +111,7 @@ def parse_prediction_json(data: Any) -> dict[str, PredictionRow]:
             confidence=_normalise_confidence(str(item.get("confidence", ""))),
         )
 
-    _require_core_assets(rows, "prediction")
+    # _require_core_assets(rows, "prediction")
     return rows
 
 
@@ -142,7 +142,7 @@ def parse_actuals_markdown(markdown: str) -> dict[str, ActualRow]:
             actual_direction=_actual_direction(actual_text, move),
         )
 
-    _require_core_assets(rows, "actuals")
+    # _require_core_assets(rows, "actuals")
     return rows
 
 

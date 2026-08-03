@@ -11,7 +11,7 @@ COPY backend/ ./backend/
 COPY data/ ./data/
 
 WORKDIR /app/backend
-RUN uv sync --frozen --no-dev \
+RUN uv sync --frozen --no-dev --no-install-package playwright \
     && mkdir -p /app/data/outputs
 
 ENV PATH="/app/backend/.venv/bin:$PATH"

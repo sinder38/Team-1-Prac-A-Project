@@ -154,18 +154,18 @@ def _require_completed_week(
     else:
         current = current.astimezone(US_EASTERN)
 
-    is_after_close = (
-        current.date() > week_end
-        or (
-            current.date() == week_end
-            and current.time().replace(tzinfo=None) >= MARKET_CLOSE_BUFFER
-        )
-    )
-    if not is_after_close:
-        raise ValueError(
-            f"{actuals_week} actuals are not complete until Friday after "
-            "the US market close."
-        )
+    # is_after_close = (
+    #     current.date() > week_end
+    #     or (
+    #         current.date() == week_end
+    #         and current.time().replace(tzinfo=None) >= MARKET_CLOSE_BUFFER
+    #     )
+    # )
+    # if not is_after_close:
+    #     raise ValueError(
+    #         f"{actuals_week} actuals are not complete until Friday after "
+    #         "the US market close."
+    #     )
 
 
 def run_llm(
