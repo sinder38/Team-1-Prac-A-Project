@@ -20,7 +20,7 @@ models = [
     {slug = "ling-3.0-flash",             id = "inclusionai/ling-3.0-flash:free",         name = "InclusionAI Ling 3.0 Flash", max_retries = 4},
     {slug = "gemma-4-26b-a4b-it",         id = "gemma-4-26b-a4b-it:free",                 name = "Google Gemma 4 26B A4B", max_retries = 6},
     {slug = "gpt-oss-20b",                id = "openai/gpt-oss-20b:free",                 name = "OpenAI gpt-oss-20b", max_retries = 5},
-    {slug = "laguna-xs-2.1",              id = "poolside/laguna-xs-2.1:free",             name = "Poolside Laguna XS 2.1", max_retires = 4},
+    {slug = "laguna-xs-2.1",              id = "poolside/laguna-xs-2.1:free",             name = "Poolside Laguna XS 2.1", max_retries = 4},
 
     # For local testing without OpenRouter (requires `ollama serve` + `ollama pull llama3.2:3b`).
     # llama3.2:3b is small enough to run at usable speed on CPU; llama3.1 (8B) takes

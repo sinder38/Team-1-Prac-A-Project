@@ -22,7 +22,7 @@ models = [
     {id = "inclusionai/ling-3.0-flash:free",        name = "InclusionAI Ling 3.0 Flash", max_retries = 4},
     {id = "gemma-4-26b-a4b-it:free",                name = "Google Gemma 4 26B A4B", max_retries = 6},
     {id = "openai/gpt-oss-20b:free",                name = "OpenAI gpt-oss-20b", max_retries = 5},
-    {id = "poolside/laguna-xs-2.1:free",            name = "Poolside Laguna XS 2.1", max_retires = 4},
+    {id = "poolside/laguna-xs-2.1:free",            name = "Poolside Laguna XS 2.1", max_retries = 4},
 
 ]
 max_retries = 5
