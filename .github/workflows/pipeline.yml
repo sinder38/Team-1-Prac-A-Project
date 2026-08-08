@@ -1,9 +1,10 @@
 name: Weekly Pipeline
 
 on:
-  schedule:
+  # schedule:
     # 22:30 UTC Friday is after the US close in both daylight and standard time.
-    - cron: "30 22 * * 5"
+    # Disabled: Project is finished
+    # - cron: "30 22 * * 5"
   workflow_dispatch:
 
 permissions:
